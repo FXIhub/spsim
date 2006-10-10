@@ -1,0 +1,184 @@
+This is pdfeTeX, Version 3.141592-1.21a-2.2 (Web2C 7.5.4) (format=pdflatex 2006.7.17)  19 SEP 2006 17:25
+entering extended mode
+**\nonstopmode\input{UserManual.tex}
+(./UserManual.tex (/usr/share/texmf-tetex/tex/latex/base/report.cls
+Document Class: report 2004/02/16 v1.4f Standard LaTeX document class
+(/usr/share/texmf-tetex/tex/latex/base/size10.clo
+File: size10.clo 2004/02/16 v1.4f Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@chapter=\count80
+\c@section=\count81
+\c@subsection=\count82
+\c@subsubsection=\count83
+\c@paragraph=\count84
+\c@subparagraph=\count85
+\c@figure=\count86
+\c@table=\count87
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen102
+)
+(/usr/share/texmf-tetex/tex/latex/base/makeidx.sty
+Package: makeidx 2000/03/29 v1.0m Standard LaTeX package
+)
+(/usr/share/texmf-tetex/tex/latex/graphics/graphicx.sty
+Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texmf-tetex/tex/latex/graphics/keyval.sty
+Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
+\KV@toks@=\toks14
+)
+(/usr/share/texmf-tetex/tex/latex/graphics/graphics.sty
+Package: graphics 2001/07/07 v1.0n Standard LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texmf-tetex/tex/latex/graphics/trig.sty
+Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
+)
+(/usr/share/texmf-tetex/tex/latex/graphics/graphics.cfg
+File: graphics.cfg 2005/02/03 v1.3 graphics configuration of teTeX/TeXLive
+)
+Package graphics Info: Driver file: pdftex.def on input line 80.
+
+(/usr/share/texmf-tetex/tex/latex/graphics/pdftex.def
+File: pdftex.def 2002/06/19 v0.03k graphics/color for pdftex
+\Gread@gobject=\count88
+))
+\Gin@req@height=\dimen103
+\Gin@req@width=\dimen104
+)
+\@indexfile=\write3
+\openout3 = `UserManual.idx'.
+
+
+Writing index file UserManual.idx
+(./UserManual.aux
+
+LaTeX Warning: Label `ewald-construction' multiply defined.
+
+)
+\openout1 = `UserManual.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 18.
+LaTeX Font Info:    ... okay on input line 18.
+ (/usr/share/texmf-tetex/tex/context/base/supp-pdf.tex
+(/usr/share/texmf-tetex/tex/context/base/supp-mis.tex
+loading : Context Support Macros / Miscellaneous (2004.10.26)
+\protectiondepth=\count89
+\scratchcounter=\count90
+\scratchtoks=\toks15
+\scratchdimen=\dimen105
+\scratchskip=\skip43
+\scratchmuskip=\muskip10
+\scratchbox=\box26
+\scratchread=\read1
+\scratchwrite=\write4
+\zeropoint=\dimen106
+\onepoint=\dimen107
+\onebasepoint=\dimen108
+\minusone=\count91
+\thousandpoint=\dimen109
+\onerealpoint=\dimen110
+\emptytoks=\toks16
+\nextbox=\box27
+\nextdepth=\dimen111
+\everyline=\toks17
+\!!counta=\count92
+\!!countb=\count93
+\recursecounter=\count94
+)
+loading : Context Support Macros / PDF (2004.03.26)
+\nofMPsegments=\count95
+\nofMParguments=\count96
+\MPscratchCnt=\count97
+\MPscratchDim=\dimen112
+\MPnumerator=\count98
+\everyMPtoPDFconversion=\toks18
+)
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <12> on input line 25.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <8> on input line 25.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <6> on input line 25.
+ [1
+
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map
+Warning: pdflatex (file /var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map): fon
+tmap entry for `mtex' already exists, duplicates ignored
+}] (./UserManual.toc
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 2.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 2.
+)
+\tf@toc=\write5
+\openout5 = `UserManual.toc'.
+
+ [1
+
+]
+Chapter 1.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 67.
+(/usr/share/texmf-tetex/tex/latex/base/omscmr.fd
+File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 67.
+ [1
+
+] [2] [3]
+Chapter 2.
+<ewald.png, id=50, 556.0775pt x 537.00626pt>
+File: ewald.png Graphic file (type png)
+ <use ewald.png> [4
+
+ <./ewald.png>]
+[5] [6]
+Chapter 3.
+[7
+
+] <example.png, id=76, 2055.68pt x 1027.84pt>
+File: example.png Graphic file (type png)
+ <use example.png>
+(./UserManual.bbl [8 <./example.png>]) [9
+
+] (./UserManual.aux)
+
+LaTeX Warning: There were multiply-defined labels.
+
+ ) 
+Here is how much of TeX's memory you used:
+ 983 strings out of 94500
+ 11979 string characters out of 1175771
+ 60259 words of memory out of 1000000
+ 4181 multiletter control sequences out of 10000+50000
+ 9974 words of font info for 35 fonts, out of 500000 for 2000
+ 580 hyphenation exceptions out of 8191
+ 26i,6n,19p,246b,270s stack positions out of 1500i,500n,5000p,200000b,5000s
+PDF statistics:
+ 82 PDF objects out of 300000
+ 0 named destinations out of 131072
+ 11 words of extra memory for PDF output out of 65536
+</usr/share/texmf-tetex/fonts/type1/bluesky/cm/cmmi5.pfb></usr/share/texmf-te
+tex/fonts/type1/bluesky/cm/cmr5.pfb></usr/share/texmf-tetex/fonts/type1/bluesky
+/cm/cmmi7.pfb></usr/share/texmf-tetex/fonts/type1/bluesky/cm/cmex10.pfb></usr/s
+hare/texmf-tetex/fonts/type1/bluesky/cm/cmtt10.pfb></usr/share/texmf-tetex/font
+s/type1/bluesky/cm/cmr7.pfb></usr/share/texmf-tetex/fonts/type1/bluesky/cm/cmsl
+10.pfb></usr/share/texmf-tetex/fonts/type1/bluesky/cm/cmmi10.pfb></usr/share/te
+xmf-tetex/fonts/type1/bluesky/cm/cmsy10.pfb></usr/share/texmf-tetex/fonts/type1
+/bluesky/cm/cmti10.pfb></usr/share/texmf-tetex/fonts/type1/bluesky/cm/cmr10.pfb
+></usr/share/texmf-tetex/fonts/type1/bluesky/cm/cmbx10.pfb></usr/share/texmf-te
+tex/fonts/type1/bluesky/cm/cmr12.pfb></usr/share/texmf-tetex/fonts/type1/bluesk
+y/cm/cmr17.pfb></usr/share/texmf-tetex/fonts/type1/bluesky/cm/cmbx12.pfb>
+Output written on UserManual.pdf (11 pages, 889796 bytes).

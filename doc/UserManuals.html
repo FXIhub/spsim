@@ -1,0 +1,282 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"><HTML>
+<HEAD>
+<TITLE></TITLE>
+</HEAD>
+<BODY>
+<A name=1></a>spsim User Manual<br>
+Version 1.0 (Alpha)<br>
+Filipe Maia<br>
+September 19, 2006<br>
+<hr>
+<A name=2></a>Contents<br>
+1<br>
+Introduction<br>
+1<br>
+1.1<br>
+spsim.conf . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .<br>
+1<br>
+1.2<br>
+Output<br>
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .<br>
+3<br>
+2<br>
+Theory<br>
+4<br>
+3<br>
+Installation<br>
+7<br>
+i<br>
+<hr>
+<A name=3></a>Chapter 1<br>
+Introduction<br>
+spsim is a small program which aims to realistically simulate the output of a single particle diffraction<br>
+experiment. The program reads it's input from a single file named spsim.conf which must reside<br>
+on the directory where the program is run. It then runs for while and produces several VTK files<br>
+related to the detector output from the simualted an experiment.<br>
+1.1<br>
+spsim.conf<br>
+spsim.conf is composed of several "key = value lines;". All lines starting with "#" are comments<br>
+and not interpreted by the program. All values are in SI units!<br>
+The required keys are:<br>
+· number of dimensions = &lt;int&gt; - currently only the value of 2 is valid. Number of dimensions<br>
+of the output.<br>
+· input type = &lt;string&gt; - currently only the value "pdb" is accepted. Defines the type of the<br>
+input structure on which the experiment is going to be performed.<br>
+· pdb filename = &lt;string&gt; - a string containing the path to the PDB file to be used.<br>
+· detector distance = &lt;float&gt; - the distance to the detectorin meters.<br>
+· detector width = &lt;float&gt; - the width of the detectorin meters.<br>
+· detector height = &lt;float&gt; - the height of the detectorin meters.<br>
+· detector pixel width = &lt;float&gt; - the width of a single pixelin meters.<br>
+· detector pixel height = &lt;float&gt; - the height of a single pixelin meters.<br>
+· detector quantum efficiency = &lt;float&gt; - the quantum efficiency of the detector. A number<br>
+from [0.00,1.00] indicating 0 to 100% efficiency<br>
+1<br>
+<hr>
+<A name=4></a>CHAPTER 1. INTRODUCTION<br>
+2<br>
+· detector electron hole production energy = &lt;float&gt; - energy required to produce an electron<br>
+on the detectorin joules.<br>
+· detector readout noise = &lt;float&gt; - RMS of the readout noise, in electrons per pixel.<br>
+· detector dark current = &lt;float&gt; - dark current of the CCD in electrons/(pixel.second).<br>
+· detector linear full well = &lt;float&gt; - maximum capacity of a pixel in electrons.<br>
+· detector binning &lt;int&gt; - number of pixels to bin. Binning is assumed to be the same in all<br>
+dimensions so a value of 4 means 4x4 binning.<br>
+· detector maximum value = &lt;float&gt; maximum value that the detector output. For a 16 bit<br>
+detector this would be 216 or 65535.0.<br>
+· experiment wavelength = &lt;float&gt; the wavelength of the experiment in meters.<br>
+· experiment exposure time = &lt;float&gt; total exposure time in seconds.<br>
+· experiment beam intensity = &lt;float&gt; total beam intensity integrated over the entire exposure<br>
+time in photons/m2.<br>
+Due to the way libconfig works all floating point values must include a decimal point, otherwise<br>
+they will be treated as 0. So for example if your detector readout noise is 10 you need to write<br>
+"detector readout noise = 10.0;".<br>
+Here is an example configuration file:<br>
+number_of_dimensions = 2;<br>
+input_type = &quot;pdb&quot;;<br>
+pdb_filename = &quot;DNA_triangle.pdb&quot;;<br>
+# 5cm detector distance<br>
+detector_distance = 5.000000e-02;<br>
+# 26.8mm x 26mm CCD<br>
+detector_width = 2.680000e-02;<br>
+detector_height = 2.600000e-02;<br>
+#20um square pixels<br>
+detector_pixel_width = 2.000000e-05;<br>
+detector_pixel_height = 2.000000e-05;<br>
+# 15% quantum efficiency<br>
+detector_quantum_efficiency = 1.500000e-01;<br>
+# 3.6 eV<br>
+detector_electron_hole_production_energy = 5.800000e-19;<br>
+<hr>
+<A name=5></a>CHAPTER 1. INTRODUCTION<br>
+3<br>
+detector_readout_noise = 1.000000e+01;<br>
+detector_dark_current = 1.000000e-01;<br>
+detector_linear_full_well = 2.000000e+05;<br>
+# 4x4 binning<br>
+detector_binning = 4;<br>
+detector_maximum_value = 65535.0;<br>
+#13 nm<br>
+experiment_wavelength = 1.300000e-08;<br>
+# 100fs<br>
+experiment_exposure_time = 1.000000e-13;<br>
+# 1e15 photons, 100um^2 area<br>
+experiment_beam_intensity = 1.0e25;<br>
+1.2<br>
+Output<br>
+The output of spsim consists of the following files:<br>
+· spsim.confout - contains all information read by the program from spsim.conf<br>
+· scattering factor.vtk - the scattering factors of the input molecule on the detector<br>
+· thomson correction.vtk - the thomson correction factor for each pixel. Simply the differential<br>
+electron cross-section times the pixel solid-angle<br>
+· solid angle.vtk - the solid angle for each pixel<br>
+· photon count.vtk - the number of photons detected by each pixel. This already takes into<br>
+account the quantum efficiency and poisson noise.<br>
+· electrons per pixel.vtk - electrons generated on each pixel due to the incomming photons.<br>
+· real output.vtk - the value that detector output, including all the noise effects.<br>
+· noiseless output.vtk - the value which the detector would output if there were no sources of<br>
+noise.<br>
+An easy way to examine images is to use an excellent visualizer called VisIt produced by the LLNL<br>
+and freely available for many platforms. Please visit the page http://www.llnl.gov/visit/ for more<br>
+information, including installation details. From now on i'll assume that you have VisIt installed.<br>
+But any other VTK visualizer like should work.<br>
+<hr>
+<A name=6></a>Chapter 2<br>
+Theory<br>
+The way spsim simulates the diffraction patterns is very simple. First it starts by calculating the<br>
+reciprocal space coordinates of the detector pixels, using the Ewald sphere construct [1]. For each<br>
+pixel x, y on the detector at a distance d from the source and at a wavelength  the reciprocal h, k, l<br>
+coordinates are:<br>
+x<br>
+y<br>
+1<br>
+ =<br>
+(<br>
+)2 + (<br>
+)2 + ( )2<br>
+(2.1)<br>
+d<br>
+d<br>
+<br>
+x<br>
+h(x, y) =<br>
+(2.2)<br>
+2  d<br>
+y<br>
+k(x, y) =<br>
+(2.3)<br>
+2d<br>
+1<br>
+1<br>
+l(x, y) =<br>
+-<br>
+(2.4)<br>
+<br>
+2<br>
+Then the molecular scattering factors are calculated on those coordinates, using CCP4's atomsf.lib<br>
+to get the atomic scattering factors. Assuming n atoms at positions (xj, yj, zj) and using ai,bi and<br>
+c from atomsf.lib.<br>
+<br>
+4<br>
+h2 + k2 + l2<br>
+f0j(h, k, l) =<br>
+aiexp(-bi sin2<br>
+) + c<br>
+(2.5)<br>
+2<br>
+i=1<br>
+4<br>
+<hr>
+<A name=7></a>CHAPTER 2. THEORY<br>
+5<br>
+n<br>
+j=n<br>
+F (h, k, l) =<br>
+{f0j(h, k, l) cos{2(hxj + kyj + lzj)}} + i<br>
+{f0j(h, k, l) sin{2(hxj + kyj + lzj)}}<br>
+j=1<br>
+j=1<br>
+(2.6)<br>
+After that the Thomson correction is applied. K1 and K2 are the relative vertical and horizontal<br>
+polarized parts of the beam. That an horizontal scaterring plane K1 = 0 and K2 = 1 and vice<br>
+versa. For unpolarized light K1 = K2 = 0.5. P is the polarization factor. 2 is the angle between<br>
+the primary beam and the direction of observation. IeT h is the density of the scattered radiation, Ii<br>
+is the intensity of the indicent radiation, e is the charge of the electron, m the mass of the electron<br>
+and c the speed of light.<br>
+e2<br>
+is known as the classic electron radius.<br>
+mc2<br>
+P () = K1 + K2 cos2(2)<br>
+(2.7)<br>
+IeT h<br>
+e4<br>
+=<br>
+× P () = T homson()<br>
+(2.8)<br>
+Ii<br>
+m2c4<br>
+The Thomson correction is applied to each pixel according to it's solid angle, and then the total<br>
+number of photons that arrive to each pixel is calculated.  is the solid angle and Apx is the pixel<br>
+area projected on a plane passing through the center of the pixel and normal to the direction of<br>
+observation.<br>
+Apx<br>
+(x, y) =<br>
+(2.9)<br>
+x2 + y2 + d2<br>
+The number of photons that arrive at each pixel, P hinc is then given by:<br>
+P hinc(x, y) = T homson() × (x, y) × F (hkl(x, y)) × Ii<br>
+(2.10)<br>
+From those pixel that arrive at each pixel only a certain number is detected. The percentage that<br>
+on average is detected is known as quantum efficiency( ) and is wavelength dependent. P oisson(x)<br>
+returns a poisson distributed number with mean x. The number of photons detected on each<br>
+pixel(P hdet) is then:<br>
+P hdet(x, y) = P oisson(P hinc(x, y) ×  )<br>
+(2.11)<br>
+Using µ to represent the energy to produce one electron hole, the number of electrons generated on<br>
+the pixel by the detected photons(elgen is then simply:<br>
+P hdet(x, y) × hc<br>
+el<br>
+<br>
+gen(x, y) =<br>
+(2.12)<br>
+µ<br>
+Representing the maximum value output by the detector by Vmax, the binned pixels by pxbin, the<br>
+pixel linear full well by Wmax exposure time by t dark current by  and readout noise by N , the<br>
+final output is then calculated by:<br>
+<hr>
+<A name=8></a>CHAPTER 2. THEORY<br>
+6<br>
+pxbin<br>
+Vmax<br>
+Output(x, y) =<br>
+{(elgen(xbin, ybin) + t)} + Gaussian(N ) ×<br>
+(2.13)<br>
+Wmax<br>
+xbin,ybin<br>
+Where Gaussian(x) returns a normally distributed random number with mean 0 and standard<br>
+deviation x.<br>
+The noiseless output is then calculated by:<br>
+pxbin<br>
+P hinc(xbin, ybin) ×  × hc<br>
+Vmax<br>
+N oiseless(x, y) =<br>
+<br>
+×<br>
+(2.14)<br>
+µ<br>
+Wmax<br>
+xbin,ybin<br>
+<hr>
+<A name=9></a>Chapter 3<br>
+Installation<br>
+spsim should compile in any linux distribution and most kinds of Unix. It might also compile in<br>
+windows under cygwin although that has not been tested.<br>
+To install first simply extract the source code, go to the libconfig-0.9 directory inside of the source<br>
+code directory, run configure followed by make, move to the previous directory and run make. For<br>
+example:<br>
+$ tar -zxvf spsim-1.0.tar.gz<br>
+$ cd spsim-1.0<br>
+$ cd libconfig-0.9<br>
+$ ./configure<br>
+$ make<br>
+$ cd ..<br>
+$ make<br>
+You now should have a binary called "spsim" in your "spsim-1.0" directory, ready to run.<br>
+If you wish to turn off MPI support you need to edit the Makefile on the "spsim-1.0" directory and<br>
+change the MPI = ON line to MPI = OFF.<br>
+7<br>
+<hr>
+<A name=10></a>CHAPTER 3. INSTALLATION<br>
+8<br>
+You can now run the examples by going to the examples directory and running spsim:<br>
+$ cd examples<br>
+$ ../spsim<br>
+This should produce several files including "real output.vtk" and "noiseless output.vtk" that you<br>
+can now take a look at. They should look like this:<br>
+Congratulations you have successfully installed spsim!<br>
+<hr>
+<A name=11></a>Bibliography<br>
+[1] Fundamentals of crystallography. IUCr Texts on Crystallography. Oxford University Press, 1992.<br>
+9<br>
+<hr>
+</BODY>
+</HTML>

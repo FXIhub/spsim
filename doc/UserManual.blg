@@ -1,0 +1,48 @@
+This is BibTeX, Version 0.99c (Web2C 7.5.4)
+The top-level auxiliary file: UserManual.aux
+The style file: acm.bst
+Database file #1: imaging.bib
+Warning--to sort, need author, editor, or key in Giacovazzo92
+Warning--empty author and editor in Giacovazzo92
+You've used 1 entry,
+            2253 wiz_defined-function locations,
+            532 strings with 3999 characters,
+and the built_in function-call counts, 196 in all, are:
+= -- 15
+> -- 1
+< -- 0
++ -- 1
+- -- 0
+* -- 13
+:= -- 31
+add.period$ -- 2
+call.type$ -- 1
+change.case$ -- 2
+chr.to.int$ -- 0
+cite$ -- 3
+duplicate$ -- 13
+empty$ -- 25
+format.name$ -- 0
+if$ -- 42
+int.to.chr$ -- 0
+int.to.str$ -- 1
+missing$ -- 1
+newline$ -- 7
+num.names$ -- 0
+pop$ -- 7
+preamble$ -- 1
+purify$ -- 2
+quote$ -- 0
+skip$ -- 6
+stack$ -- 0
+substring$ -- 5
+swap$ -- 1
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 2
+warning$ -- 2
+while$ -- 0
+width$ -- 2
+write$ -- 10
+(There were 2 warnings)

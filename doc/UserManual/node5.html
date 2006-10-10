@@ -1,0 +1,553 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Theory</TITLE>
+<META NAME="description" CONTENT="Theory">
+<META NAME="keywords" CONTENT="UserManual">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="UserManual.css">
+
+<LINK REL="next" HREF="node6.html">
+<LINK REL="previous" HREF="node2.html">
+<LINK REL="up" HREF="UserManual.html">
+<LINK REL="next" HREF="node6.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html76"
+  HREF="node6.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html72"
+  HREF="UserManual.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html66"
+  HREF="node4.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html74"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html77"
+  HREF="node6.html">Installation</A>
+<B> Up:</B> <A NAME="tex2html73"
+  HREF="UserManual.html">spsim User Manual Version</A>
+<B> Previous:</B> <A NAME="tex2html67"
+  HREF="node4.html">Output</A>
+ &nbsp; <B>  <A NAME="tex2html75"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION00300000000000000000">
+Theory</A>
+</H1>
+The way spsim simulates the diffraction patterns is very simple. First it starts by calculating the reciprocal space coordinates
+of the detector pixels, using the Ewald sphere construct&nbsp;[<A
+ HREF="node7.html#Giacovazzo92">1</A>].
+For each pixel <SPAN CLASS="MATH"><IMG
+ WIDTH="29" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img5.png"
+ ALT="$x,y$"></SPAN> on the detector at a distance <SPAN CLASS="MATH"><IMG
+ WIDTH="13" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img6.png"
+ ALT="$d$"></SPAN> from the source and at a wavelength <SPAN CLASS="MATH"><IMG
+ WIDTH="14" HEIGHT="15" ALIGN="BOTTOM" BORDER="0"
+ SRC="img7.png"
+ ALT="$\lambda$"></SPAN> the reciprocal <SPAN CLASS="MATH"><IMG
+ WIDTH="42" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img8.png"
+ ALT="$h,k,l$"></SPAN> coordinates are:
+
+<P>
+
+<DIV ALIGN="CENTER">
+
+<P><A NAME="ewald-construction"></A></P>
+<DIV ALIGN="CENTER">
+
+</DIV><IMG
+  WIDTH="167" HEIGHT="161" ALIGN="BOTTOM" BORDER="0"
+ SRC="./ewald.png"
+ ALT="Image ewald">
+
+</DIV>
+
+<P>
+<BR>
+<DIV ALIGN="RIGHT" CLASS="mathdisplay">
+
+<!-- MATH
+ \begin{equation}
+\chi = \sqrt{(\frac{x}{\lambda d})^2+(\frac{y}{\lambda d})^2+(\frac{1}{\lambda})^2}
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP><IMG
+ WIDTH="201" HEIGHT="45" BORDER="0"
+ SRC="img9.png"
+ ALT="\begin{displaymath}
+\chi = \sqrt{(\frac{x}{\lambda d})^2+(\frac{y}{\lambda d})^2+(\frac{1}{\lambda})^2}
+\end{displaymath}"></TD>
+<TD CLASS="eqno" WIDTH=10 ALIGN="RIGHT">
+(<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">1</SPAN>)</TD></TR>
+</TABLE>
+<BR CLEAR="ALL"></DIV><P></P>
+<BR>
+<DIV ALIGN="RIGHT" CLASS="mathdisplay">
+
+<!-- MATH
+ \begin{equation}
+h(x,y) = \frac{x}{\lambda^2* d \chi}
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP><IMG
+ WIDTH="119" HEIGHT="38" BORDER="0"
+ SRC="img10.png"
+ ALT="\begin{displaymath}
+h(x,y) = \frac{x}{\lambda^2* d \chi}
+\end{displaymath}"></TD>
+<TD CLASS="eqno" WIDTH=10 ALIGN="RIGHT">
+(<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">2</SPAN>)</TD></TR>
+</TABLE>
+<BR CLEAR="ALL"></DIV><P></P>
+<BR>
+<DIV ALIGN="RIGHT" CLASS="mathdisplay">
+
+<!-- MATH
+ \begin{equation}
+k(x,y) = \frac{y}{\lambda^2 d \chi}
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP><IMG
+ WIDTH="103" HEIGHT="38" BORDER="0"
+ SRC="img11.png"
+ ALT="\begin{displaymath}
+k(x,y) = \frac{y}{\lambda^2 d \chi}
+\end{displaymath}"></TD>
+<TD CLASS="eqno" WIDTH=10 ALIGN="RIGHT">
+(<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">3</SPAN>)</TD></TR>
+</TABLE>
+<BR CLEAR="ALL"></DIV><P></P>
+<BR>
+<DIV ALIGN="RIGHT" CLASS="mathdisplay">
+
+<!-- MATH
+ \begin{equation}
+l(x,y) = \frac{1}{\lambda} - \frac{1}{\lambda^2\chi}
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP><IMG
+ WIDTH="124" HEIGHT="41" BORDER="0"
+ SRC="img12.png"
+ ALT="\begin{displaymath}
+l(x,y) = \frac{1}{\lambda} - \frac{1}{\lambda^2\chi}
+\end{displaymath}"></TD>
+<TD CLASS="eqno" WIDTH=10 ALIGN="RIGHT">
+(<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">4</SPAN>)</TD></TR>
+</TABLE>
+<BR CLEAR="ALL"></DIV><P></P>
+
+<P>
+Then the molecular scattering factors are calculated on those coordinates, using CCP4's atomsf.lib to get the atomic scattering factors.
+Assuming <SPAN CLASS="MATH"><IMG
+ WIDTH="14" HEIGHT="13" ALIGN="BOTTOM" BORDER="0"
+ SRC="img13.png"
+ ALT="$n$"></SPAN> atoms at positions <SPAN CLASS="MATH"><IMG
+ WIDTH="75" HEIGHT="32" ALIGN="MIDDLE" BORDER="0"
+ SRC="img14.png"
+ ALT="$(x_j,y_j,z_j)$"></SPAN> and using <SPAN CLASS="MATH"><IMG
+ WIDTH="18" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img15.png"
+ ALT="$a_i$"></SPAN>,<SPAN CLASS="MATH"><IMG
+ WIDTH="17" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img16.png"
+ ALT="$b_i$"></SPAN> and <SPAN CLASS="MATH"><IMG
+ WIDTH="11" HEIGHT="13" ALIGN="BOTTOM" BORDER="0"
+ SRC="img17.png"
+ ALT="$c$"></SPAN> from atomsf.lib.
+<BR>
+<DIV ALIGN="RIGHT" CLASS="mathdisplay">
+
+<!-- MATH
+ \begin{equation}
+f_{0j}(h,k,l) = \sum_{i=1}^{4} a_i exp(-b_i\sin^2\Biggl[\frac{\sqrt{h^2+k^2+l^2}}{2}\Biggl]) + c
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP><IMG
+ WIDTH="366" HEIGHT="55" BORDER="0"
+ SRC="img18.png"
+ ALT="\begin{displaymath}
+f_{0j}(h,k,l) = \sum_{i=1}^{4} a_i exp(-b_i\sin^2\Biggl[\frac{\sqrt{h^2+k^2+l^2}}{2}\Biggl]) + c
+\end{displaymath}"></TD>
+<TD CLASS="eqno" WIDTH=10 ALIGN="RIGHT">
+(<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">5</SPAN>)</TD></TR>
+</TABLE>
+<BR CLEAR="ALL"></DIV><P></P>
+<BR>
+<DIV ALIGN="RIGHT" CLASS="mathdisplay">
+
+<!-- MATH
+ \begin{equation}
+F(h,k,l) = \sum_{j=1}^{n} \{f_{0j}(h,k,l) \cos\{2 \pi (h x_j+k y_j + l z_j)\}\} + i \sum_{j=1}^{j=n}\{f_{0j}(h,k,l) \sin\{2 \pi (h x_j+k y_j + l z_j)\}\}
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP><IMG
+ WIDTH="644" HEIGHT="59" BORDER="0"
+ SRC="img19.png"
+ ALT="\begin{displaymath}
+F(h,k,l) = \sum_{j=1}^{n} \{f_{0j}(h,k,l) \cos\{2 \pi (h x_...
+...=1}^{j=n}\{f_{0j}(h,k,l) \sin\{2 \pi (h x_j+k y_j + l z_j)\}\}
+\end{displaymath}"></TD>
+<TD CLASS="eqno" WIDTH=10 ALIGN="RIGHT">
+(<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">6</SPAN>)</TD></TR>
+</TABLE>
+<BR CLEAR="ALL"></DIV><P></P>
+
+<P>
+After that the Thomson correction is applied. <SPAN CLASS="MATH"><IMG
+ WIDTH="27" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img20.png"
+ ALT="$K1$"></SPAN> and <SPAN CLASS="MATH"><IMG
+ WIDTH="27" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img21.png"
+ ALT="$K2$"></SPAN> are the relative vertical and horizontal polarized parts of the beam.
+That an horizontal scaterring plane <SPAN CLASS="MATH"><IMG
+ WIDTH="56" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img22.png"
+ ALT="$K1 = 0$"></SPAN> and <SPAN CLASS="MATH"><IMG
+ WIDTH="56" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img23.png"
+ ALT="$K2 = 1$"></SPAN> and vice versa. For unpolarized light <SPAN CLASS="MATH"><IMG
+ WIDTH="112" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img24.png"
+ ALT="$K1 = K2 = 0.5$"></SPAN>.
+<SPAN CLASS="MATH"><IMG
+ WIDTH="17" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img25.png"
+ ALT="$P$"></SPAN> is the polarization factor. <SPAN CLASS="MATH"><IMG
+ WIDTH="20" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img26.png"
+ ALT="$2\theta$"></SPAN> is the angle between the primary beam and the direction of observation.
+<SPAN CLASS="MATH"><IMG
+ WIDTH="35" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img27.png"
+ ALT="$I_{eTh}$"></SPAN> is the density of the scattered radiation, <SPAN CLASS="MATH"><IMG
+ WIDTH="17" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img28.png"
+ ALT="$I_i$"></SPAN> is the intensity of the indicent radiation,
+<SPAN CLASS="MATH"><IMG
+ WIDTH="12" HEIGHT="13" ALIGN="BOTTOM" BORDER="0"
+ SRC="img29.png"
+ ALT="$e$"></SPAN> is the charge of the electron, <SPAN CLASS="MATH"><IMG
+ WIDTH="18" HEIGHT="13" ALIGN="BOTTOM" BORDER="0"
+ SRC="img30.png"
+ ALT="$m$"></SPAN> the mass of the electron and <SPAN CLASS="MATH"><IMG
+ WIDTH="11" HEIGHT="13" ALIGN="BOTTOM" BORDER="0"
+ SRC="img17.png"
+ ALT="$c$"></SPAN> the speed of light.
+<!-- MATH
+ $\frac{e^2}{mc^2}$
+ -->
+<SPAN CLASS="MATH"><IMG
+ WIDTH="31" HEIGHT="42" ALIGN="MIDDLE" BORDER="0"
+ SRC="img31.png"
+ ALT="$\frac{e^2}{mc^2}$"></SPAN> is known as the classic electron radius.
+
+<P>
+<BR>
+<DIV ALIGN="RIGHT" CLASS="mathdisplay">
+
+<!-- MATH
+ \begin{equation}
+P(\theta) = K_1 +K_2 \cos^2(2\theta)
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP><IMG
+ WIDTH="173" HEIGHT="28" BORDER="0"
+ SRC="img32.png"
+ ALT="\begin{displaymath}
+P(\theta) = K_1 +K_2 \cos^2(2\theta)
+\end{displaymath}"></TD>
+<TD CLASS="eqno" WIDTH=10 ALIGN="RIGHT">
+(<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">7</SPAN>)</TD></TR>
+</TABLE>
+<BR CLEAR="ALL"></DIV><P></P>
+<BR>
+<DIV ALIGN="RIGHT" CLASS="mathdisplay">
+
+<!-- MATH
+ \begin{equation}
+\frac{I_{eTh}}{I_i} = \frac{e^4}{m^2c^4} \times P(\theta) = Thomson(\theta)
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP><IMG
+ WIDTH="252" HEIGHT="43" BORDER="0"
+ SRC="img33.png"
+ ALT="\begin{displaymath}
+\frac{I_{eTh}}{I_i} = \frac{e^4}{m^2c^4} \times P(\theta) = Thomson(\theta)
+\end{displaymath}"></TD>
+<TD CLASS="eqno" WIDTH=10 ALIGN="RIGHT">
+(<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">8</SPAN>)</TD></TR>
+</TABLE>
+<BR CLEAR="ALL"></DIV><P></P>
+
+<P>
+The Thomson correction is applied to each pixel according to it's solid angle, and then the total number of photons that arrive to each pixel is calculated.
+<SPAN CLASS="MATH"><IMG
+ WIDTH="16" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img34.png"
+ ALT="$\Omega$"></SPAN> is the solid angle and <SPAN CLASS="MATH"><IMG
+ WIDTH="31" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img35.png"
+ ALT="$A_{px}$"></SPAN> is the pixel area projected on a plane passing through the center of the pixel and normal to the direction of observation.
+
+<P>
+<BR>
+<DIV ALIGN="RIGHT" CLASS="mathdisplay">
+
+<!-- MATH
+ \begin{equation}
+\Omega(x,y) = \frac{A_{px}}{x^2+y^2+d^2}
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP><IMG
+ WIDTH="158" HEIGHT="42" BORDER="0"
+ SRC="img36.png"
+ ALT="\begin{displaymath}
+\Omega(x,y) = \frac{A_{px}}{x^2+y^2+d^2}
+\end{displaymath}"></TD>
+<TD CLASS="eqno" WIDTH=10 ALIGN="RIGHT">
+(<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">9</SPAN>)</TD></TR>
+</TABLE>
+<BR CLEAR="ALL"></DIV><P></P>
+
+<P>
+The number of photons that arrive at each pixel, <SPAN CLASS="MATH"><IMG
+ WIDTH="45" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img37.png"
+ ALT="$Ph_{inc}$"></SPAN> is then given by:
+
+<P>
+<BR>
+<DIV ALIGN="RIGHT" CLASS="mathdisplay">
+
+<!-- MATH
+ \begin{equation}
+Ph_{inc}(x,y) = Thomson(\theta) \times \Omega(x,y) \times F(hkl(x,y)) \times I_i
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP><IMG
+ WIDTH="388" HEIGHT="28" BORDER="0"
+ SRC="img38.png"
+ ALT="\begin{displaymath}
+Ph_{inc}(x,y) = Thomson(\theta) \times \Omega(x,y) \times F(hkl(x,y)) \times I_i
+\end{displaymath}"></TD>
+<TD CLASS="eqno" WIDTH=10 ALIGN="RIGHT">
+(<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">10</SPAN>)</TD></TR>
+</TABLE>
+<BR CLEAR="ALL"></DIV><P></P>
+
+<P>
+From those pixel that arrive at each pixel only a certain number is detected. The percentage that on average is detected is known as
+<EM>quantum efficiency</EM>(<SPAN CLASS="MATH"><IMG
+ WIDTH="13" HEIGHT="13" ALIGN="BOTTOM" BORDER="0"
+ SRC="img39.png"
+ ALT="$\tau$"></SPAN>) and is wavelength dependent. <SPAN CLASS="MATH"><IMG
+ WIDTH="84" HEIGHT="32" ALIGN="MIDDLE" BORDER="0"
+ SRC="img40.png"
+ ALT="$Poisson(x)$"></SPAN> returns a poisson distributed number with mean <SPAN CLASS="MATH"><IMG
+ WIDTH="14" HEIGHT="13" ALIGN="BOTTOM" BORDER="0"
+ SRC="img41.png"
+ ALT="$x$"></SPAN>.
+The number of photons detected on each pixel(<SPAN CLASS="MATH"><IMG
+ WIDTH="44" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img42.png"
+ ALT="$Ph_{det}$"></SPAN>) is then:
+
+<P>
+<BR>
+<DIV ALIGN="RIGHT" CLASS="mathdisplay">
+
+<!-- MATH
+ \begin{equation}
+Ph_{det}(x,y) = Poisson(Ph_{inc}(x,y) \times \tau)
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP><IMG
+ WIDTH="272" HEIGHT="28" BORDER="0"
+ SRC="img43.png"
+ ALT="\begin{displaymath}
+Ph_{det}(x,y) = Poisson(Ph_{inc}(x,y) \times \tau)
+\end{displaymath}"></TD>
+<TD CLASS="eqno" WIDTH=10 ALIGN="RIGHT">
+(<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">11</SPAN>)</TD></TR>
+</TABLE>
+<BR CLEAR="ALL"></DIV><P></P>
+
+<P>
+Using <SPAN CLASS="MATH"><IMG
+ WIDTH="14" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img44.png"
+ ALT="$\mu$"></SPAN> to represent the energy to produce one electron hole, the number of electrons generated on the pixel by the detected photons(<SPAN CLASS="MATH"><IMG
+ WIDTH="38" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img45.png"
+ ALT="$el_{gen}$"></SPAN> is then simply:
+
+<P>
+<BR>
+<DIV ALIGN="RIGHT" CLASS="mathdisplay">
+
+<!-- MATH
+ \begin{equation}
+el_{gen}(x,y) = \frac{Ph_{det}(x,y) \times \frac{hc}{\lambda}}{\mu}
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP><IMG
+ WIDTH="206" HEIGHT="46" BORDER="0"
+ SRC="img46.png"
+ ALT="\begin{displaymath}
+el_{gen}(x,y) = \frac{Ph_{det}(x,y) \times \frac{hc}{\lambda}}{\mu}
+\end{displaymath}"></TD>
+<TD CLASS="eqno" WIDTH=10 ALIGN="RIGHT">
+(<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">12</SPAN>)</TD></TR>
+</TABLE>
+<BR CLEAR="ALL"></DIV><P></P>
+
+<P>
+Representing the maximum value output by the detector by <SPAN CLASS="MATH"><IMG
+ WIDTH="40" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img47.png"
+ ALT="$V_{max}$"></SPAN>, the binned pixels by <SPAN CLASS="MATH"><IMG
+ WIDTH="40" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img48.png"
+ ALT="$px_{bin}$"></SPAN>, the pixel linear full well by <SPAN CLASS="MATH"><IMG
+ WIDTH="46" HEIGHT="30" ALIGN="MIDDLE" BORDER="0"
+ SRC="img49.png"
+ ALT="$W_{max}$"></SPAN> exposure time by <SPAN CLASS="MATH"><IMG
+ WIDTH="10" HEIGHT="13" ALIGN="BOTTOM" BORDER="0"
+ SRC="img50.png"
+ ALT="$t$"></SPAN>
+dark current by <SPAN CLASS="MATH"><IMG
+ WIDTH="10" HEIGHT="13" ALIGN="BOTTOM" BORDER="0"
+ SRC="img51.png"
+ ALT="$\iota$"></SPAN> and readout noise by <SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="14" ALIGN="BOTTOM" BORDER="0"
+ SRC="img52.png"
+ ALT="$N$"></SPAN>,
+ the final output is then calculated by:
+
+<P>
+<BR>
+<DIV ALIGN="RIGHT" CLASS="mathdisplay">
+
+<!-- MATH
+ \begin{equation}
+Output(x,y) = \sum_{x_{bin},y_{bin}}^{px_{bin}} \{\left( el_{gen}(x_{bin},y_{bin}) + \iota t \right)\}  + Gaussian(N) \times \frac{V_{max}}{W_{max}}
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP><IMG
+ WIDTH="503" HEIGHT="56" BORDER="0"
+ SRC="img53.png"
+ ALT="\begin{displaymath}
+Output(x,y) = \sum_{x_{bin},y_{bin}}^{px_{bin}} \{\left( el...
+...\iota t \right)\} + Gaussian(N) \times \frac{V_{max}}{W_{max}}
+\end{displaymath}"></TD>
+<TD CLASS="eqno" WIDTH=10 ALIGN="RIGHT">
+(<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">13</SPAN>)</TD></TR>
+</TABLE>
+<BR CLEAR="ALL"></DIV><P></P>
+
+<P>
+Where Gaussian(x) returns a normally distributed random number with mean 0 and standard deviation x.
+
+<P>
+The noiseless output is then calculated by:
+
+<P>
+<BR>
+<DIV ALIGN="RIGHT" CLASS="mathdisplay">
+
+<!-- MATH
+ \begin{equation}
+Noiseless(x,y) = \sum_{x_{bin},y_{bin}}^{px_{bin}} \frac{Ph_{inc}(x_{bin},y_{bin}) \times \tau \times  \frac{hc}{\lambda}}{\mu} \times \frac{V_{max}}{W_{max}}
+\end{equation}
+ -->
+<TABLE WIDTH="100%" ALIGN="CENTER">
+<TR VALIGN="MIDDLE"><TD ALIGN="CENTER" NOWRAP><IMG
+ WIDTH="428" HEIGHT="56" BORDER="0"
+ SRC="img54.png"
+ ALT="\begin{displaymath}
+Noiseless(x,y) = \sum_{x_{bin},y_{bin}}^{px_{bin}} \frac{Ph...
+...\times \frac{hc}{\lambda}}{\mu} \times \frac{V_{max}}{W_{max}}
+\end{displaymath}"></TD>
+<TD CLASS="eqno" WIDTH=10 ALIGN="RIGHT">
+(<SPAN CLASS="arabic">2</SPAN>.<SPAN CLASS="arabic">14</SPAN>)</TD></TR>
+</TABLE>
+<BR CLEAR="ALL"></DIV><P></P>
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html76"
+  HREF="node6.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html72"
+  HREF="UserManual.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html66"
+  HREF="node4.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html74"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html77"
+  HREF="node6.html">Installation</A>
+<B> Up:</B> <A NAME="tex2html73"
+  HREF="UserManual.html">spsim User Manual Version</A>
+<B> Previous:</B> <A NAME="tex2html67"
+  HREF="node4.html">Output</A>
+ &nbsp; <B>  <A NAME="tex2html75"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+
+2006-09-19
+</ADDRESS>
+</BODY>
+</HTML>

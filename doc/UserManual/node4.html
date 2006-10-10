@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Output</TITLE>
+<META NAME="description" CONTENT="Output">
+<META NAME="keywords" CONTENT="UserManual">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="UserManual.css">
+
+<LINK REL="previous" HREF="node3.html">
+<LINK REL="up" HREF="node2.html">
+<LINK REL="next" HREF="node5.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html64"
+  HREF="node5.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html60"
+  HREF="node2.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html56"
+  HREF="node3.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html62"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html65"
+  HREF="node5.html">Theory</A>
+<B> Up:</B> <A NAME="tex2html61"
+  HREF="node2.html">Introduction</A>
+<B> Previous:</B> <A NAME="tex2html57"
+  HREF="node3.html">spsim.conf</A>
+ &nbsp; <B>  <A NAME="tex2html63"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION00220000000000000000">
+Output</A>
+</H1>
+The output of spsim consists of the following files:
+
+<P>
+
+<UL>
+<LI>spsim.confout - contains all information read by the program from spsim.conf
+</LI>
+<LI>scattering_factor.vtk - the scattering factors of the input molecule on the detector
+</LI>
+<LI>thomson_correction.vtk - the thomson correction factor for each pixel. Simply the differential electron cross-section times the pixel solid-angle
+</LI>
+<LI>solid_angle.vtk - the solid angle for each pixel
+</LI>
+<LI>photon_count.vtk - the number of photons detected by each pixel. This already takes into account the quantum efficiency and poisson noise.
+</LI>
+<LI>electrons_per_pixel.vtk - electrons generated on each pixel due to the incomming photons.
+</LI>
+<LI>real_output.vtk - the value that detector output, including all the noise effects.
+</LI>
+<LI>noiseless_output.vtk - the value which the detector would output if there were no sources of noise.
+</LI>
+</UL>
+
+<P>
+An easy way to examine images is to use an excellent visualizer called VisIt produced by the LLNL
+and freely available for many platforms. Please visit the page http://www.llnl.gov/visit/ for
+more information, including installation details. From now on i'll assume that you have VisIt installed.
+But any other VTK visualizer like should work.
+
+<P>
+<BR><HR>
+<ADDRESS>
+
+2006-09-19
+</ADDRESS>
+</BODY>
+</HTML>
