@@ -23,6 +23,7 @@
 
 #include "config.h"
 
+#include <complex.h>
 #include <fftw3.h>
 
 /* 
@@ -39,7 +40,7 @@
 
 typedef struct{
   /* scattering intensity */ 
-  float * I;
+  float * ints;
   /* scattering pattern */
   fftw_complex * F;
   /* maximum scattering vector on each dimension */

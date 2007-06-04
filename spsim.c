@@ -30,12 +30,11 @@
 int main(int argc, char ** argv){
   Options * opts = set_defaults();
   Diffraction_Pattern * pattern;
-  /* 20x100x100 nm box */
-  float box[3] = {20e-9,100e-9,100e-9};
   float * HKL_list;
   int HKL_list_size = 0;
   int i;
   Image * noiseless;
+  Image * output;
   Molecule * mol = NULL;
 #ifdef MPI
   MPI_Init(&argc, &argv);
@@ -43,7 +42,8 @@ int main(int argc, char ** argv){
   read_options_file("spsim.conf",opts);
   write_options_file("spsim.confout", opts);
   if(opts->input_type == CHEM_FORMULA){
-    mol = get_Molecule_from_formula(opts->chem_formula,box);
+    mol = get_Molecule_from_formula(opts->chem_formula,opts);
+    write_pdb_from_mol("molout.pdb",mol);
   }else if(opts->input_type == PDB){
     mol = get_Molecule_from_pdb(opts->pdb_filename);
   }else{
@@ -64,7 +64,7 @@ int main(int argc, char ** argv){
     return 0;
   }
 #endif
-  write_2D_array_to_vtk(pattern->I,opts->detector->nx,opts->detector->ny,"scattering_factor.vtk");
+  write_2D_array_to_vtk(pattern->ints,opts->detector->nx,opts->detector->ny,"scattering_factor.vtk");
   calculate_thomson_correction(opts->detector);
   calculate_pixel_solid_angle(opts->detector);
   write_2D_array_to_vtk(opts->detector->thomson_correction,opts->detector->nx,opts->detector->ny,"thomson_correction.vtk");
@@ -76,17 +76,22 @@ int main(int argc, char ** argv){
   calculate_electrons_per_pixel(opts->detector,opts->experiment);
   write_2D_array_to_vtk(opts->detector->electrons_per_pixel,opts->detector->nx,opts->detector->ny,"electrons_per_pixel.vtk");
   calculate_real_detector_output(opts->detector,opts->experiment);
-  write_2D_array_to_vtk(opts->detector->real_output,opts->detector->nx/opts->detector->binning,
-			opts->detector->ny/opts->detector->binning,"real_output.vtk");
-  calculate_noiseless_detector_output(opts->detector,opts->experiment);
-  write_2D_array_to_vtk(opts->detector->noiseless_output,opts->detector->nx/opts->detector->binning,
-			opts->detector->ny/opts->detector->binning,"noiseless_output.vtk");
-  noiseless = create_new_img(opts->detector->nx/opts->detector->binning,opts->detector->ny/opts->detector->binning);
-  for(i = 0;i<TSIZE(noiseless);i++){
-    noiseless->image[i] = opts->detector->noiseless_output[i];
-    noiseless->mask[i] = 1;
+  output = sp_image_alloc(opts->detector->nx/opts->detector->binning,opts->detector->ny/opts->detector->binning);
+  for(i = 0;i<sp_image_size(output);i++){
+    output->image->data[i] = opts->detector->real_output[i];
+    output->mask->data[i] = 1;
   }
-  write_img(noiseless,"noiseless_output.h5",sizeof(real));
+  sp_image_write(output,"real_output.h5",sizeof(real));
+  sp_image_write(output,"real_output.vtk",0);
+
+  calculate_noiseless_detector_output(opts->detector,opts->experiment);
+  noiseless = sp_image_alloc(opts->detector->nx/opts->detector->binning,opts->detector->ny/opts->detector->binning);
+  for(i = 0;i<sp_image_size(noiseless);i++){
+    noiseless->image->data[i] = opts->detector->noiseless_output[i];
+    noiseless->mask->data[i] = 1;
+  }
+  sp_image_write(noiseless,"noiseless_output.h5",sizeof(real));
+  sp_image_write(noiseless,"noiseless_output.vtk",0);
 #ifdef MPI
   MPI_Finalize();
 #endif

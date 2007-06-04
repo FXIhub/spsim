@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 #include "config.h"
 #include "molecule.h"
 
@@ -29,23 +30,32 @@ static char legal_atom_names[106][2] ;
 static void get_legal_atom_names();
 static int getZfromSymbol(char * symbol);
 
-Molecule * get_Molecule_from_formula(Chem_Formula * form, float * box){
+Molecule * get_Molecule_from_formula(Chem_Formula * form, Options * opts){
   int i,j,d;
   Molecule * res = malloc(sizeof(Molecule));
+  float distance;
   res->atomic_number = NULL;
   res->pos = NULL;
   res->natoms = 0;
-  for(d = 0;d<3;d++){
-    res->box[d] = box[d];
-  }
   for(i = 0;i<form->n_elements;i++){
     res->natoms += form->quantity[i];
     res->atomic_number = realloc(res->atomic_number,sizeof(int)*res->natoms);
     res->pos = realloc(res->pos,sizeof(float)*res->natoms*3);
     for(j = res->natoms-form->quantity[i];j<res->natoms;j++){
       res->atomic_number[j] = form->atomic_number[i];
-      for(d = 0;d<3;d++){
-	res->pos[3*j+d] = drand48();
+      if(opts->box_type == BOX_SPHERICAL){
+	do{
+	  distance = 0;
+	  for(d = 0;d<3;d++){
+	    res->pos[3*j+d] = (p_drand48()-0.5)*opts->box_dimension;
+	    distance += res->pos[3*j+d]*res->pos[3*j+d];
+	  }
+	  distance = sqrt(distance);
+	}while(distance > opts->box_dimension/2.0);
+      }else if(opts->box_type == BOX_PARALLEL){
+	for(d = 0;d<3;d++){
+	  res->pos[3*j+d] = drand48()*opts->box_dimension;
+	}	
       }
     }
   }
@@ -225,17 +235,41 @@ static void get_legal_atom_names()
 {
      /* The full periodic table as 2 character identifiers, left-justified */
      
-     strcpy(legal_atom_names [0], "H HELIBEB C N O F NE") ;
-     strcpy(legal_atom_names[10], "NAMGALSIP S CLARK CA") ; 
-     strcpy(legal_atom_names[20], "SCTIV CRMNFECONICUZN") ; 
-     strcpy(legal_atom_names[30], "GAGEASSEBRKRRBSRY ZR") ; 
+     strcpy(legal_atom_names [0], " HHELIBE B C N O FNE") ;
+     strcpy(legal_atom_names[10], "NAMGALSI P SCLAR KCA") ; 
+     strcpy(legal_atom_names[20], "SCTI VCRMNFECONICUZN") ; 
+     strcpy(legal_atom_names[30], "GAGEASSEBRKRRBSR YZR") ; 
      strcpy(legal_atom_names[40], "NBMOTCRURHPDAGCDINSN") ; 
-     strcpy(legal_atom_names[50], "SBTEI XECSBALACEPRND") ; 
+     strcpy(legal_atom_names[50], "SBTE IXECSBALACEPRND") ; 
      strcpy(legal_atom_names[60], "PMSMEUGDTBDYHOERTMYB") ; 
-     strcpy(legal_atom_names[70], "LUHFTAW REOSIRPTAUHG") ; 
+     strcpy(legal_atom_names[70], "LUHFTA WREOSIRPTAUHG") ; 
      strcpy(legal_atom_names[80], "TLPBBIPOATRNFRRAACTH") ; 
-     strcpy(legal_atom_names[90], "PAU NPPUAMCMBKCFESFM") ; 
+     strcpy(legal_atom_names[90], "PA UNPPUAMCMBKCFESFM") ; 
      strcpy(legal_atom_names[100], "MDNOLRRFHA") ;
 
      return;
+}
+
+
+void    write_pdb_from_mol(char *filename,Molecule * mol){
+  FILE     *fpout;
+  int      i ;
+#ifdef MPI
+  if(!is_mpi_master()){
+    return ;
+  }
+#endif  
+  get_legal_atom_names();
+  
+  if ((fpout = fopen(filename, "w")) == NULL){
+    perror("Cannot open file\n");
+    abort();
+  }
+
+  for (i = 0; i <  mol->natoms; i++) {
+    fprintf(fpout,"ATOM  %5d  %.2s      A   1    %8.3f%8.3f%8.3f\n",i%99999,legal_atom_names[mol->atomic_number[i]-1],
+	    mol->pos[i*3]*1e10,mol->pos[i*3+1]*1e10,mol->pos[i*3+2]*1e10);
+  }
+  fprintf(fpout, "END\n") ;
+  fclose(fpout);
 }

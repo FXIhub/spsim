@@ -172,8 +172,8 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
 
 	 Upper left corner of the detector with negative x and positive y
       */
-      px = ((x-(nx-1.0)/2.0)/nx)*det->width/2;
-      py = (((ny-1.0)/2.0-y)/ny)*det->height/2;
+      px = ((x-(nx-1.0)/2.0)/nx)*det->width;
+      py = (((ny-1.0)/2.0-y)/ny)*det->height;
 
       rx = px*real_to_reciprocal;
       ry = py*real_to_reciprocal;
@@ -214,7 +214,7 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
   }
 
   res->F = malloc(sizeof(fftw_complex)*HKL_list_size);
-  res->I = malloc(sizeof(float)*HKL_list_size);
+  res->ints = malloc(sizeof(float)*HKL_list_size);
   res->HKL_list = malloc(sizeof(float)*3*HKL_list_size);
   memcpy(res->HKL_list,HKL_list,sizeof(float)*3*HKL_list_size);
   res->HKL_list_size = HKL_list_size;
@@ -227,7 +227,7 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
 
   points_per_percent = (HKL_list_end-HKL_list_start)/100;
   for(i = HKL_list_start;i<HKL_list_end;i++){
-/*#ifdef MPI    
+#ifdef MPI    
     if(is_mpi_master()){
       if(i % points_per_percent == 0){
 	fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
@@ -238,10 +238,10 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
 	fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
       }
 
-#endif*/
+#endif
 
-    res->F[i][0] = 0;
-    res->F[i][1] = 0;
+    res->F[i] = 0;
+    res->F[i] = 0;
     scattering_vector_length = sqrt(HKL_list[3*i]*HKL_list[3*i]+HKL_list[3*i+1]*HKL_list[3*i+1]+HKL_list[3*i+2]*HKL_list[3*i+2]);
     for(j = 0;j<ELEMENTS;j++){
       if(is_element_in_molecule[j]){
@@ -250,10 +250,10 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
     }
     for(j = 0 ;j< mol->natoms;j++){
       scattering_factor = scattering_factor_cache[mol->atomic_number[j]];
-      res->F[i][0] += scattering_factor*cos(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));
-      res->F[i][1] += scattering_factor*sin(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));
+      res->F[i] += scattering_factor*cos(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));
+      res->F[i] += I*scattering_factor*sin(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));
     }
-    res->I[i] = res->F[i][0] * res->F[i][0] + res->F[i][1] * res->F[i][1];
+    res->ints[i] = cabsr(res->F[i])*cabsr(res->F[i]);
   }
   syncronize_patterns(res);
   return res;
@@ -269,7 +269,7 @@ Diffraction_Pattern * load_pattern_from_file(CCD * det,char * filename,
   memcpy(res->HKL_list,HKL_list,sizeof(float)*3*HKL_list_size);
   res->HKL_list_size = HKL_list_size;
 
-  res->I = read_VTK_to_array(det->nx,det->ny,filename);
+  res->ints = read_VTK_to_array(det->nx,det->ny,filename);
   res->F = 0;
   return res;
 }
@@ -369,7 +369,7 @@ void calculate_photons_per_pixel(Diffraction_Pattern * pattern, CCD * det, Exper
   }
   det->photons_per_pixel = malloc(sizeof(float)*det->nx*det->ny);
   for(i = 0;i<det->nx*det->ny;i++){
-    det->photons_per_pixel[i] = det->thomson_correction[i] * det->solid_angle[i] * pattern->I[i] * experiment->beam_intensity;
+    det->photons_per_pixel[i] = det->thomson_correction[i] * det->solid_angle[i] * pattern->ints[i] * experiment->beam_intensity;
   }
 }
 
@@ -384,6 +384,11 @@ void write_hkl_grid(float * list, Molecule * mol,CCD * det){
   double max_x = -FLT_MAX;
   double max_y = -FLT_MAX;
   double max_dim;
+#ifdef MPI
+  if(!is_mpi_master()){
+    return;
+  }
+#endif
   for(i =0 ;i<mol->natoms;i++){
     if(mol->pos[i*3] < min_x){
       min_x = mol->pos[i*3];
@@ -398,24 +403,24 @@ void write_hkl_grid(float * list, Molecule * mol,CCD * det){
       max_y = mol->pos[i*3+1];
     }
   }
-  max_dim = MAX(max_x-min_x,max_y-min_y);
-  hkl_grid = create_new_img(det->nx/det->binning,det->ny/det->binning);
-  hkl_grid->detector->image_center[0] = hkl_grid->detector->size[0]/2;
-  hkl_grid->detector->image_center[1] = hkl_grid->detector->size[1]/2;
+  max_dim = sp_max(max_x-min_x,max_y-min_y);
+  hkl_grid = sp_image_alloc(det->nx/det->binning,det->ny/det->binning);
+  hkl_grid->detector->image_center[0] = sp_image_width(hkl_grid)/2;
+  hkl_grid->detector->image_center[1] = sp_image_height(hkl_grid)/2;
   i = 0;
   index = 0;
-  for(x = 0;x<hkl_grid->detector->size[0];x++){
-    for(y = 0;y<hkl_grid->detector->size[1];y++){
+  for(x = 0;x<sp_image_width(hkl_grid);x++){
+    for(y = 0;y<sp_image_height(hkl_grid);y++){
       if(fabs(x-hkl_grid->detector->image_center[0]) > fabs(y-hkl_grid->detector->image_center[1])){
-	hkl_grid->image[i] = list[index]*max_dim;
+	hkl_grid->image->data[i] = list[index]*max_dim;
       }else{
-	hkl_grid->image[i] = list[index+1]*max_dim;
+	hkl_grid->image->data[i] = list[index+1]*max_dim;
       }
-      hkl_grid->mask[i] = 1;
+      hkl_grid->mask->data[i] = 1;
       index += 3*det->binning;
       i++;
     }
     index += 3*(det->binning-1)*(det->ny);
   }
-  write_img(hkl_grid,"hkl_grid.h5",sizeof(real));
+  sp_image_write(hkl_grid,"hkl_grid.h5",sizeof(real));
 }

@@ -31,6 +31,8 @@ energy: joules
 #define CHEM_FORMULA 1
 #define PDB 2
 
+#define BOX_SPHERICAL 1
+#define BOX_PARALLEL 2
 
 typedef struct{
   int n_elements;
@@ -44,7 +46,6 @@ typedef struct{
   /* real physical position */
   float * pos;
   /* may optionally contain the boundaries of pos */
-  float box[3];
 }Molecule;
 
 typedef struct{
@@ -108,6 +109,8 @@ typedef struct {
   char pdb_filename[1024];
   char sf_filename[1024];
   char hkl_grid_filename[1024];
+  int box_type; /* spherical or parallelepipedic */
+  float box_dimension; /* diameter in case of spherical or side in case of parallelepipedic */
 }Options;
 
 

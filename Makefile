@@ -9,8 +9,7 @@ clean:
 MPI = OFF
 
 
-LIBCONFIG = libconfig-0.9
-CFLAGS = -g3  -I$(LIBCONFIG) -I/home/filipe/Imaging/programs/libspimage
+CFLAGS = -g3  -I/home/filipe/Imaging/programs/libspimage
 
 ifeq ($(MPI),ON)
 CC = mpicc -Wall
@@ -22,11 +21,11 @@ CXX = g++ -Wall
 endif
 
 LDFLAGS = -O3
-LOADLIBES =  -lm -lspimage
+LOADLIBES =  -lm -lspimage -lconfig -lpng -ltiff -lhdf5 -lfftw3f
 
 LINK.o = $(CXX) $(LDFLAGS) $(TARGET_ARCH)
 
 
-spsim: spsim.o config.o diffraction.o molecule.o io.o mpi.o noise.o amplification.o $(LIBCONFIG)/.libs/libconfig.a
+spsim: spsim.o config.o diffraction.o molecule.o io.o mpi.o noise.o amplification.o
 
 

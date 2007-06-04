@@ -33,6 +33,8 @@ Options * set_defaults(){
   opt->chem_formula = calloc(1,sizeof(Chem_Formula));
   opt->experiment = calloc(1,sizeof(Experiment));
   opt->detector = calloc(1,sizeof(CCD));
+  opt->box_type = BOX_SPHERICAL;
+  opt->box_dimension = 1e-9;
   return opt;
 }
 
@@ -55,6 +57,18 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"number_of_dimensions")){
     res->n_dims = config_lookup_int(&config,"number_of_dimensions");
   }
+  if((tmp = config_lookup_string(&config,"box_type"))){
+    if(strcmp(tmp,"spherical") == 0){
+      res->box_type = BOX_SPHERICAL;
+    }else if(strcmp(tmp,"parallelepipedic") == 0){
+      res->box_type = BOX_PARALLEL;
+    }
+  }
+
+  if(config_lookup(&config,"box_dimension")){
+    res->box_dimension = config_lookup_float(&config,"box_dimension");
+  }
+
   if((tmp = config_lookup_string(&config,"input_type"))){
     if(strcmp(tmp,"chemical_formula") == 0){
       res->input_type = CHEM_FORMULA;
@@ -143,7 +157,6 @@ void read_options_file(char * filename, Options * res){
   res->detector->nx = rint(res->detector->width/res->detector->pixel_width);
   res->detector->ny = rint(res->detector->height/res->detector->pixel_height);
 
-
 }
 
 
@@ -184,6 +197,15 @@ void write_options_file(char * filename, Options * res){
     s = config_setting_add(root,"input_type",CONFIG_TYPE_STRING);
     config_setting_set_string(s,"none");
   }
+
+  if(res->box_type == BOX_SPHERICAL){
+    s = config_setting_add(root,"box_type",CONFIG_TYPE_STRING);
+    config_setting_set_string(s,"spherical");
+  }else if(res->box_type == BOX_PARALLEL){
+    s = config_setting_add(root,"box_type",CONFIG_TYPE_STRING);
+    config_setting_set_string(s,"parallelepipedic");
+  }
+
   s = config_setting_add(root,"detector_distance",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->detector->distance);
   s = config_setting_add(root,"detector_width",CONFIG_TYPE_FLOAT);
@@ -217,6 +239,10 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_float(s,res->experiment->exposure_time);
   s = config_setting_add(root,"experiment_beam_intensity",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->experiment->beam_intensity);
+
+
+  s = config_setting_add(root,"box_dimension",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->box_dimension);
   
   s = config_setting_add(root,"detector_spherical",CONFIG_TYPE_INT);
   config_setting_set_int(s,res->detector->spherical);

@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <spimage.h>
 #include "config.h"
 #include "amplification.h"
 
@@ -36,8 +37,8 @@ float box_muller(float m, float s){
     use_last = 0;
   }  else {
     do {
-      x1 = 2.0 * drand48() - 1.0;
-      x2 = 2.0 * drand48() - 1.0;
+      x1 = 2.0 * p_drand48() - 1.0;
+      x2 = 2.0 * p_drand48() - 1.0;
       w = x1 * x1 + x2 * x2;
     } while ( w >= 1.0 );
     

@@ -18,5 +18,6 @@
  */
 
 
-Molecule * get_Molecule_from_formula(Chem_Formula * form, float * box);
+Molecule * get_Molecule_from_formula(Chem_Formula * form, Options * opts);
 Molecule * get_Molecule_from_pdb(char * filename);
+void write_pdb_from_mol(char *filename,Molecule * mol);

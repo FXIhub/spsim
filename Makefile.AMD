@@ -1,20 +1,24 @@
 all: spsim
 clean: 
 	rm spsim *.o
-LOADLIBES = -lconfig -lm
+LOADLIBES = -lconfig -lm -lspimage -ltiff -lhdf5 -lfftw3f -lpng
 CC = mpicc  -Wall 
 #CC = gcc -Wall -march=opteron
 CXX = mpic++ -Wall
 #CXX = g++ -march=opteron
 CFLAGS = -O2 -Wall 
- CFLAGS += -DMPI 
+CFLAGS += -DMPI 
 CXXFLAGS = -O2
 CFLAGS += -I/home/filipe/c/fftw-3.0.1/AMD/include 
 CFLAGS += -I/home/filipe/c/libconfig-0.9/AMD/include
-LDFLAGS =  -O2 -march=opteron -mfpmath=sse -m3dnow -m64
-LDFALGS += -L/home/filipe/c/fftw-3.0.1/AMD/lib  
-LDFLAGS += -L/home/filipe/c/libconfig-0.9/AMD/lib
+CFLAGS += -I/home/filipe/Imaging/programs/libspimage
 
+LDFLAGS =  -O2 -march=opteron -mfpmath=sse -m3dnow -m64
+
+LDFLAGS += -L/home/filipe/c/libconfig-0.9/AMD/lib
+LDFLAGS += -L/home/filipe/Imaging/programs/libspimage/x86_64/
+LDFLAGS += -L/home/filipe/c/hdf5-1.6.4/AMD/lib
+LDFLAGS += -L/home/filipe/c/fftw-3.0.1/AMD/lib
 LINK.o = $(CXX) $(LDFLAGS) $(TARGET_ARCH)
 
 spsim: spsim.o config.o diffraction.o molecule.o io.o mpi.o noise.o amplification.o
