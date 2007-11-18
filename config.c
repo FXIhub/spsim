@@ -35,6 +35,7 @@ Options * set_defaults(){
   opt->detector = calloc(1,sizeof(CCD));
   opt->box_type = BOX_SPHERICAL;
   opt->box_dimension = 1e-9;
+  opt->use_fft_for_sf = 0;
   return opt;
 }
 
@@ -103,11 +104,17 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"detector_height")){
     res->detector->height = config_lookup_float(&config,"detector_height");
   }
+  if(config_lookup(&config,"detector_depth")){
+    res->detector->depth = config_lookup_float(&config,"detector_depth");
+  }
   if(config_lookup(&config,"detector_pixel_width")){
     res->detector->pixel_width = config_lookup_float(&config,"detector_pixel_width");
   }
   if(config_lookup(&config,"detector_pixel_height")){
     res->detector->pixel_height = config_lookup_float(&config,"detector_pixel_height");
+  }
+  if(config_lookup(&config,"detector_pixel_depth")){
+    res->detector->pixel_depth = config_lookup_float(&config,"detector_pixel_depth");
   }
   if(config_lookup(&config,"detector_quantum_efficiency")){
     res->detector->quantum_efficiency = config_lookup_float(&config,"detector_quantum_efficiency");
@@ -125,7 +132,18 @@ void read_options_file(char * filename, Options * res){
     res->detector->linear_full_well = config_lookup_float(&config,"detector_linear_full_well");
   }
   if(config_lookup(&config,"detector_binning")){
-    res->detector->binning = config_lookup_int(&config,"detector_binning");
+    res->detector->binning_x = config_lookup_int(&config,"detector_binning");
+    res->detector->binning_y = config_lookup_int(&config,"detector_binning");
+    res->detector->binning_z = 1;
+  }
+  if(config_lookup(&config,"detector_binning_x")){
+    res->detector->binning_x = config_lookup_int(&config,"detector_binning_x");
+  }
+  if(config_lookup(&config,"detector_binning_y")){
+    res->detector->binning_y = config_lookup_int(&config,"detector_binning_y");
+  }
+  if(config_lookup(&config,"detector_binning_z")){
+    res->detector->binning_z = config_lookup_int(&config,"detector_binning_z");
   }
   if(config_lookup(&config,"detector_maximum_value")){
     res->detector->maximum_value = config_lookup_float(&config,"detector_maximum_value");
@@ -154,8 +172,23 @@ void read_options_file(char * filename, Options * res){
     res->detector->spherical = config_lookup_int(&config,"detector_spherical");
   }
 
+  if(config_lookup(&config,"detector_gaussian_blurring")){
+    res->detector->gaussian_blurring = config_lookup_float(&config,"detector_gaussian_blurring");
+  }
+
+  if(config_lookup(&config,"use_fft_for_sf")){
+    res->use_fft_for_sf = config_lookup_int(&config,"use_fft_for_sf");
+  }
+
   res->detector->nx = rint(res->detector->width/res->detector->pixel_width);
   res->detector->ny = rint(res->detector->height/res->detector->pixel_height);
+  if(res->detector->pixel_depth){
+    res->detector->nz = rint(res->detector->depth/res->detector->pixel_depth);
+  }else{
+    res->detector->nz = 1;
+    res->detector->binning_z = 1;
+  }
+     
 
 }
 
@@ -212,10 +245,14 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_float(s,res->detector->width);
   s = config_setting_add(root,"detector_height",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->detector->height);
+  s = config_setting_add(root,"detector_depth",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->detector->depth);
   s = config_setting_add(root,"detector_pixel_width",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->detector->pixel_width);
   s = config_setting_add(root,"detector_pixel_height",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->detector->pixel_height);
+  s = config_setting_add(root,"detector_pixel_depth",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->detector->pixel_depth);
   s = config_setting_add(root,"detector_quantum_efficiency",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->detector->quantum_efficiency);
   s = config_setting_add(root,"detector_electron_hole_production_energy",CONFIG_TYPE_FLOAT);
@@ -226,8 +263,12 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_float(s,res->detector->dark_current);
   s = config_setting_add(root,"detector_linear_full_well",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->detector->linear_full_well);
-  s = config_setting_add(root,"detector_binning",CONFIG_TYPE_INT);
-  config_setting_set_int(s,res->detector->binning);
+  s = config_setting_add(root,"detector_binning_x",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->detector->binning_x);
+  s = config_setting_add(root,"detector_binning_y",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->detector->binning_y);
+  s = config_setting_add(root,"detector_binning_z",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->detector->binning_z);
   s = config_setting_add(root,"detector_maximum_value",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->detector->maximum_value);
 
@@ -246,7 +287,13 @@ void write_options_file(char * filename, Options * res){
   
   s = config_setting_add(root,"detector_spherical",CONFIG_TYPE_INT);
   config_setting_set_int(s,res->detector->spherical);
-  
+
+  s = config_setting_add(root,"detector_gaussian_blurring",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->detector->gaussian_blurring);
+
+  s = config_setting_add(root,"use_fft_for_sf",CONFIG_TYPE_INT);
+  config_setting_set_float(s,res->use_fft_for_sf);
+
   if(res->sf_filename[0]){
     s = config_setting_add(root,"precalculated_sf",CONFIG_TYPE_STRING);
     config_setting_set_string(s,res->sf_filename);

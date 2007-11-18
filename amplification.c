@@ -60,7 +60,7 @@ void calculate_electrons_per_pixel(CCD * det, Experiment * experiment){
     fprintf(stderr,"Calculate photon_count first\n");
     return;
   }
-  det->electrons_per_pixel = malloc(sizeof(float)*det->nx*det->ny);
+  det->electrons_per_pixel = malloc(sizeof(float)*det->nx*det->ny*det->nz);
   for(i = 0;i<det->nx*det->ny;i++){
     det->electrons_per_pixel[i] =  det->photon_count[i]*electrons_per_photon;
   }
@@ -74,28 +74,34 @@ void calculate_electrons_per_pixel(CCD * det, Experiment * experiment){
 void calculate_real_detector_output(CCD * det, Experiment * experiment){
   int i;
   float ADC_constant = det->maximum_value/det->linear_full_well;
-  int x,y,xi,yi;
+  int x,y,z,xi,yi,zi;
   if(!det->electrons_per_pixel){
     fprintf(stderr,"Calculate electrons_per_pixel first\n");
     return;
   }
-  det->real_output = malloc(sizeof(float)*(det->nx/det->binning)*(det->ny/det->binning));
+  det->real_output = malloc(sizeof(float)*(det->nx/det->binning_x)*(det->ny/det->binning_y)*(det->nz/det->binning_z));
   i = 0;
-  for(x = 0;x<det->nx/det->binning;x++){
-    for(y = 0;y<det->ny/det->binning;y++){
-      det->real_output[i] = 0;
-      for(xi = 0;xi<det->binning;xi++){
-	for(yi = 0;yi<det->binning;yi++){
-	  det->real_output[i] +=  (det->electrons_per_pixel[(x*det->binning+xi)*det->ny+y*det->binning+yi]+
-				   det->dark_current*experiment->exposure_time);
+  for(x = 0;x<det->nx/det->binning_x;x++){
+    for(y = 0;y<det->ny/det->binning_y;y++){
+      for(z = 0;z<det->nz/det->binning_z;z++){
+	det->real_output[i] = 0;
+	for(xi = 0;xi<det->binning_x;xi++){
+	  for(yi = 0;yi<det->binning_y;yi++){
+	    for(zi = 0;zi<det->binning_z;zi++){
+	      det->real_output[i] +=  (det->electrons_per_pixel[(x*det->binning_x+xi)*det->ny*det->nz+
+								(y*det->binning_y+yi)*det->nz+
+				                                (z*det->binning_z+zi)]+
+				       det->dark_current*experiment->exposure_time);
+	    }
+	  }
+	  det->real_output[i] +=+box_muller(0,det->readout_noise);
+	  if(det->real_output[i] < 0){
+	    det->real_output[i] = 0;
+	  }
+	  det->real_output[i] *= ADC_constant;
+	  i++;
 	}
       }
-      det->real_output[i] +=+box_muller(0,det->readout_noise);
-      if(det->real_output[i] < 0){
-        det->real_output[i] = 0;
-      }
-      det->real_output[i] *= ADC_constant;
-      i++;
     }
   }
 
@@ -110,23 +116,28 @@ void calculate_noiseless_detector_output(CCD * det, Experiment * experiment){
   double photon_energy = h_c/experiment->wavelength; /* photon energy in joules */
   float electrons_per_photon = photon_energy/det->electron_hole_production_energy;
   float ADC_constant = det->maximum_value/det->linear_full_well;
-  int x,y,xi,yi;
+  int x,y,z,xi,yi,zi;
   if(!det->photons_per_pixel){
     fprintf(stderr,"Calculate photons_per_pixel first\n");
     return;
   }
-  det->noiseless_output = malloc(sizeof(float)*det->nx/det->binning*det->ny/det->binning);
+  det->noiseless_output = malloc(sizeof(float)*(det->nx/det->binning_x)*(det->ny/det->binning_y)*(det->nz/det->binning_z));
   i = 0;
-  for(x = 0;x<det->nx/det->binning;x++){
-    for(y = 0;y<det->ny/det->binning;y++){
-      det->noiseless_output[i] = 0;
-      for(xi = 0;xi<det->binning;xi++){
-	for(yi = 0;yi<det->binning;yi++){
-	  det->noiseless_output[i] +=  (det->photons_per_pixel[(x*det->binning+xi)*det->ny+y*det->binning+yi]
-					*det->quantum_efficiency*electrons_per_photon*ADC_constant);
+  for(x = 0;x<det->nx/det->binning_x;x++){    
+    for(y = 0;y<det->ny/det->binning_y;y++){
+      for(z = 0;z<det->nz/det->binning_z;z++){
+	det->noiseless_output[i] = 0;
+	for(xi = 0;xi<det->binning_x;xi++){
+	  for(yi = 0;yi<det->binning_y;yi++){
+	    for(zi = 0;zi<det->binning_z;zi++){
+	      det->noiseless_output[i] +=  (det->photons_per_pixel[(x*det->binning_x+xi)*det->ny*det->nz+(y*det->binning_y+yi)*det->nz+
+								   (z*(det->binning_z)+zi)]
+					    *det->quantum_efficiency*electrons_per_photon*ADC_constant);
+	    }
+	  }
+	  i++;
 	}
       }
-      i++;
     }
   }
 }

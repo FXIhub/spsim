@@ -34,6 +34,8 @@ energy: joules
 #define BOX_SPHERICAL 1
 #define BOX_PARALLEL 2
 
+#define VERSION "2.0"
+
 typedef struct{
   int n_elements;
   int * atomic_number;
@@ -79,18 +81,24 @@ typedef struct{
   float distance; /* in meters */
   float width; /* in meters */
   float height; /* in meters */
+  float depth; /* in meters */
   float pixel_width; /* in meters */
   float pixel_height; /* in meters */
+  float pixel_depth; /* in meters */
   float quantum_efficiency; /* wavelength dependent */
   float electron_hole_production_energy; /* in Joules */
   float readout_noise; /* in electrons/pixel */
   float dark_current; /*in electrons/(pixel.second) */
   float linear_full_well; /* in electrons */  
-  int binning;
+  int binning_x;
+  int binning_y;
+  int binning_z;
   int nx;
   int ny;
+  int nz;
   float maximum_value;
   int spherical;
+  float gaussian_blurring;
 }CCD;
 
 
@@ -111,6 +119,7 @@ typedef struct {
   char hkl_grid_filename[1024];
   int box_type; /* spherical or parallelepipedic */
   float box_dimension; /* diameter in case of spherical or side in case of parallelepipedic */
+  int use_fft_for_sf;
 }Options;
 
 

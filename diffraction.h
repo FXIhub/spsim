@@ -23,7 +23,7 @@
 
 #include "config.h"
 
-#include <complex.h>
+#include <spimage.h>
 #include <fftw3.h>
 
 /* 
@@ -42,7 +42,7 @@ typedef struct{
   /* scattering intensity */ 
   float * ints;
   /* scattering pattern */
-  fftw_complex * F;
+  Complex * F;
   /* maximum scattering vector on each dimension */
   float max_s[3];
   /* scattering vector grid spacing on each dimension */
@@ -56,6 +56,7 @@ typedef struct{
 
 /* Calculates the HKL indexes for all the pixels of a given detector */
 float * get_HKL_list_for_detector(CCD * det, Experiment * exp, int * HKL_list_size);
+float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_size);
 
 /* Computes the diffraction pattern of a given structure on a given set of HKL points */
 Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size);
@@ -69,4 +70,6 @@ void calculate_photons_per_pixel(Diffraction_Pattern * pattern, CCD * det, Exper
 Diffraction_Pattern * load_pattern_from_file(CCD * det,char * filename, 
 					     float * HKL_list, int HKL_list_size);
 void write_hkl_grid(float * list, Molecule * mol,CCD * det);
+
+Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experiment * exp);
 #endif 

@@ -70,6 +70,7 @@ Molecule * get_Molecule_from_pdb(char * filename){
   char       tmp_char;
   char       *next_field_start;
   float t1,t2,t3,t4,t5;
+  int total_atomic_number = 0;
   Molecule * res = malloc(sizeof(Molecule));
   if(!fp){
     perror("Error reading PDB\n");
@@ -128,6 +129,7 @@ Molecule * get_Molecule_from_pdb(char * filename){
 	atid[0] = atid[1];		/* left justify */
 	atid[1] = ' ';
       }
+      total_atomic_number += getZfromSymbol(atid);
       res->atomic_number[res->natoms] = getZfromSymbol(atid);
       
       /* Next: skip over alternate location indicator */
@@ -193,6 +195,7 @@ Molecule * get_Molecule_from_pdb(char * filename){
       res->natoms++;
     }			/* skip anything else */
   }
+  fprintf(stderr, "Read %d atoms with %d electrons\n",res->natoms,total_atomic_number);
   fclose(fp);
   res->atomic_number = realloc(res->atomic_number,sizeof(int)*res->natoms);
   res->pos = realloc(res->pos,3*sizeof(float)*res->natoms);  
@@ -235,16 +238,16 @@ static void get_legal_atom_names()
 {
      /* The full periodic table as 2 character identifiers, left-justified */
      
-     strcpy(legal_atom_names [0], " HHELIBE B C N O FNE") ;
-     strcpy(legal_atom_names[10], "NAMGALSI P SCLAR KCA") ; 
-     strcpy(legal_atom_names[20], "SCTI VCRMNFECONICUZN") ; 
-     strcpy(legal_atom_names[30], "GAGEASSEBRKRRBSR YZR") ; 
+     strcpy(legal_atom_names [0], "H HELIBEB C N O  FNE") ;
+     strcpy(legal_atom_names[10], "NAMGALSIP S CLARK CA") ; 
+     strcpy(legal_atom_names[20], "SCTIV CRMNFECONICUZN") ; 
+     strcpy(legal_atom_names[30], "GAGEASSEBRKRRBSRY ZR") ; 
      strcpy(legal_atom_names[40], "NBMOTCRURHPDAGCDINSN") ; 
-     strcpy(legal_atom_names[50], "SBTE IXECSBALACEPRND") ; 
+     strcpy(legal_atom_names[50], "SBTEI XECSBALACEPRND") ; 
      strcpy(legal_atom_names[60], "PMSMEUGDTBDYHOERTMYB") ; 
      strcpy(legal_atom_names[70], "LUHFTA WREOSIRPTAUHG") ; 
      strcpy(legal_atom_names[80], "TLPBBIPOATRNFRRAACTH") ; 
-     strcpy(legal_atom_names[90], "PA UNPPUAMCMBKCFESFM") ; 
+     strcpy(legal_atom_names[90], "PAU NPPUAMCMBKCFESFM") ; 
      strcpy(legal_atom_names[100], "MDNOLRRFHA") ;
 
      return;

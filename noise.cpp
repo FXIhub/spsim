@@ -50,8 +50,8 @@ void generate_poisson_noise(CCD * det){
     fprintf(stderr,"Please calculate photons per pixel first\n");
     return;
   }
-  det->photon_count = (float *)malloc(sizeof(float)*det->nx*det->ny);
-  for(i = 0;i<det->nx*det->ny;i++){
+  det->photon_count = (float *)malloc(sizeof(float)*det->nx*det->ny*det->nz);
+  for(i = 0;i<det->nx*det->ny*det->nz;i++){
     det->photon_count[i] = get_poisson_random_number(det->photons_per_pixel[i]*det->quantum_efficiency);
   }  
 }

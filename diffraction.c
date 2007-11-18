@@ -142,6 +142,20 @@ static float  scatt_factor(float d,int Z){
 }
 
 
+/* d should be the distance from the center of the atom */
+/* d is in m but we need it in A so we multiply by 1^10*/
+static float  electron_density(float d,int Z){
+  float res = 0;
+  int i;  
+  d *= 1e10;
+  for(i = 0;i<4;i++){
+    res+= atomsf[Z][i]*exp(-d*d*4.0/atomsf[Z][i+4]);
+  }                
+  res += atomsf[Z][8];
+  return res;    
+}
+
+
 float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_size){
   /* number of pixels */
   int nx, ny;
@@ -196,6 +210,98 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
   return HKL_list;
 }
 
+
+float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_size){
+  /* number of pixels */
+  int nx, ny,nz;
+  /* pixel index */
+  int x,y,z;
+  /* physical location of pixel*/
+  double px,py,pz;
+  /* reciprocal coordinates */
+  double rx,ry,rz;
+  double real_to_reciprocal = 1.0/(det->distance*exp->wavelength);
+
+  float * HKL_list;
+  int index = 0;
+  
+  nx = det->nx;
+  ny = det->ny;
+  nz = det->nz;
+
+  HKL_list = malloc(sizeof(float)*nx*ny*nz*3);
+  for(x = 0;x<nx;x++){
+    for(y = 0;y<ny;y++){
+      for(z = 0;z<nz;z++){
+      /* 
+	 Calculate the pixel coordinates in reciprocal space 	 
+	 by dividing the physical position by detector_distance*wavelength.
+	 
+	 CCD center at (nx-1)/2,(ny-1)/2
+
+	 Upper left corner of the detector with negative x and positive y
+      */
+      px = ((x-(nx-1.0)/2.0)/nx)*det->width;
+      py = (((ny-1.0)/2.0-y)/ny)*det->height;
+      pz = ((z-(nz-1.0)/2.0)/nz)*det->depth;
+
+      rx = px*real_to_reciprocal;
+      ry = py*real_to_reciprocal;
+      rz = pz*real_to_reciprocal;
+      
+      /* Project pixel into Ewald sphere. */
+      HKL_list[index++] = rx;
+      HKL_list[index++] = ry;
+      HKL_list[index++] = rz;      
+      }
+    }
+  }
+  *HKL_list_size = nx*ny*nz;
+  return HKL_list;
+}
+
+
+
+Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experiment * exp){
+  double alpha_x = atan(det->width/2.0 * det->distance);
+  double alpha_y = atan(det->height/2.0 * det->distance);
+  double alpha_z = atan(det->depth/2.0 * det->distance);
+  double smax_x = 2*sin(alpha_x/2)/exp->wavelength;
+  double smax_y = 2*sin(alpha_y/2)/exp->wavelength;
+  double smax_z = 2*sin(alpha_z/2)/exp->wavelength;
+  double rs_pixel_x = 1/(smax_x*2);  
+  double rs_pixel_y = 1/(smax_y*2);  
+  double rs_pixel_z = 1/(smax_z*2);  
+  int nx = det->nx;
+  int ny = det->ny;
+  int nz = det->nz;
+  double max_atoms_radius = 5e-10; /* in meters defines the limit up to which we compute the electron density */
+  int x_grid_radius = max_atoms_radius/rs_pixel_x;
+  int y_grid_radius = max_atoms_radius/rs_pixel_y;
+  int z_grid_radius = max_atoms_radius/rs_pixel_z;
+  Image * rs = sp_image_alloc(nx,ny,nz);
+  for(int j = 0 ;j< mol->natoms;j++){
+    float home_x = (int)(mol->pos[j*3]/rs_pixel_x)%nx;
+    float home_y = (int)(mol->pos[j*3+1]/rs_pixel_y)%ny;
+    float home_z = (int)(mol->pos[j*3+2]/rs_pixel_z)%nz;
+    for(int z = home_z-z_grid_radius;z<home_z+z_grid_radius;z++){
+      float dz = fabs((home_z*nz-z)*rs_pixel_z);
+      for(int y = home_y-y_grid_radius;y<home_y+y_grid_radius;y++){
+	float dy = fabs((home_y*ny-y)*rs_pixel_y);
+	for(int x = home_x-x_grid_radius;x<home_x+x_grid_radius;x++){
+	  float dx = fabs((home_x*nx-x)*rs_pixel_x);
+	  float distance = sqrt(dz*dz+dy*dy+dx*dx);
+	  float ed = electron_density(distance,mol->atomic_number[j]);   
+	  sp_image_set(rs,x,y,z,sp_cinit(ed,0));
+	}
+      }
+    }
+    printf("%f done\n",100.0*j/mol->natoms);
+  }
+  sp_image_write(rs,"ed.vtk",0);
+  return NULL;
+}
+
 Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size){
   int i,j;
   double scattering_factor;
@@ -240,8 +346,8 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
 
 #endif
 
-    res->F[i] = 0;
-    res->F[i] = 0;
+    sp_real(res->F[i]) = 0;
+    sp_imag(res->F[i]) = 0;
     scattering_vector_length = sqrt(HKL_list[3*i]*HKL_list[3*i]+HKL_list[3*i+1]*HKL_list[3*i+1]+HKL_list[3*i+2]*HKL_list[3*i+2]);
     for(j = 0;j<ELEMENTS;j++){
       if(is_element_in_molecule[j]){
@@ -250,10 +356,10 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
     }
     for(j = 0 ;j< mol->natoms;j++){
       scattering_factor = scattering_factor_cache[mol->atomic_number[j]];
-      res->F[i] += scattering_factor*cos(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));
-      res->F[i] += I*scattering_factor*sin(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));
+      sp_real(res->F[i]) += scattering_factor*cos(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));
+      sp_imag(res->F[i]) += scattering_factor*sin(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));
     }
-    res->ints[i] = cabsr(res->F[i])*cabsr(res->F[i]);
+    res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
   }
   syncronize_patterns(res);
   return res;
@@ -275,25 +381,28 @@ Diffraction_Pattern * load_pattern_from_file(CCD * det,char * filename,
 }
 
 void calculate_thomson_correction(CCD * det){
-  int x,y;
+  int x,y,z;
   double px,py;
   int nx = det->nx;
   int ny = det->ny;
+  int nz = det->nz;
   double r; /* distance to scatterer */
   int index;
   double r0 = 2.81794e-15; /* classical electron radius = e^2/(m*c^2)*/
   /* For the moment we're considering vertical polarization */
   double polarization_factor = 1;
-  det->thomson_correction = malloc(sizeof(float)*nx*ny);
+  det->thomson_correction = malloc(sizeof(float)*nx*ny*nz);
   index = 0;
   for(x = 0;x<det->nx;x++){
     for(y = 0;y<det->ny;y++){
-      px = ((x-(nx-1.0)/2.0)/nx)*det->width/2;
-      py = (((ny-1.0)/2.0-y)/ny)*det->height/2;
-      r = sqrt(det->distance*det->distance+px*px+py*py);
-      det->thomson_correction[index++] = (r0*r0)*polarization_factor;
-    }
-  }                  
+      for(z = 0;z<det->nz;z++){
+	px = ((x-(nx-1.0)/2.0)/nx)*det->width/2;
+	py = (((ny-1.0)/2.0-y)/ny)*det->height/2;
+	r = sqrt(det->distance*det->distance+px*px+py*py);
+	det->thomson_correction[index++] = (r0*r0)*polarization_factor;
+      }
+    }    
+  }              
 }
 
 void calculate_pixel_solid_angle(CCD * det){
@@ -303,56 +412,59 @@ void calculate_pixel_solid_angle(CCD * det){
      on the scatterer and going through the center of the pixel
   */
   int i;
-  int x,y;
+  int x,y,z;
   double px,py;
   double corners[4][2];
   double corner_distance[4];
   double projected_pixel_sides[4];
   int nx = det->nx;
   int ny = det->ny;
+  int nz = det->nz;
   double r; /* distance to scatterer */
   int index;
   /* For the moment we're considering vertical polarization */
-  det->solid_angle = malloc(sizeof(float)*nx*ny);
+  det->solid_angle = malloc(sizeof(float)*nx*ny*nz);
   index = 0;
   for(x = 0;x<det->nx;x++){
     for(y = 0;y<det->ny;y++){
-      if(det->spherical){
-	r = det->distance;
-	det->solid_angle[index++] = det->pixel_width*det->pixel_height/(r*r);
-      }else{
-	px = ((x-(nx-1.0)/2.0)/nx)*det->width/2;
-	py = (((ny-1.0)/2.0-y)/ny)*det->height/2;
-	r = sqrt(det->distance*det->distance+px*px+py*py);
-	/* top left */
-	corners[0][0] = px-det->pixel_width/2;
-	corners[0][1] = py+det->pixel_height/2;
-	
-	corner_distance[0] = sqrt(det->distance*det->distance+corners[0][0]*corners[0][0]+corners[0][1]*corners[0][1]);
-	/* top right */
-	corners[1][0] = px+det->pixel_width/2;
-	corners[1][1] = py+det->pixel_height/2;
-	corner_distance[1] = sqrt(det->distance*det->distance+corners[1][0]*corners[1][0]+corners[1][1]*corners[1][1]);
-	/* bottom right */
-	corners[2][0] = px+det->pixel_width/2;
-	corners[2][1] = py-det->pixel_height/2;
-	corner_distance[2] = sqrt(det->distance*det->distance+corners[2][0]*corners[2][0]+corners[2][1]*corners[2][1]);
-	/* bottom left */
-	corners[3][0] = px-det->pixel_width/2;
-	corners[3][1] = py-det->pixel_height/2;
-	corner_distance[3] = sqrt(det->distance*det->distance+corners[3][0]*corners[3][0]+corners[3][1]*corners[3][1]);
-	/* project on plane*/
-	if(!det->spherical){
-	  for(i = 0;i<4;i++){
-	    corners[i][0] *= r/corner_distance[i];
-	    corners[i][1] *= r/corner_distance[i];	
+      for(z = 0;z<det->nz;z++){
+	if(det->spherical){
+	  r = det->distance;
+	  det->solid_angle[index++] = det->pixel_width*det->pixel_height/(r*r);
+	}else{
+	  px = ((x-(nx-1.0)/2.0)/nx)*det->width/2;
+	  py = (((ny-1.0)/2.0-y)/ny)*det->height/2;
+	  r = sqrt(det->distance*det->distance+px*px+py*py);
+	  /* top left */
+	  corners[0][0] = px-det->pixel_width/2;
+	  corners[0][1] = py+det->pixel_height/2;
+	  
+	  corner_distance[0] = sqrt(det->distance*det->distance+corners[0][0]*corners[0][0]+corners[0][1]*corners[0][1]);
+	  /* top right */
+	  corners[1][0] = px+det->pixel_width/2;
+	  corners[1][1] = py+det->pixel_height/2;
+	  corner_distance[1] = sqrt(det->distance*det->distance+corners[1][0]*corners[1][0]+corners[1][1]*corners[1][1]);
+	  /* bottom right */
+	  corners[2][0] = px+det->pixel_width/2;
+	  corners[2][1] = py-det->pixel_height/2;
+	  corner_distance[2] = sqrt(det->distance*det->distance+corners[2][0]*corners[2][0]+corners[2][1]*corners[2][1]);
+	  /* bottom left */
+	  corners[3][0] = px-det->pixel_width/2;
+	  corners[3][1] = py-det->pixel_height/2;
+	  corner_distance[3] = sqrt(det->distance*det->distance+corners[3][0]*corners[3][0]+corners[3][1]*corners[3][1]);
+	  /* project on plane*/
+	  if(!det->spherical){
+	    for(i = 0;i<4;i++){
+	      corners[i][0] *= r/corner_distance[i];
+	      corners[i][1] *= r/corner_distance[i];	
+	    }
 	  }
+	  /* top */
+	  projected_pixel_sides[0] = sqrt((corners[0][0]-corners[1][0])*(corners[0][0]-corners[1][0])+(corners[0][1]-corners[1][1])*(corners[0][1]-corners[1][1]));
+	  /* left */
+	  projected_pixel_sides[1] = sqrt((corners[0][0]-corners[3][0])*(corners[0][0]-corners[3][0])+(corners[0][1]-corners[3][1])*(corners[0][1]-corners[3][1]));
+	  det->solid_angle[index++] = projected_pixel_sides[0]*projected_pixel_sides[1]/(r*r);
 	}
-	/* top */
-	projected_pixel_sides[0] = sqrt((corners[0][0]-corners[1][0])*(corners[0][0]-corners[1][0])+(corners[0][1]-corners[1][1])*(corners[0][1]-corners[1][1]));
-	/* left */
-	projected_pixel_sides[1] = sqrt((corners[0][0]-corners[3][0])*(corners[0][0]-corners[3][0])+(corners[0][1]-corners[3][1])*(corners[0][1]-corners[3][1]));
-	det->solid_angle[index++] = projected_pixel_sides[0]*projected_pixel_sides[1]/(r*r);
       }
     }
   }
@@ -367,8 +479,8 @@ void calculate_photons_per_pixel(Diffraction_Pattern * pattern, CCD * det, Exper
   if(!det->solid_angle){
     calculate_pixel_solid_angle(det);
   }
-  det->photons_per_pixel = malloc(sizeof(float)*det->nx*det->ny);
-  for(i = 0;i<det->nx*det->ny;i++){
+  det->photons_per_pixel = malloc(sizeof(float)*det->nx*det->ny*det->nz);
+  for(i = 0;i<det->nx*det->ny*det->nz;i++){
     det->photons_per_pixel[i] = det->thomson_correction[i] * det->solid_angle[i] * pattern->ints[i] * experiment->beam_intensity;
   }
 }
@@ -376,13 +488,15 @@ void calculate_photons_per_pixel(Diffraction_Pattern * pattern, CCD * det, Exper
 
 void write_hkl_grid(float * list, Molecule * mol,CCD * det){
   Image * hkl_grid;
-  int x,y;
+  int x,y,z;
   int i;
   int index;
   double min_x = FLT_MAX;
   double min_y = FLT_MAX; 
+  double min_z = FLT_MAX; 
   double max_x = -FLT_MAX;
   double max_y = -FLT_MAX;
+  double max_z = -FLT_MAX;
   double max_dim;
 #ifdef MPI
   if(!is_mpi_master()){
@@ -402,25 +516,36 @@ void write_hkl_grid(float * list, Molecule * mol,CCD * det){
     if(mol->pos[i*3+1] > max_y){
       max_y = mol->pos[i*3+1];
     }
+    if(mol->pos[i*3+2] < min_z){
+      min_z = mol->pos[i*3+2];
+    }
+    if(mol->pos[i*3+2] > max_z){
+      max_z = mol->pos[i*3+2];
+    }
   }
+  
   max_dim = sp_max(max_x-min_x,max_y-min_y);
-  hkl_grid = sp_image_alloc(det->nx/det->binning,det->ny/det->binning);
-  hkl_grid->detector->image_center[0] = sp_image_width(hkl_grid)/2;
-  hkl_grid->detector->image_center[1] = sp_image_height(hkl_grid)/2;
+  max_dim = sp_max(max_z-min_z,max_dim);
+  hkl_grid = sp_image_alloc(det->nx/det->binning_x,det->ny/det->binning_y,det->nz/det->binning_z);
+  hkl_grid->detector->image_center[0] = sp_image_x(hkl_grid)/2;
+  hkl_grid->detector->image_center[1] = sp_image_y(hkl_grid)/2;
+  hkl_grid->detector->image_center[2] = sp_image_z(hkl_grid)/2;
   i = 0;
   index = 0;
-  for(x = 0;x<sp_image_width(hkl_grid);x++){
-    for(y = 0;y<sp_image_height(hkl_grid);y++){
-      if(fabs(x-hkl_grid->detector->image_center[0]) > fabs(y-hkl_grid->detector->image_center[1])){
-	hkl_grid->image->data[i] = list[index]*max_dim;
-      }else{
-	hkl_grid->image->data[i] = list[index+1]*max_dim;
+  for(x = 0;x<sp_image_x(hkl_grid);x++){
+    for(y = 0;y<sp_image_y(hkl_grid);y++){
+      for(z = 0;z<sp_image_z(hkl_grid);z++){
+	if(fabs(x-hkl_grid->detector->image_center[0]) > fabs(y-hkl_grid->detector->image_center[1])){
+	  sp_real(hkl_grid->image->data[i]) = list[index]*max_dim;
+	}else{
+	  sp_real(hkl_grid->image->data[i]) = list[index+1]*max_dim;
+	}
+	hkl_grid->mask->data[i] = 1;
+	index += 3*det->binning_x;
+	i++;
       }
-      hkl_grid->mask->data[i] = 1;
-      index += 3*det->binning;
-      i++;
     }
-    index += 3*(det->binning-1)*(det->ny);
+    index += 3*(det->binning_x-1)*(det->ny);
   }
   sp_image_write(hkl_grid,"hkl_grid.h5",sizeof(real));
 }

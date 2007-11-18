@@ -30,12 +30,12 @@ IF(WIN32)
 SET (GETOPT utils/getopt.c)
 ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE)
 ELSE(WIN32)
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall -std=c99")
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wall -std=c99")
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall -std=c99 -g")
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wall -g ")
 ENDIF(WIN32)
 
 INCLUDE_DIRECTORIES(${SPIMAGE_INCLUDE_DIR} ${LIBCONFIG_INCLUDE_DIR} ${TIFF_INCLUDE_DIR} ${HDF5_INCLUDE_DIR} ${FFTW3_INCLUDE_DIR} ${PNG_INCLUDE_DIR} saddle)
-ADD_EXECUTABLE(spsim spsim.c config.c diffraction.c molecule.c io.c mpi.c noise.cpp amplification.c)
+ADD_EXECUTABLE(spsim spsim.c config.c diffraction.c molecule.c io.c mpi.c noise.cpp amplification.c real_space.c)
 TARGET_LINK_LIBRARIES(spsim ${SPIMAGE_LIBRARY} ${LIBCONFIG_LIBRARY} ${MATH_LIBRARY} ${HDF5_LIBRARY} ${TIFF_LIBRARY} ${PNG_LIBRARY} ${FFTW_LIBRARY})
 
 INSTALL(TARGETS spsim
