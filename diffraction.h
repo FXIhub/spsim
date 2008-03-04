@@ -25,6 +25,7 @@
 
 #include <spimage.h>
 #include <fftw3.h>
+#include <complex.h>
 
 /* 
    We're always gonna use 3D diffraction patterns 
@@ -59,7 +60,7 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp, int * HKL_list_si
 float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_size);
 
 /* Computes the diffraction pattern of a given structure on a given set of HKL points */
-Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size);
+Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size, float B);
 
 void calculate_pixel_solid_angle(CCD * det);
 
@@ -71,5 +72,9 @@ Diffraction_Pattern * load_pattern_from_file(CCD * det,char * filename,
 					     float * HKL_list, int HKL_list_size);
 void write_hkl_grid(float * list, Molecule * mol,CCD * det);
 
-Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experiment * exp);
+Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experiment * exp,float B);
+Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experiment * exp, float B,float * HKL_list);
+Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL_list, int HKL_list_size, CCD * det,float B);
+void multiply_pattern_on_list_with_scattering_factor(complex double * f,int Z,float * HKL_list, int HKL_list_size,float B);
+void apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Options * opts);
 #endif 

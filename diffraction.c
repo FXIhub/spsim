@@ -22,6 +22,9 @@
 #include <string.h>
 #include <float.h>
 #include <spimage.h>
+#include <nfft/nfft3.h>
+#include <nfft/options.h>
+#include <nfft/window_defines.h>
 #include "config.h"
 #include "diffraction.h"
 #include "mpi.h"
@@ -31,13 +34,29 @@
 #ifndef M_PI
 #define M_PI     3.1415926535897932384626433832795029L
 #endif
+#ifndef PI
+#define PI     3.1415926535897932384626433832795029L
+#endif
 
 #define ELEMENTS 100
 static float atomsf[ELEMENTS][9] = 
 #include "atomsf.cdata"
 
-static int atomsf_initialized = 0;
+static float atomed[ELEMENTS][11];
 
+static int atomsf_initialized = 0;
+static int atomed_initialized = 0;
+
+
+static float sp_mod(float a, float b){
+  while(a < 0){
+    a += b;
+  }
+  while(a>=b){
+    a -= b;
+  }
+  return a;
+}
 
 /*
   Use atomsf.lib to obtain details for all atoms in a problem.
@@ -63,6 +82,22 @@ static void write_ff_tables(){
   fclose(fp);
 }
 */
+
+
+/* The B is assumed to be the same for all the atoms */
+static void fill_ed_tables(float B){
+  for(int Z = 0;Z<ELEMENTS;Z++){
+    double min_b = sp_min(sp_min(sp_min(atomsf[Z][4],atomsf[Z][5]),atomsf[Z][6]),atomsf[Z][7]);
+    for(int i = 0;i<4;i++){
+      if(atomsf[Z][i+4] == min_b){
+	atomed[Z][i] = 8*pow(M_PI,1.5)*(atomsf[Z][i]+atomsf[Z][8])/pow((atomsf[Z][i+4]+B),1.5);
+      }else{
+	atomed[Z][i] = 8*pow(M_PI,1.5)*(atomsf[Z][i])/pow((atomsf[Z][i+4]+B),1.5);
+      }
+      atomed[Z][i+4] = 4*M_PI*M_PI/(atomsf[Z][i+4]+B);
+    }	
+  }
+}
 
 static void fill_ff_tables(){
   FILE * ff;
@@ -129,29 +164,41 @@ static void fill_ff_tables(){
 
 /* d should be the size of the scattering vector |H| */
 /* d is in m^-1 but we need it in A^-1 so divide  by 1^10*/
-static float  scatt_factor(float d,int Z){
+static float  scatt_factor(float d,int Z,float B){
   float res = 0;
   int i;  
   d *= 1e-10;
-  /* the 0.25 is there because the formula is (|H|/2)^2 */
+  /* the 0.25 is there because the 's' used by the aproxumation is 'd/2' */
   for(i = 0;i<4;i++){
-    res+= atomsf[Z][i]*exp((-atomsf[Z][i+4])*d*d*0.25);
+    res+= atomsf[Z][i]*exp(-(atomsf[Z][i+4]+B)*d*d*0.25);
   }                
-  res += atomsf[Z][8];
+  res += atomsf[Z][8]*exp(-B*d*d/0.25);
   return res;    
 }
 
 
 /* d should be the distance from the center of the atom */
 /* d is in m but we need it in A so we multiply by 1^10*/
+/* this formula results for the *spherical* fourier transform
+   of the 4 gaussian aproximation of the scattering factors.
+   Check the basic formulas paper for more details 
+
+   
+   The formula is:
+   Sum i=1..4 8*Pi^(3/2)*ai/bi^(3/2)/exp(4*Pi^2*r^2/bi)
+
+   And now the tricky part is what to do with c.
+   I decided to add it to the gaussian with the smallest b (the widest gaussian)
+
+   But this has all been factored in the fill_ed_table
+*/
 static float  electron_density(float d,int Z){
   float res = 0;
   int i;  
   d *= 1e10;
   for(i = 0;i<4;i++){
-    res+= atomsf[Z][i]*exp(-d*d*4.0/atomsf[Z][i+4]);
-  }                
-  res += atomsf[Z][8];
+    res+= atomed[Z][i]*exp(-(atomed[Z][i+4])*d*d);
+  }
   return res;    
 }
 
@@ -178,6 +225,8 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
   HKL_list = malloc(sizeof(float)*nx*ny*3);
   for(x = 0;x<nx;x++){
     for(y = 0;y<ny;y++){
+
+
       /* 
 	 Calculate the pixel coordinates in reciprocal space 	 
 	 by dividing the physical position by detector_distance*wavelength.
@@ -211,6 +260,36 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
 }
 
 
+void apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Options * opts){
+  Rotation * rot;
+  int d = 3;
+  int i,j,k;
+  sp_vector * v = sp_vector_alloc(3);
+  sp_vector * u = sp_vector_alloc(3);
+  /* grow list to accomodate more patterns */
+  *HKL_list = realloc(*HKL_list,*HKL_list_size*opts->n_patterns*sizeof(float)*d);
+  real * tmp = v->data;
+  for(k = 1;k<opts->n_patterns;k++){
+    memcpy(&((*HKL_list)[d*(*HKL_list_size)*k]),*HKL_list,sizeof(float)*d*(*HKL_list_size));
+    if(opts->random_orientation){
+      rot = sp_rot_uniform();
+    }else{
+      rot = sp_rot_euler(opts->euler_orientation[0],opts->euler_orientation[1],opts->euler_orientation[2]);
+    }
+    for(i = 0;i<*HKL_list_size;i++){
+      v->data = &((*HKL_list)[(*HKL_list_size*k+i)*d]);
+      u = sp_matrix_vector_prod(rot->R,v);
+      for(j = 0;j<d;j++){
+	(*HKL_list)[(*HKL_list_size*k+i)*d+j] = u->data[j];
+      }
+      sp_vector_free(u);		          
+    }
+  }
+  v->data = tmp;
+  sp_vector_free(v);
+  *HKL_list_size = *HKL_list_size*opts->n_patterns;
+}
+
 float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_size){
   /* number of pixels */
   int nx, ny,nz;
@@ -237,13 +316,13 @@ float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_
 	 Calculate the pixel coordinates in reciprocal space 	 
 	 by dividing the physical position by detector_distance*wavelength.
 	 
-	 CCD center at (nx-1)/2,(ny-1)/2
+	 CCD center at (nx)/2,(ny)/2
 
 	 Upper left corner of the detector with negative x and positive y
       */
-      px = ((x-(nx-1.0)/2.0)/nx)*det->width;
-      py = (((ny-1.0)/2.0-y)/ny)*det->height;
-      pz = ((z-(nz-1.0)/2.0)/nz)*det->depth;
+      px = ((x-(nx)/2.0)/nx)*det->width;
+      py = ((y-(ny)/2.0)/ny)*det->height;
+      pz = ((z-(nz)/2.0)/nz)*det->depth;
 
       rx = px*real_to_reciprocal;
       ry = py*real_to_reciprocal;
@@ -262,16 +341,294 @@ float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_
 
 
 
-Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experiment * exp){
-  double alpha_x = atan(det->width/2.0 * det->distance);
-  double alpha_y = atan(det->height/2.0 * det->distance);
-  double alpha_z = atan(det->depth/2.0 * det->distance);
-  double smax_x = 2*sin(alpha_x/2)/exp->wavelength;
-  double smax_y = 2*sin(alpha_y/2)/exp->wavelength;
-  double smax_z = 2*sin(alpha_z/2)/exp->wavelength;
+
+void multiply_pattern_with_scattering_factor(complex double * f,int Z,int nx, int ny, int nz, double rs_pixel_x,double rs_pixel_y,double rs_pixel_z, float B){
+  /* f is assumed to be C ordered*/
+  int i = 0;
+  for(int xi = -nx/2;xi<nx/2;xi++){
+    float x = (float)xi/(nx)/rs_pixel_x;
+    for(int yi = -ny/2;yi<ny/2;yi++){
+      float y = (float)yi/(ny)/rs_pixel_y;
+      for(int zi = -nz/2;zi<nz/2;zi++){
+	float z = (float)zi/(nz)/rs_pixel_z;
+	double distance = sqrt(x*x+y*y+z*z);
+	float sf = scatt_factor(distance,Z,B);
+	f[i] *= sf;
+	i++;
+      }
+    }
+  }
+}
+
+
+void multiply_pattern_on_list_with_scattering_factor(complex double * f,int Z,float * HKL_list, int HKL_list_size, float B){
+  /* f is assumed to be C ordered*/
+  int i = 0;
+  for(i = 0;i<HKL_list_size;i++){
+    double distance = sqrt(HKL_list[i*3]*HKL_list[i*3]+HKL_list[i*3+1]*HKL_list[i*3+1]+HKL_list[i*3+2]*HKL_list[i*3+2]);
+    float sf = scatt_factor(distance,Z,B);
+    f[i] *= sf;
+  }
+}
+
+Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experiment * exp, float B,float * HKL_list){
+  double alpha_x = atan(det->width/(2.0 * det->distance));
+  double alpha_y = atan(det->height/(2.0 * det->distance));
+  double alpha_z = atan(det->depth/(2.0 * det->distance));
+  /* Assuming spherical detector (which is a bit weird for a 3D detector)*/
+  double smax_x = tan(alpha_x)/exp->wavelength;
+  double smax_y = tan(alpha_y)/exp->wavelength;
+  double smax_z = tan(alpha_z)/exp->wavelength;
+  float rs_pixel_x = 1/(smax_x*2);  
+  float rs_pixel_y = 1/(smax_y*2);  
+  float rs_pixel_z = 1/(smax_z*2);  
+  int is_element_in_molecule[ELEMENTS];
+  fprintf(stderr,"Pixel size x-%e y-%e z-%e\n",rs_pixel_x,rs_pixel_y,rs_pixel_z);
+  int nx = det->nx;
+  int ny = det->ny;
+  int nz = det->nz;
+  int n_el_in_mol = 0;
+
+  int mpi_skip = 1;
+  int mpi_skip_flag = 0;
+
+/* in meters defines the limit up to which we compute the electron density */
+  Diffraction_Pattern * res = malloc(sizeof(Diffraction_Pattern));
+  res->HKL_list_size = nx*ny*nz;
+  res->F = malloc(sizeof(Complex)*res->HKL_list_size);
+  res->ints = malloc(sizeof(float)*res->HKL_list_size);
+  res->HKL_list = malloc(sizeof(float)*3*res->HKL_list_size);
+
+  nfft_plan p;
+  
+#ifdef MPI  
+  /* Skip a number of elements equivalent to the number of computers used */
+  MPI_Comm_size(MPI_COMM_WORLD,&mpi_skip);
+  MPI_Comm_rank(MPI_COMM_WORLD,&mpi_skip_flag);
+#endif
+  
+  if(!atomed_initialized){
+    fill_ed_tables(B);
+    atomed_initialized = 1;
+  }
+  for(int j = 0 ;j< ELEMENTS;j++){
+    is_element_in_molecule[j] = 0;
+  }
+  for(int j = 0 ;j< mol->natoms;j++){
+    if(is_element_in_molecule[mol->atomic_number[j]] == 0){
+      n_el_in_mol++;
+    }
+    is_element_in_molecule[mol->atomic_number[j]]++;
+  }
+
+  for(int k = 0;k<nx*ny*nz;k++){
+    sp_real(res->F[k]) = 0;
+    sp_imag(res->F[k]) = 0;
+  }
+  for(int Z = 0 ;Z< ELEMENTS;Z++){
+    if(!is_element_in_molecule[Z]){
+      continue;
+    }else if(is_element_in_molecule[Z]){
+      mpi_skip_flag++;
+      if(mpi_skip_flag < mpi_skip){
+	continue;
+      }
+      mpi_skip_flag = 0;
+      fprintf(stderr,"Calculating Z = %d\n",Z);
+      /* more than 100 atoms of that kind in the molecule use nfft*/
+      nfft_init_3d(&p,nx,ny,nz,is_element_in_molecule[Z]);
+
+      int k = 0;
+      for(int j = 0 ;j< mol->natoms;j++){
+	if(mol->atomic_number[j] == Z){
+
+	  p.f[k] = 1;    
+	  /* We have to multiply the position with the dimension of the box because the
+	     fourier sample are taken between 0..1 (equivalent to 0..0.5,-0.5..0) */
+	  p.x[k*3] = mol->pos[j*3]/(rs_pixel_x)/nx; 
+	  p.x[k*3+1] = mol->pos[j*3+1]/(rs_pixel_y)/ny; 
+	  p.x[k*3+2] = mol->pos[j*3+2]/(rs_pixel_z)/nz; 
+	  k++;
+	}
+      }
+      
+      if(p.nfft_flags & PRE_ONE_PSI){
+	nfft_precompute_one_psi(&p);
+      }
+      if(is_element_in_molecule[Z] < 100){
+	ndft_adjoint(&p);  
+      }else{
+	nfft_adjoint(&p);  
+      }
+      multiply_pattern_with_scattering_factor(p.f_hat,Z,nx,ny,nz,
+					      rs_pixel_x,rs_pixel_y,rs_pixel_z,B);
+      for(int k = 0;k<nx*ny*nz;k++){
+	sp_real(res->F[k]) += creal(p.f_hat[k]);
+	sp_imag(res->F[k]) += cimag(p.f_hat[k]);
+      }   
+      nfft_finalize(&p);
+    }
+  }
+  for(int i = 0;i<nx*ny*nz;i++){
+    res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
+  }
+  sum_patterns(res);
+  return res;
+}
+
+
+Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL_list, int HKL_list_size,CCD * det, float B){
+  int is_element_in_molecule[ELEMENTS];
+/* in meters defines the limit up to which we compute the electron density */
+  Diffraction_Pattern * res = malloc(sizeof(Diffraction_Pattern));
+  res->HKL_list_size = HKL_list_size;
+  res->F = malloc(sizeof(Complex)*HKL_list_size);
+  res->ints = malloc(sizeof(float)*HKL_list_size);
+  res->HKL_list = malloc(sizeof(float)*3*HKL_list_size);
+  /* N is the cutoff frequency */
+  double max_x[3] = {0,0,0};
+  double max_v[3] = {0,0,0};
+  int N[3] = {1000,1000,10};
+  int n[3] = {1000,1000,10};
+  int n_el_in_mol = 0;
+
+  int mpi_skip = 1;
+  int mpi_skip_flag = 0;
+  nnfft_plan p;
+
+#ifdef MPI  
+  /* Skip a number of elements equivalent to the number of computers used */
+  MPI_Comm_size(MPI_COMM_WORLD,&mpi_skip);
+  MPI_Comm_rank(MPI_COMM_WORLD,&mpi_skip_flag);
+#endif
+  
+  if(!atomed_initialized){
+    fill_ed_tables(B);
+    atomed_initialized = 1;
+  }
+  for(int j = 0 ;j< ELEMENTS;j++){
+    is_element_in_molecule[j] = 0;
+  }
+  for(int j = 0 ;j< mol->natoms;j++){
+    for(int k = 0;k<3;k++){
+      if(2*fabs(mol->pos[j*3+k]) > max_x[k]){
+	max_x[k] = 2*fabs(mol->pos[j*3+k]);
+      }
+    }
+    if(is_element_in_molecule[mol->atomic_number[j]] == 0){
+      n_el_in_mol++;
+    }
+    is_element_in_molecule[mol->atomic_number[j]]++;
+  }
+
+
+
+  for(int j = 0;j<HKL_list_size;j++){
+    sp_real(res->F[j]) = 0;
+    sp_imag(res->F[j]) = 0;
+    for(int k = 0;k<3;k++){
+      if(2*fabs(HKL_list[j*3+k]) > max_v[k]){
+	max_v[k] = 2*fabs(HKL_list[j*3+k]);
+      }
+    }
+  }
+  printf("max_x %e %e %e\n",max_x[0],max_x[1],max_x[2]);
+  printf("max_v %e %e %e\n",max_v[0],max_v[1],max_v[2]);
+  printf("max_v*max_x %e %e %e\n",max_x[0]*max_v[0],max_x[1]*max_v[1],max_x[2]*max_v[2]);
+  
+  for(int k = 0;k<3;k++){
+    N[k] = ceil(max_x[k]*max_v[k]);
+    max_v[k] = N[k]/max_x[k];
+    n[k] = 2*N[k];
+  }
+/*  int tmp = N[0];
+  N[0] = N[3];
+  N[3] = tmp;
+  tmp = n[0];
+  n[0] = n[3];
+  n[3] = tmp;*/
+  for(int Z = 0 ;Z< ELEMENTS;Z++){
+    if(!is_element_in_molecule[Z]){
+      continue;
+    }else if(is_element_in_molecule[Z]){
+      mpi_skip_flag++;
+      if(mpi_skip_flag < mpi_skip){
+	continue;
+      }
+      mpi_skip_flag = 0;
+      fprintf(stderr,"Calculating Z = %d\n",Z);
+      /* more than 100 atoms of that kind in the molecule use nfft*/
+      nnfft_init_guru(&p, 3, HKL_list_size, is_element_in_molecule[Z], N, n, 2,
+                      PRE_PSI| PRE_PHI_HUT|
+                      MALLOC_X| MALLOC_V| MALLOC_F_HAT| MALLOC_F);
+/*      nnfft_init(&p,3,HKL_list_size,is_element_in_molecule[Z],N);*/
+
+      int k = 0;
+      for(int j = 0 ;j< mol->natoms;j++){
+	if(mol->atomic_number[j] == Z){
+
+	  p.f[k] = 1;    
+	  /* We have to multiply the position with the dimension of the box because the
+	     fourier sample are taken between 0..1 (equivalent to 0..0.5,-0.5..0) */
+	  p.x[k*3] = mol->pos[j*3]/max_x[0];
+	  p.x[k*3+1] = mol->pos[j*3+1]/max_x[1];
+	  p.x[k*3+2] = mol->pos[j*3+2]/max_x[2];
+	  k++;
+	}
+      }
+      k = 0;
+      for(int k = 0 ;k<HKL_list_size;k++){
+	p.v[k*3] =  HKL_list[k*3]/max_v[0];
+	p.v[k*3+1] =  HKL_list[k*3+1]/max_v[1];
+	p.v[k*3+2] =  HKL_list[k*3+2]/max_v[2];
+      }
+      
+      /** precompute psi, the entries of the matrix B */
+      if(p.nnfft_flags & PRE_PSI)
+	nnfft_precompute_psi(&p);
+      
+      if(p.nnfft_flags & PRE_FULL_PSI)
+	nnfft_precompute_full_psi(&p);
+      
+      if(p.nnfft_flags & PRE_LIN_PSI)
+	nnfft_precompute_lin_psi(&p);
+      
+      /** precompute phi_hut, the entries of the matrix D */
+      if(p.nnfft_flags & PRE_PHI_HUT)
+	nnfft_precompute_phi_hut(&p);
+    
+      if(is_element_in_molecule[Z] < 10){
+	nndft_adjoint(&p);  
+      }else{
+	nnfft_adjoint(&p);  
+      }
+      multiply_pattern_on_list_with_scattering_factor(p.f_hat,Z,HKL_list,HKL_list_size,B);
+      for(int k = 0;k<HKL_list_size;k++){
+	sp_real(res->F[k]) += creal(p.f_hat[k]);
+	sp_imag(res->F[k]) += cimag(p.f_hat[k]);
+      }   
+      nnfft_finalize(&p);
+    }
+  }
+  for(int i = 0;i<HKL_list_size;i++){
+    res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
+  }
+  sum_patterns(res);
+  return res;
+}
+
+
+Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experiment * exp, float B){
+  double alpha_x = atan(det->width/(2.0 * det->distance));
+  double alpha_y = atan(det->height/(2.0 * det->distance));
+  double alpha_z = atan(det->depth/(2.0 * det->distance));
+  double smax_x = sin(alpha_x)/exp->wavelength;
+  double smax_y = sin(alpha_y)/exp->wavelength;
+  double smax_z = sin(alpha_z)/exp->wavelength;
   double rs_pixel_x = 1/(smax_x*2);  
   double rs_pixel_y = 1/(smax_y*2);  
   double rs_pixel_z = 1/(smax_z*2);  
+  fprintf(stderr,"Pixel size x-%e y-%e z-%e\n",rs_pixel_x,rs_pixel_y,rs_pixel_z);
   int nx = det->nx;
   int ny = det->ny;
   int nz = det->nz;
@@ -279,30 +636,81 @@ Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experime
   int x_grid_radius = max_atoms_radius/rs_pixel_x;
   int y_grid_radius = max_atoms_radius/rs_pixel_y;
   int z_grid_radius = max_atoms_radius/rs_pixel_z;
+  int total_el = 0;
+  if(!atomed_initialized){
+    fill_ed_tables(B);
+    atomed_initialized = 1;
+  }
   Image * rs = sp_image_alloc(nx,ny,nz);
   for(int j = 0 ;j< mol->natoms;j++){
-    float home_x = (int)(mol->pos[j*3]/rs_pixel_x)%nx;
-    float home_y = (int)(mol->pos[j*3+1]/rs_pixel_y)%ny;
-    float home_z = (int)(mol->pos[j*3+2]/rs_pixel_z)%nz;
-    for(int z = home_z-z_grid_radius;z<home_z+z_grid_radius;z++){
-      float dz = fabs((home_z*nz-z)*rs_pixel_z);
+    if(!mol->atomic_number[j]){
+      /* undetermined atomic number */
+      continue;
+    }
+    total_el += mol->atomic_number[j];
+    float home_x = sp_mod(mol->pos[j*3]/rs_pixel_x,nx);
+    float home_y = sp_mod(mol->pos[j*3+1]/rs_pixel_y,ny);
+    float home_z = sp_mod(mol->pos[j*3+2]/rs_pixel_z,nz);
+    for(int x = home_x-x_grid_radius;x<home_x+x_grid_radius;x++){
       for(int y = home_y-y_grid_radius;y<home_y+y_grid_radius;y++){
-	float dy = fabs((home_y*ny-y)*rs_pixel_y);
-	for(int x = home_x-x_grid_radius;x<home_x+x_grid_radius;x++){
-	  float dx = fabs((home_x*nx-x)*rs_pixel_x);
-	  float distance = sqrt(dz*dz+dy*dy+dx*dx);
-	  float ed = electron_density(distance,mol->atomic_number[j]);   
-	  sp_image_set(rs,x,y,z,sp_cinit(ed,0));
+	for(int z = home_z-z_grid_radius;z<home_z+z_grid_radius;z++){
+	  float ed = 0;
+/*	  int z2 = 0;
+	  int y2 = 0;
+	  int x2 = 0;*/
+	  for(int z2 = -1;z2<2;z2+=2){
+	    for(int y2 = -1;y2<2;y2+=2){
+	      for(int x2 = -1;x2<2;x2+=2){
+		float dz = (home_z-(z+z2/2.0))*rs_pixel_z;
+		float dy = (home_y-(y+y2/2.0))*rs_pixel_y;
+		float dx = (home_x-(x+x2/2.0))*rs_pixel_x;
+		float distance = sqrt(dz*dz+dy*dy+dx*dx);
+		ed += electron_density(distance,mol->atomic_number[j])*rs_pixel_x*1e10*rs_pixel_y*1e10*rs_pixel_z*1e10;   
+	      }
+	    }
+	  }
+	  /* ed is the average of 27 points around the grid point */
+	  ed *= rs_pixel_x*1e10*rs_pixel_y*1e10*rs_pixel_z*1e10/8;
+	  /* Multiply by the voxel volume so that we have the number in electrons instead of electrons/a^3*/
+/*	  if(!isnormal(ed)){
+	    abort();
+	  }*/
+	  ed += sp_cabs(sp_image_get(rs,sp_mod(x,nx),sp_mod(y,ny),sp_mod(z,nz)));
+	  sp_image_set(rs,sp_mod(x,nx),sp_mod(y,ny),sp_mod(z,nz),sp_cinit(ed,0));
 	}
       }
     }
-    printf("%f done\n",100.0*j/mol->natoms);
+    fprintf(stderr,"%d done\n",j);
   }
-  sp_image_write(rs,"ed.vtk",0);
-  return NULL;
+  fprintf(stderr,"Total electrons - %d\n",total_el);
+  sp_image_write(rs,"ed.vtk",0);  
+  sp_image_write(rs,"ed.h5",sizeof(real));  
+  Image * sf = sp_image_fft(rs);
+  sp_image_free(rs);
+  rs = sp_image_shift(sf);
+  sp_image_free(sf);
+  sf = rs;
+  Diffraction_Pattern * res = malloc(sizeof(Diffraction_Pattern));
+  res->HKL_list_size = nx*ny*nz;
+  res->F = malloc(sizeof(Complex)*res->HKL_list_size);
+  res->ints = malloc(sizeof(float)*res->HKL_list_size);
+  res->HKL_list = malloc(sizeof(float)*3*res->HKL_list_size);
+  int i = 0;
+  float norm = 1.0;
+  for(int x = 0;x<sp_image_x(sf);x++){
+    for(int y = 0;y<sp_image_y(sf);y++){
+      for(int z = 0;z<sp_image_z(sf);z++){
+	res->F[i] = sp_cscale(sp_image_get(sf,x,y,z),norm);
+	res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
+	i++;
+      }
+    }
+  }
+  sp_image_free(sf);
+  return res;
 }
 
-Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size){
+Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size,float B){
   int i,j;
   double scattering_factor;
   double scattering_vector_length;
@@ -319,7 +727,7 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
     atomsf_initialized = 1;
   }
 
-  res->F = malloc(sizeof(fftw_complex)*HKL_list_size);
+  res->F = malloc(sizeof(Complex)*HKL_list_size);
   res->ints = malloc(sizeof(float)*HKL_list_size);
   res->HKL_list = malloc(sizeof(float)*3*HKL_list_size);
   memcpy(res->HKL_list,HKL_list,sizeof(float)*3*HKL_list_size);
@@ -351,11 +759,15 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
     scattering_vector_length = sqrt(HKL_list[3*i]*HKL_list[3*i]+HKL_list[3*i+1]*HKL_list[3*i+1]+HKL_list[3*i+2]*HKL_list[3*i+2]);
     for(j = 0;j<ELEMENTS;j++){
       if(is_element_in_molecule[j]){
-	scattering_factor_cache[j] = scatt_factor(scattering_vector_length,j);
+	scattering_factor_cache[j] = scatt_factor(scattering_vector_length,j,B);
       }
     }
     for(j = 0 ;j< mol->natoms;j++){
+      if(!mol->atomic_number[j]){
+	continue;
+      }
       scattering_factor = scattering_factor_cache[mol->atomic_number[j]];
+/*      scattering_factor = 1;*/
       sp_real(res->F[i]) += scattering_factor*cos(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));
       sp_imag(res->F[i]) += scattering_factor*sin(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));
     }
@@ -375,7 +787,7 @@ Diffraction_Pattern * load_pattern_from_file(CCD * det,char * filename,
   memcpy(res->HKL_list,HKL_list,sizeof(float)*3*HKL_list_size);
   res->HKL_list_size = HKL_list_size;
 
-  res->ints = read_VTK_to_array(det->nx,det->ny,filename);
+  res->ints = read_VTK_to_array(det->nx,det->ny,det->nz,filename);
   res->F = 0;
   return res;
 }

@@ -84,22 +84,30 @@ int main(int argc, char ** argv){
     exit(0);
   }
 
-
-  if(opts->use_fft_for_sf){
-    pattern = compute_pattern_by_fft(mol,opts->detector,opts->experiment);
+  if(opts->sf_filename[0]){
+    pattern = load_pattern_from_file(opts->detector,opts->sf_filename,HKL_list,HKL_list_size);
   }else{
     if(is3D){
       HKL_list = get_HKL_list_for_3d_detector(opts->detector,opts->experiment, &HKL_list_size);
+      apply_orientation_to_HKL_list(&HKL_list,&HKL_list_size,opts);
+      if(opts->use_fft_for_sf){
+	pattern = compute_pattern_by_fft(mol,opts->detector,opts->experiment,opts->b_factor);
+      }else if(opts->use_nfft_for_sf){
+	pattern = compute_pattern_by_nfft(mol,opts->detector,opts->experiment,opts->b_factor,HKL_list);
+      }else{
+	pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor);
+      }
     }else{
       HKL_list = get_HKL_list_for_detector(opts->detector,opts->experiment, &HKL_list_size);
-    }
-    
-    write_hkl_grid(HKL_list,mol,opts->detector);
-    
-    if(opts->sf_filename[0]){
-      pattern = load_pattern_from_file(opts->detector,opts->sf_filename,HKL_list,HKL_list_size);
-    }else{
-      pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size);
+      apply_orientation_to_HKL_list(&HKL_list,&HKL_list_size,opts);
+      if(opts->use_fft_for_sf){
+	fprintf(stderr,"Cannot use fft for 2D pattern calculation!\n");
+	abort();
+      }else if(opts->use_nfft_for_sf){
+	pattern = compute_pattern_on_list_by_nfft(mol,HKL_list,HKL_list_size,opts->detector,opts->b_factor);
+      }else{
+	pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor);
+      }
     }
   }
 #ifdef MPI
@@ -110,15 +118,21 @@ int main(int argc, char ** argv){
 
   gaussian_blur_pattern(opts,pattern);
 
-  write_3D_array_to_vtk(pattern->ints,opts->detector->nx,opts->detector->ny,opts->detector->nz,"scattering_factor.vtk");  
+  write_3D_array_to_vtk(pattern->ints,opts->detector->nx,opts->detector->ny,opts->detector->nz,
+			"scattering_factor.vtk");  
+  write_3D_array_as_structured_grid_to_vtk(pattern->ints,opts->detector,HKL_list,HKL_list_size,opts->n_patterns,"ewald.vtk");  
   calculate_thomson_correction(opts->detector);
   calculate_pixel_solid_angle(opts->detector);
-  write_3D_array_to_vtk(opts->detector->thomson_correction,opts->detector->nx,opts->detector->ny,opts->detector->nz,"thomson_correction.vtk");
-  write_3D_array_to_vtk(opts->detector->solid_angle,opts->detector->nx,opts->detector->ny,opts->detector->nz,"solid_angle.vtk");
+  write_3D_array_to_vtk(opts->detector->thomson_correction,opts->detector->nx,opts->detector->ny,
+			opts->detector->nz,"thomson_correction.vtk");
+  write_3D_array_to_vtk(opts->detector->solid_angle,opts->detector->nx,opts->detector->ny,
+			opts->detector->nz,"solid_angle.vtk");
   calculate_photons_per_pixel(pattern,opts->detector,opts->experiment);
-  write_3D_array_to_vtk(opts->detector->photons_per_pixel,opts->detector->nx,opts->detector->ny,opts->detector->nz,"pattern.vtk");
+  write_3D_array_to_vtk(opts->detector->photons_per_pixel,opts->detector->nx,opts->detector->ny,
+			opts->detector->nz,"pattern.vtk");
   generate_poisson_noise(opts->detector);
-  write_3D_array_to_vtk(opts->detector->photon_count,opts->detector->nx,opts->detector->ny,opts->detector->nz,"photon_count.vtk");
+  write_3D_array_to_vtk(opts->detector->photon_count,opts->detector->nx,opts->detector->ny,
+			opts->detector->nz,"photon_count.vtk");
   calculate_electrons_per_pixel(opts->detector,opts->experiment);
   write_3D_array_to_vtk(opts->detector->electrons_per_pixel,opts->detector->nx,opts->detector->ny,opts->detector->nz,"electrons_per_pixel.vtk");
   calculate_real_detector_output(opts->detector,opts->experiment);
@@ -151,13 +165,15 @@ int main(int argc, char ** argv){
   sp_image_write(noiseless,"noiseless_output.vtk",0);
   
 
-  
-  Image * rs = calculate_noiseless_real_space(opts,pattern);
 
-  sp_image_write(rs,"real_space.h5",sizeof(real));
-  sp_image_write(rs,"real_space.vtk",0);
+  if(pattern->F){
+    Image * rs = calculate_noiseless_real_space(opts,pattern);
+    
+    sp_image_write(rs,"real_space.h5",sizeof(real));
+    sp_image_write(rs,"real_space.vtk",0);
 
-  write_density_histogram(rs);
+    write_density_histogram(rs);
+  }
 #ifdef MPI
   MPI_Finalize();
 #endif

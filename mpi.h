@@ -27,6 +27,7 @@
 
 void get_my_loop_start_and_end(int size, int * start, int * end);
 void syncronize_patterns(Diffraction_Pattern * pat);
+void sum_patterns(Diffraction_Pattern * pat);
 
 #ifdef MPI
 
@@ -34,5 +35,7 @@ int is_mpi_master();
 void get_id_loop_start_and_end(int id, int size, int * start, int * end);
 int mpi_receive_pattern(Diffraction_Pattern * pat);
 int mpi_send_pattern(Diffraction_Pattern * pat);
+int mpi_sum_receive_pattern(Diffraction_Pattern * pat);
+int mpi_sum_send_pattern(Diffraction_Pattern * pat);
 
 #endif

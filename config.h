@@ -120,6 +120,11 @@ typedef struct {
   int box_type; /* spherical or parallelepipedic */
   float box_dimension; /* diameter in case of spherical or side in case of parallelepipedic */
   int use_fft_for_sf;
+  int use_nfft_for_sf;
+  float b_factor;
+  float euler_orientation[3];
+  int random_orientation;
+  int n_patterns;
 }Options;
 
 

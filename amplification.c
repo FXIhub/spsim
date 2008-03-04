@@ -61,7 +61,7 @@ void calculate_electrons_per_pixel(CCD * det, Experiment * experiment){
     return;
   }
   det->electrons_per_pixel = malloc(sizeof(float)*det->nx*det->ny*det->nz);
-  for(i = 0;i<det->nx*det->ny;i++){
+  for(i = 0;i<det->nx*det->ny*det->nz;i++){
     det->electrons_per_pixel[i] =  det->photon_count[i]*electrons_per_photon;
   }
 }
@@ -88,19 +88,19 @@ void calculate_real_detector_output(CCD * det, Experiment * experiment){
 	for(xi = 0;xi<det->binning_x;xi++){
 	  for(yi = 0;yi<det->binning_y;yi++){
 	    for(zi = 0;zi<det->binning_z;zi++){
-	      det->real_output[i] +=  (det->electrons_per_pixel[(x*det->binning_x+xi)*det->ny*det->nz+
-								(y*det->binning_y+yi)*det->nz+
+	      det->real_output[i] +=  (det->electrons_per_pixel[(x*det->binning_x+xi)*(det->ny)*(det->nz)+
+								(y*det->binning_y+yi)*(det->nz)+
 				                                (z*det->binning_z+zi)]+
 				       det->dark_current*experiment->exposure_time);
 	    }
 	  }
-	  det->real_output[i] +=+box_muller(0,det->readout_noise);
-	  if(det->real_output[i] < 0){
-	    det->real_output[i] = 0;
-	  }
-	  det->real_output[i] *= ADC_constant;
-	  i++;
 	}
+	det->real_output[i] +=+box_muller(0,det->readout_noise);
+	if(det->real_output[i] < 0){
+	  det->real_output[i] = 0;
+	}
+	det->real_output[i] *= ADC_constant;
+	i++;
       }
     }
   }
@@ -135,8 +135,8 @@ void calculate_noiseless_detector_output(CCD * det, Experiment * experiment){
 					    *det->quantum_efficiency*electrons_per_photon*ADC_constant);
 	    }
 	  }
-	  i++;
 	}
+	i++;
       }
     }
   }

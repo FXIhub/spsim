@@ -59,6 +59,18 @@ void syncronize_patterns(Diffraction_Pattern * pat){
 #endif
 }
 
+void sum_patterns(Diffraction_Pattern * pat){
+#ifndef MPI
+  return;
+#else
+  if(is_mpi_master()){
+    mpi_sum_receive_pattern(pat);
+  }else{
+    mpi_sum_send_pattern(pat);
+  }
+#endif
+}
+
 
 #ifdef MPI
 
@@ -92,10 +104,31 @@ int mpi_receive_pattern(Diffraction_Pattern * pat){
     get_id_loop_start_and_end(i,pat->HKL_list_size,&start,&end);
     /*count is (end-start)*2 because we're sending fftw_complex not doubles */
     MPI_Recv(&(pat->F[start]),(end-start)*2,MPI_DOUBLE,i,0,MPI_COMM_WORLD,&status);
-    for(j = start;j<end;j++){
-      pat->I[j] = pat->F[j][0] * pat->F[j][0] + pat->F[j][1] * pat->F[j][1];
+    for(j = start;j<end;j++){       
+      pat->ints[j] = sp_cabs(pat->F[j])*sp_cabs(pat->F[j]);
     }
   }  
+  return 0;
+}
+
+int mpi_sum_receive_pattern(Diffraction_Pattern * pat){
+  int np;
+  int i,j;
+  int start,end;
+  MPI_Status status;
+  MPI_Comm_size(MPI_COMM_WORLD,&np);
+  Complex * buffer = malloc(sizeof(Complex)*pat->HKL_list_size);
+  for(i = 1;i<np;i++){
+    MPI_Recv(buffer,pat->HKL_list_size*2,MPI_DOUBLE,i,0,MPI_COMM_WORLD,&status);
+    for(j = 0;j<pat->HKL_list_size;j++){       
+      sp_real(pat->F[j]) += sp_real(buffer[j]);
+      sp_imag(pat->F[j]) += sp_imag(buffer[j]);
+    }
+  }  
+  free(buffer);
+  for(j = 0;j<pat->HKL_list_size;j++){       
+    pat->ints[j] = sp_cabs(pat->F[j])*sp_cabs(pat->F[j]);
+  }
   return 0;
 }
 
@@ -104,6 +137,14 @@ int mpi_send_pattern(Diffraction_Pattern * pat){
   get_my_loop_start_and_end(pat->HKL_list_size,&start,&end);
   /*count is (end-start)*2 because we're sending fftw_complex not doubles */
   MPI_Send (&(pat->F[start]),(end-start)*2,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
+  return 0;    
+}
+
+int mpi_sum_send_pattern(Diffraction_Pattern * pat){
+  int start,end;
+  get_my_loop_start_and_end(pat->HKL_list_size,&start,&end);
+  /*count is (end-start)*2 because we're sending fftw_complex not doubles */
+  MPI_Send (pat->F,pat->HKL_list_size*2,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
   return 0;    
 }
 #endif

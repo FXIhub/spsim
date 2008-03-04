@@ -36,6 +36,14 @@ Options * set_defaults(){
   opt->box_type = BOX_SPHERICAL;
   opt->box_dimension = 1e-9;
   opt->use_fft_for_sf = 0;
+  opt->use_nfft_for_sf = 0;
+  opt->b_factor = 0;
+  opt->n_patterns = 1;
+  opt->euler_orientation[0]= 0;
+  opt->euler_orientation[1]= 0;
+  opt->euler_orientation[2]= 0;
+  opt->random_orientation = 0;
+  
   return opt;
 }
 
@@ -179,6 +187,27 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"use_fft_for_sf")){
     res->use_fft_for_sf = config_lookup_int(&config,"use_fft_for_sf");
   }
+  if(config_lookup(&config,"use_nfft_for_sf")){
+    res->use_nfft_for_sf = config_lookup_int(&config,"use_nfft_for_sf");
+  }
+  if(config_lookup(&config,"b_factor")){
+    res->b_factor = config_lookup_float(&config,"b_factor");
+  }
+  if(config_lookup(&config,"phi")){
+    res->euler_orientation[0] = config_lookup_float(&config,"phi");
+  }
+  if(config_lookup(&config,"theta")){
+    res->euler_orientation[1] = config_lookup_float(&config,"theta");
+  }
+  if(config_lookup(&config,"psi")){
+    res->euler_orientation[2] = config_lookup_float(&config,"psi");
+  }
+  if(config_lookup(&config,"random_orientation")){
+    res->random_orientation = config_lookup_int(&config,"random_orientation");
+  }
+  if(config_lookup(&config,"number_of_patterns")){
+    res->n_patterns = config_lookup_int(&config,"number_of_patterns");
+  }
 
   res->detector->nx = rint(res->detector->width/res->detector->pixel_width);
   res->detector->ny = rint(res->detector->height/res->detector->pixel_height);
@@ -292,7 +321,27 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_float(s,res->detector->gaussian_blurring);
 
   s = config_setting_add(root,"use_fft_for_sf",CONFIG_TYPE_INT);
-  config_setting_set_float(s,res->use_fft_for_sf);
+  config_setting_set_int(s,res->use_fft_for_sf);
+
+  s = config_setting_add(root,"use_nfft_for_sf",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->use_nfft_for_sf);
+
+  s = config_setting_add(root,"b_factor",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->b_factor);
+
+
+  s = config_setting_add(root,"phi",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->euler_orientation[0]);
+  s = config_setting_add(root,"theta",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->euler_orientation[1]);
+  s = config_setting_add(root,"psi",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->euler_orientation[2]);
+
+  s = config_setting_add(root,"random_orientation",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->random_orientation);
+  s = config_setting_add(root,"number_of_patterns",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->n_patterns);
+
 
   if(res->sf_filename[0]){
     s = config_setting_add(root,"precalculated_sf",CONFIG_TYPE_STRING);
