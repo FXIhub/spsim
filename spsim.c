@@ -28,6 +28,39 @@
 #include "amplification.h"
 #include "real_space.h"
 
+void gaussian_blur_real_space(Options * opts,Diffraction_Pattern * pattern){
+  Image * real_space = calculate_noiseless_real_space(opts,pattern);
+  float radius = opts->detector->real_space_blurring;
+  float d_c = sqrt(opts->detector->nx*opts->detector->nx/4+opts->detector->ny*opts->detector->ny/4+opts->detector->nz*opts->detector->nz/4);
+  if(!radius){
+    return;
+  }
+  /*  radius *= d_c; */
+  /*  f(x,y) = 1/sqrt(2*M_PI*radius) * exp(-(x^2+y^2+dz^2)/(2*radius^2)) */
+  
+  int i = 0;
+  for(int x = 0;x<opts->detector->nx;x++){
+    float dx = fabs(x-((opts->detector->nx-1)/2));
+    for(int y = 0;y<opts->detector->ny;y++){
+    float dy = fabs(y-((opts->detector->ny-1)/2));
+      for(int z = 0;z<opts->detector->nz;z++){
+	float dz = fabs(z-((opts->detector->nz-1)/2));
+	float factor = 1/sqrt(2*M_PI*radius) * exp(-(dx*dx+dy*dy+dz*dz)/(2*radius*radius));
+	sp_real(real_space->image->data[i]) *= factor;
+	sp_imag(real_space->image->data[i]) *= factor;
+	i++;
+      }
+    }
+  }
+  sp_image_write(real_space,"blurred_real_space.vtk",0);
+  Image * tmp = sp_image_shift(sp_image_fft(real_space));
+  sp_image_write(tmp,"blurred_real_space_pattern.vtk",0);
+  for(i = 0;i<sp_image_size(real_space);i++){
+    pattern->F[i] = tmp->image->data[i];
+    pattern->ints[i] = sp_cabs(pattern->F[i])*sp_cabs(pattern->F[i]);
+  }
+}
+
 void gaussian_blur_pattern(Options * opts,Diffraction_Pattern * pattern){
   if(!opts->detector->gaussian_blurring){
     return;
@@ -117,6 +150,7 @@ int main(int argc, char ** argv){
 #endif
 
   gaussian_blur_pattern(opts,pattern);
+  gaussian_blur_real_space(opts,pattern);
 
   write_3D_array_to_vtk(pattern->ints,opts->detector->nx,opts->detector->ny,opts->detector->nz,
 			"scattering_factor.vtk");  

@@ -29,7 +29,7 @@
 #include "diffraction.h"
 #include "mpi.h"
 #include "io.h"
-
+#include "box.h"
 
 #ifndef M_PI
 #define M_PI     3.1415926535897932384626433832795029L
@@ -778,73 +778,33 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
 }
 
 
-
-Diffraction_Pattern * compute_box_on_list(Box box, float * HKL_list, int HKL_list_size,float B){
-
-  
-  int i,j;
-  double scattering_factor;
-  double scattering_vector_length;
-  double scattering_factor_cache[ELEMENTS];
-  int is_element_in_molecule[ELEMENTS];
-  Diffraction_Pattern * res = malloc(sizeof(Diffraction_Pattern));
-  int HKL_list_start = 0;
-  int HKL_list_end = 0;
-  int points_per_percent;
-  get_my_loop_start_and_end(HKL_list_size,&HKL_list_start,&HKL_list_end);
-
-  if(!atomsf_initialized){
-    fill_ff_tables();
-    atomsf_initialized = 1;
+double box_fourier_transform(Box box, float h, float k, float l){
+  if(box.alpha != 90 ||
+     box.beta != 90 ||
+     box.gamma != 90){
+    sp_error_fatal("Cannot handle non rectangular boxes\n");
   }
+  return (sin(PI*box.a*h)/(PI*box.a*h))*(sin(PI*box.b*k)/(PI*box.b*k))*(sin(PI*box.c*l)/(PI*box.c*l));
+}
 
+
+Diffraction_Pattern * compute_box_on_list(Box box, float * HKL_list, int HKL_list_size){  
+  int i;
+  Diffraction_Pattern * res = malloc(sizeof(Diffraction_Pattern));
+  double scattering_vector_length;
   res->F = malloc(sizeof(Complex)*HKL_list_size);
   res->ints = malloc(sizeof(float)*HKL_list_size);
   res->HKL_list = malloc(sizeof(float)*3*HKL_list_size);
   memcpy(res->HKL_list,HKL_list,sizeof(float)*3*HKL_list_size);
   res->HKL_list_size = HKL_list_size;
-  for(j = 0 ;j< ELEMENTS;j++){
-    is_element_in_molecule[j] = 0;
-  }
-  for(j = 0 ;j< mol->natoms;j++){
-    is_element_in_molecule[mol->atomic_number[j]] = 1;
-  }
 
-  points_per_percent = (HKL_list_end-HKL_list_start)/100;
-  for(i = HKL_list_start;i<HKL_list_end;i++){
-#ifdef MPI    
-    if(is_mpi_master()){
-      if(i % points_per_percent == 0){
-	fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
-      }
-    }
-#else
-      if(i % points_per_percent == 0){
-	fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
-      }
-
-#endif
-
+  for(i = 0;i<HKL_list_size;i++){
     sp_real(res->F[i]) = 0;
     sp_imag(res->F[i]) = 0;
-    scattering_vector_length = sqrt(HKL_list[3*i]*HKL_list[3*i]+HKL_list[3*i+1]*HKL_list[3*i+1]+HKL_list[3*i+2]*HKL_list[3*i+2]);
-    for(j = 0;j<ELEMENTS;j++){
-      if(is_element_in_molecule[j]){
-	scattering_factor_cache[j] = scatt_factor(scattering_vector_length,j,B);
-      }
-    }
-    for(j = 0 ;j< mol->natoms;j++){
-      if(!mol->atomic_number[j]){
-	continue;
-      }
-      scattering_factor = scattering_factor_cache[mol->atomic_number[j]];
-/*      scattering_factor = 1;*/
-      sp_real(res->F[i]) += scattering_factor*cos(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));
-      sp_imag(res->F[i]) += scattering_factor*sin(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));
-    }
+    /*    scattering_vector_length = sqrt(HKL_list[3*i]*HKL_list[3*i]+HKL_list[3*i+1]*HKL_list[3*i+1]+HKL_list[3*i+2]*HKL_list[3*i+2]); */
+    sp_real(res->F[i]) = box_fourier_transform(box,HKL_list[3*i],HKL_list[3*i+1],HKL_list[3*i+2]);
     res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
   }
-  syncronize_patterns(res);
   return res;
 }
 

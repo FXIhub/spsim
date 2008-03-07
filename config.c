@@ -184,6 +184,10 @@ void read_options_file(char * filename, Options * res){
     res->detector->gaussian_blurring = config_lookup_float(&config,"detector_gaussian_blurring");
   }
 
+  if(config_lookup(&config,"real_space_blurring")){
+    res->detector->real_space_blurring = config_lookup_float(&config,"real_space_blurring");
+  }
+
   if(config_lookup(&config,"use_fft_for_sf")){
     res->use_fft_for_sf = config_lookup_int(&config,"use_fft_for_sf");
   }

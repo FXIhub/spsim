@@ -99,6 +99,7 @@ typedef struct{
   float maximum_value;
   int spherical;
   float gaussian_blurring;
+  float real_space_blurring;
 }CCD;
 
 

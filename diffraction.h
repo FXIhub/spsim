@@ -26,6 +26,7 @@
 #include <spimage.h>
 #include <fftw3.h>
 #include <complex.h>
+#include "box.h"
 
 /* 
    We're always gonna use 3D diffraction patterns 
@@ -77,4 +78,5 @@ Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experim
 Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL_list, int HKL_list_size, CCD * det,float B);
 void multiply_pattern_on_list_with_scattering_factor(complex double * f,int Z,float * HKL_list, int HKL_list_size,float B);
 void apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Options * opts);
+Diffraction_Pattern * compute_box_on_list(Box box, float * HKL_list, int HKL_list_size);
 #endif 

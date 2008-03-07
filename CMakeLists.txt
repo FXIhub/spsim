@@ -54,14 +54,16 @@ LIST(APPEND SPSIM_LIBRARY_LIST ${SPIMAGE_LIBRARY} ${LIBCONFIG_LIBRARY} ${MATH_LI
 
 INCLUDE_DIRECTORIES(${SPIMAGE_INCLUDE_DIR} ${LIBCONFIG_INCLUDE_DIR} ${TIFF_INCLUDE_DIR} ${HDF5_INCLUDE_DIR} ${FFTW3_INCLUDE_DIR} ${PNG_INCLUDE_DIR} saddle ${NFFT_INCLUDE_DIR})
 ADD_EXECUTABLE(spsim spsim.c config.c diffraction.c molecule.c io.c mpi.c noise.cpp amplification.c real_space.c)
+ADD_EXECUTABLE(box_deconvolute box_deconvolute.c config.c diffraction.c molecule.c io.c mpi.c noise.cpp amplification.c real_space.c)
 
 ADD_EXECUTABLE(image_integrate image_integrate.c)
 TARGET_LINK_LIBRARIES(spsim ${SPSIM_LIBRARY_LIST})
+TARGET_LINK_LIBRARIES(box_deconvolute ${SPSIM_LIBRARY_LIST})
 
 
 TARGET_LINK_LIBRARIES(image_integrate ${SPIMAGE_LIBRARY} ${LIBCONFIG_LIBRARY} ${MATH_LIBRARY} ${HDF5_LIBRARY} ${TIFF_LIBRARY} ${PNG_LIBRARY} ${FFTW_LIBRARY})
 
-INSTALL(TARGETS spsim image_integrate
+INSTALL(TARGETS spsim image_integrate box_deconvolute
             RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
             LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
             ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/static)

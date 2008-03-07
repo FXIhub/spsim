@@ -27,18 +27,39 @@
 #include "noise.h"
 #include "amplification.h"
 #include "real_space.h"
+#include "box.h"
 
 
-typedef struct{
-  double a;
-  double b;
-  double c;
-  double alpha;
-  double beta;
-  double gamma;   
-}Box;
+void test_deconvolute(Image * input, Image * box){
+  real p = sp_point_convolute(input,box,500*1000+500);
+}
 
- pattern = compute_box_on_list(box,HKL_list,HKL_list_size);
+void gaussian_blur_pattern(Options * opts,Diffraction_Pattern * pattern){
+  if(!opts->detector->gaussian_blurring){
+    return;
+  }
+  float radius = opts->detector->gaussian_blurring;
+  float d_c = sqrt(opts->detector->nx*opts->detector->nx/4+opts->detector->ny*opts->detector->ny/4+opts->detector->nz*opts->detector->nz/4);
+  radius *= d_c;
+  /*  f(x,y) = 1/sqrt(2*M_PI*radius) * exp(-(x^2+y^2+dz^2)/(2*radius^2)) */
+  
+  int i = 0;
+  for(int x = 0;x<opts->detector->nx;x++){
+    float dx = fabs(x-((opts->detector->nx-1)/2));
+    for(int y = 0;y<opts->detector->ny;y++){
+    float dy = fabs(y-((opts->detector->ny-1)/2));
+      for(int z = 0;z<opts->detector->nz;z++){
+	float dz = fabs(z-((opts->detector->nz-1)/2));
+	float factor = 1/sqrt(2*M_PI*radius) * exp(-(dx*dx+dy*dy+dz*dz)/(2*radius*radius));
+	sp_real(pattern->F[i]) *= factor;
+	sp_imag(pattern->F[i]) *= factor;
+	pattern->ints[i] = sp_cabs(pattern->F[i])*sp_cabs(pattern->F[i]);
+	i++;
+      }
+    }
+  }
+}
+
 
 int main(int argc, char ** argv){
   Options * opts = set_defaults();
@@ -49,6 +70,8 @@ int main(int argc, char ** argv){
   int is3D = 0;
   Image * input;
   Image * output;
+  Image * noiseless;
+  Image * autocorrelation;
   Box box;
   read_options_file("spsim.conf",opts);
   if(opts->detector->nz > 1){
@@ -56,15 +79,23 @@ int main(int argc, char ** argv){
   }else{
     is3D = 0;
   }
-  if(argc < 4){
+  if(argc < 5){
     sp_error_fatal("Usage: box_deconvolute <image> <a b c> [alpha beta gamma]\n");
   }
-  if(argc > 4){
+  if(argc > 5){
     sp_error_fatal("Sorry non rectangular boxes are not supported yet\n");
   }
 
-  input = sp_image_read(argv[1]);
-
+  box.a = strtod(argv[2],NULL);
+  box.b = strtod(argv[3],NULL);
+  box.c = strtod(argv[4],NULL);
+  if(argc == 5){
+    box.alpha = box.beta = box.gamma = 90;
+  }
+  input = sp_image_read(argv[1],0);
+  sp_image_rephase(input,SP_ZERO_PHASE);
+  autocorrelation = sp_image_ifft(sp_image_shift(input));
+  sp_image_write(autocorrelation,"input_auto.vtk",0);
   if(is3D){
     HKL_list = get_HKL_list_for_3d_detector(opts->detector,opts->experiment, &HKL_list_size);
     apply_orientation_to_HKL_list(&HKL_list,&HKL_list_size,opts);
@@ -122,7 +153,7 @@ int main(int argc, char ** argv){
   sp_image_write(noiseless,"box_noiseless_output.h5",sizeof(real));
   sp_image_write(noiseless,"box_noiseless_output.vtk",0);
   
-
+  test_deconvolute(input,noiseless);
 
   if(pattern->F){
     Image * rs = calculate_noiseless_real_space(opts,pattern);
