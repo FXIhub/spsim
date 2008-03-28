@@ -145,6 +145,7 @@ int main(int argc, char ** argv){
   }
 #ifdef MPI
   if(!is_mpi_master()){
+    MPI_Finalize();
     return 0;
   }
 #endif
