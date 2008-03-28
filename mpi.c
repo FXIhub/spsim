@@ -99,11 +99,16 @@ int mpi_receive_pattern(Diffraction_Pattern * pat){
   int start,end;
   MPI_Status status;
   MPI_Comm_size(MPI_COMM_WORLD,&np);
-  
+  MPI_Datatype mpi_datatype;
+  if(sizeof(Complex) == 8){
+    mpi_datatype = MPI_FLOAT;
+  }else if(sizeof(Complex) == 16){
+    mpi_datatype = MPI_DOUBLE;
+  }
   for(i = 1;i<np;i++){
     get_id_loop_start_and_end(i,pat->HKL_list_size,&start,&end);
     /*count is (end-start)*2 because we're sending fftw_complex not doubles */
-    MPI_Recv(&(pat->F[start]),(end-start)*2,MPI_DOUBLE,i,0,MPI_COMM_WORLD,&status);
+    MPI_Recv(&(pat->F[start]),(end-start)*2,mpi_datatype,i,0,MPI_COMM_WORLD,&status);
     for(j = start;j<end;j++){       
       pat->ints[j] = sp_cabs(pat->F[j])*sp_cabs(pat->F[j]);
     }
@@ -118,8 +123,14 @@ int mpi_sum_receive_pattern(Diffraction_Pattern * pat){
   MPI_Status status;
   MPI_Comm_size(MPI_COMM_WORLD,&np);
   Complex * buffer = malloc(sizeof(Complex)*pat->HKL_list_size);
+  MPI_Datatype mpi_datatype;
+  if(sizeof(Complex) == 8){
+    mpi_datatype = MPI_FLOAT;
+  }else if(sizeof(Complex) == 16){
+    mpi_datatype = MPI_DOUBLE;
+  }
   for(i = 1;i<np;i++){
-    MPI_Recv(buffer,pat->HKL_list_size*2,MPI_DOUBLE,i,0,MPI_COMM_WORLD,&status);
+    MPI_Recv(buffer,pat->HKL_list_size*2,mpi_datatype,i,0,MPI_COMM_WORLD,&status);
     for(j = 0;j<pat->HKL_list_size;j++){       
       sp_real(pat->F[j]) += sp_real(buffer[j]);
       sp_imag(pat->F[j]) += sp_imag(buffer[j]);
@@ -136,7 +147,11 @@ int mpi_send_pattern(Diffraction_Pattern * pat){
   int start,end;
   get_my_loop_start_and_end(pat->HKL_list_size,&start,&end);
   /*count is (end-start)*2 because we're sending fftw_complex not doubles */
-  MPI_Send (&(pat->F[start]),(end-start)*2,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
+  if(sizeof(Complex) == 8){
+    MPI_Send (&(pat->F[start]),(end-start)*2,MPI_FLOAT,0,0,MPI_COMM_WORLD);
+  }else if(sizeof(Complex) == 16){
+    MPI_Send (&(pat->F[start]),(end-start)*2,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
+  }
   return 0;    
 }
 
@@ -144,7 +159,11 @@ int mpi_sum_send_pattern(Diffraction_Pattern * pat){
   int start,end;
   get_my_loop_start_and_end(pat->HKL_list_size,&start,&end);
   /*count is (end-start)*2 because we're sending fftw_complex not doubles */
-  MPI_Send (pat->F,pat->HKL_list_size*2,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
+  if(sizeof(Complex) == 8){
+    MPI_Send (pat->F,pat->HKL_list_size*2,MPI_FLOAT,0,0,MPI_COMM_WORLD);
+  }else if(sizeof(Complex) == 16){
+    MPI_Send (pat->F,pat->HKL_list_size*2,MPI_DOUBLE,0,0,MPI_COMM_WORLD);
+  }
   return 0;    
 }
 #endif
