@@ -203,6 +203,19 @@ static float  electron_density(float d,int Z){
 }
 
 
+static double ilumination_function(Experiment * exper,float * pos){
+  double dist2;
+  double sigma;
+  /* If no fwhm is defined just return 1 everywhere */
+  if(!exper->beam_fwhm){
+    return 1;
+  }
+  /* calculate distance from the center of the beam */
+  dist2 = (pos[0]-exper->beam_center_x)*(pos[0]-exper->beam_center_x)+(pos[1]-exper->beam_center_y)*(pos[1]-exper->beam_center_y);
+  sigma = exper->beam_fwhm/2.355;
+  return exp(-dist2/(2*sigma*sigma));
+}
+
 float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_size){
   /* number of pixels */
   int nx, ny;
@@ -710,7 +723,7 @@ Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experime
   return res;
 }
 
-Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size,float B){
+Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size,float B,Experiment * exp){
   int i,j;
   double scattering_factor;
   double scattering_vector_length;
@@ -720,6 +733,7 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
   int HKL_list_start = 0;
   int HKL_list_end = 0;
   int points_per_percent;
+  double * atom_ilumination = malloc(sizeof(double)*mol->natoms);
   get_my_loop_start_and_end(HKL_list_size,&HKL_list_start,&HKL_list_end);
 
   if(!atomsf_initialized){
@@ -737,6 +751,7 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
   }
   for(j = 0 ;j< mol->natoms;j++){
     is_element_in_molecule[mol->atomic_number[j]] = 1;
+    atom_ilumination[j] = ilumination_function(exp,&(mol->pos[j*3]));
   }
 
   points_per_percent = (HKL_list_end-HKL_list_start)/100;
@@ -766,7 +781,8 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
       if(!mol->atomic_number[j]){
 	continue;
       }
-      scattering_factor = scattering_factor_cache[mol->atomic_number[j]];
+      /* Multiply the scattering factor with the ilumination function (should it be the square root of it?)*/
+      scattering_factor = scattering_factor_cache[mol->atomic_number[j]]*atom_ilumination[j];
 /*      scattering_factor = 1;*/
       sp_real(res->F[i]) += scattering_factor*cos(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));
       sp_imag(res->F[i]) += scattering_factor*sin(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));

@@ -128,7 +128,7 @@ int main(int argc, char ** argv){
       }else if(opts->use_nfft_for_sf){
 	pattern = compute_pattern_by_nfft(mol,opts->detector,opts->experiment,opts->b_factor,HKL_list);
       }else{
-	pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor);
+	pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);
       }
     }else{
       HKL_list = get_HKL_list_for_detector(opts->detector,opts->experiment, &HKL_list_size);
@@ -139,7 +139,7 @@ int main(int argc, char ** argv){
       }else if(opts->use_nfft_for_sf){
 	pattern = compute_pattern_on_list_by_nfft(mol,HKL_list,HKL_list_size,opts->detector,opts->b_factor);
       }else{
-	pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor);
+	pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);
       }
     }
   }

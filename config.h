@@ -54,6 +54,12 @@ typedef struct{
   float wavelength; /* in meters */
   float exposure_time; /* in seconds */
   float beam_intensity; /* In photons/(time.area) */
+  float beam_center_x; /* in meters */
+  float beam_center_y; /* in meters */
+  float beam_fwhm; /* in meters. Equivalent aproximately
+			     to 2.355*sigma or 2*sqrt(2*ln(2))*sigma 
+			     Implicitly assumes gaussian pulse profile
+			  */
 }Experiment;
 
 typedef struct{

@@ -61,7 +61,7 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp, int * HKL_list_si
 float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_size);
 
 /* Computes the diffraction pattern of a given structure on a given set of HKL points */
-Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size, float B);
+Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size, float B,Experiment * exp);
 
 void calculate_pixel_solid_angle(CCD * det);
 

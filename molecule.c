@@ -194,7 +194,8 @@ Molecule * get_Molecule_from_pdb(char * filename){
       res->pos[res->natoms*3+2] = t3*1e-10 ;
 
       if(!res->atomic_number[res->natoms]){
-	fprintf(stderr,"Null atom at line '%s'\n",buffer);
+	fprintf(stderr,"Null atom at line '%s'. Skipping\n",buffer);
+	res->natoms--;
       }
 
       res->natoms++;

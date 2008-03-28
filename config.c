@@ -168,6 +168,15 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"experiment_beam_intensity")){
     res->experiment->beam_intensity = config_lookup_float(&config,"experiment_beam_intensity");
   }
+  if(config_lookup(&config,"experiment_beam_center_x")){
+    res->experiment->beam_center_x = config_lookup_float(&config,"experiment_beam_center_x");
+  }
+  if(config_lookup(&config,"experiment_beam_center_y")){
+    res->experiment->beam_center_y = config_lookup_float(&config,"experiment_beam_center_y");
+  }
+  if(config_lookup(&config,"experiment_beam_fwhm")){
+    res->experiment->beam_fwhm = config_lookup_float(&config,"experiment_beam_fwhm");
+  }
   if(config_lookup_string(&config,"precalculated_sf")){
     strcpy(res->sf_filename,config_lookup_string(&config,"precalculated_sf"));
   }
@@ -314,6 +323,13 @@ void write_options_file(char * filename, Options * res){
   s = config_setting_add(root,"experiment_beam_intensity",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->experiment->beam_intensity);
 
+  s = config_setting_add(root,"experiment_beam_center_x",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->experiment->beam_center_x);
+  s = config_setting_add(root,"experiment_beam_center_y",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->experiment->beam_center_y);
+  s = config_setting_add(root,"experiment_beam_fwhm",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->experiment->beam_fwhm);
+
 
   s = config_setting_add(root,"box_dimension",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->box_dimension);
@@ -323,6 +339,9 @@ void write_options_file(char * filename, Options * res){
 
   s = config_setting_add(root,"detector_gaussian_blurring",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->detector->gaussian_blurring);
+
+  s = config_setting_add(root,"real_sapce_blurring",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->detector->real_space_blurring);
 
   s = config_setting_add(root,"use_fft_for_sf",CONFIG_TYPE_INT);
   config_setting_set_int(s,res->use_fft_for_sf);
