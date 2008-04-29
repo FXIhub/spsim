@@ -139,7 +139,8 @@ int main(int argc, char ** argv){
       }else if(opts->use_nfft_for_sf){
 	pattern = compute_pattern_on_list_by_nfft(mol,HKL_list,HKL_list_size,opts->detector,opts->b_factor);
       }else{
-	pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);
+		pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);
+		//		pattern = compute_fresnel_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);
       }
     }
   }
@@ -168,10 +169,29 @@ int main(int argc, char ** argv){
   generate_poisson_noise(opts->detector);
   write_3D_array_to_vtk(opts->detector->photon_count,opts->detector->nx,opts->detector->ny,
 			opts->detector->nz,"photon_count.vtk");
+
+  output = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,opts->detector->nz/opts->detector->binning_z);
+
+  i = 0;
+  for(int x = 0;x<sp_image_x(output);x++){
+    for(int y = 0;y<sp_image_y(output);y++){
+      for(int z = 0;z<sp_image_z(output);z++){
+	sp_image_set(output,x,y,z,sp_cinit(opts->detector->photon_count[i++],0));
+	sp_i3matrix_set(output->mask,x,y,z,1);
+      }
+    }
+  }
+  output->detector->lambda = opts->experiment->wavelength;
+  output->detector->pixel_size[0] = opts->detector->pixel_width*opts->detector->binning_x;
+  output->detector->pixel_size[1] = opts->detector->pixel_height*opts->detector->binning_y;
+  output->detector->detector_distance = opts->detector->distance;
+  sp_image_write(output,"photon_out.h5",sizeof(real));
+  sp_image_write(output,"photon_out.vtk",0);
+
   calculate_electrons_per_pixel(opts->detector,opts->experiment);
   write_3D_array_to_vtk(opts->detector->electrons_per_pixel,opts->detector->nx,opts->detector->ny,opts->detector->nz,"electrons_per_pixel.vtk");
   calculate_real_detector_output(opts->detector,opts->experiment);
-  output = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,opts->detector->nz/opts->detector->binning_z);
+
   i = 0;
   for(int x = 0;x<sp_image_x(output);x++){
     for(int y = 0;y<sp_image_y(output);y++){
@@ -181,12 +201,22 @@ int main(int argc, char ** argv){
       }
     }
   }
+  output->detector->lambda = opts->experiment->wavelength;
+  output->detector->pixel_size[0] = opts->detector->pixel_width*opts->detector->binning_x;
+  output->detector->pixel_size[1] = opts->detector->pixel_height*opts->detector->binning_y;
+  output->detector->detector_distance = opts->detector->distance;
+
   sp_image_write(output,"real_output.h5",sizeof(real));
   sp_image_write(output,"real_output.vtk",0);
+
 
   calculate_noiseless_detector_output(opts->detector,opts->experiment);
   noiseless = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,
 			     opts->detector->nz/opts->detector->binning_z);
+  noiseless->detector->lambda = opts->experiment->wavelength;
+  noiseless->detector->pixel_size[0] = opts->detector->pixel_width*opts->detector->binning_x;
+  noiseless->detector->pixel_size[1] = opts->detector->pixel_height*opts->detector->binning_y;
+  noiseless->detector->detector_distance = opts->detector->distance;
   i = 0;
   for(int x = 0;x<sp_image_x(noiseless);x++){
     for(int y = 0;y<sp_image_y(noiseless);y++){

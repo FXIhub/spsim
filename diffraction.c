@@ -86,16 +86,15 @@ static void write_ff_tables(){
 
 /* The B is assumed to be the same for all the atoms */
 static void fill_ed_tables(float B){
+  if(B <= 0){
+    B = 1;
+  }
   for(int Z = 0;Z<ELEMENTS;Z++){
     double min_b = sp_min(sp_min(sp_min(atomsf[Z][4],atomsf[Z][5]),atomsf[Z][6]),atomsf[Z][7]);
     for(int i = 0;i<4;i++){
-      if(atomsf[Z][i+4] == min_b){
-	atomed[Z][i] = 8*pow(M_PI,1.5)*(atomsf[Z][i]+atomsf[Z][8])/pow((atomsf[Z][i+4]+B),1.5);
-      }else{
-	atomed[Z][i] = 8*pow(M_PI,1.5)*(atomsf[Z][i])/pow((atomsf[Z][i+4]+B),1.5);
-      }
-      atomed[Z][i+4] = 4*M_PI*M_PI/(atomsf[Z][i+4]+B);
-    }	
+      atomed[Z][i] = 8*pow(M_PI,1.5)*(atomsf[Z][i])/pow((atomsf[Z][i+4]+B),1.5);
+    }
+    atomed[Z][4] = 8*pow(M_PI,1.5)*(atomsf[Z][8])/pow(B,1.5);
   }
 }
 
@@ -199,8 +198,9 @@ static float  electron_density(float d,int Z){
   for(i = 0;i<4;i++){
     res+= atomed[Z][i]*exp(-(atomed[Z][i+4])*d*d);
   }
+  res+= atomed[Z][4]*exp(-1*d*d);
   return res;    
-}
+  }
 
 
 static double ilumination_function(Experiment * exper,float * pos){
@@ -247,9 +247,11 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
 	 CCD center at (nx-1)/2,(ny-1)/2
 
 	 Upper left corner of the detector with negative x and positive y
+	 
+	 Add detector center as it might not be the same as the beam
       */
-      px = ((x-(nx-1.0)/2.0)/nx)*det->width;
-      py = (((ny-1.0)/2.0-y)/ny)*det->height;
+      px = ((x-(nx-1.0)/2.0)/nx)*det->width+det->center_x;
+      py = (((ny-1.0)/2.0-y)/ny)*det->height+det->center_y;
 
       rx = px*real_to_reciprocal;
       ry = py*real_to_reciprocal;
@@ -269,6 +271,7 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
     }
   }
   *HKL_list_size = nx*ny;
+  printf("Last HKL %e %e %e\n",HKL_list[nx*ny*3-3],HKL_list[nx*ny*3-2],HKL_list[nx*ny*3-1]);
   return HKL_list;
 }
 
@@ -420,10 +423,10 @@ Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experim
   MPI_Comm_rank(MPI_COMM_WORLD,&mpi_skip_flag);
 #endif
   
-  if(!atomed_initialized){
+  /*  if(!atomed_initialized){
     fill_ed_tables(B);
     atomed_initialized = 1;
-  }
+    }*/
   for(int j = 0 ;j< ELEMENTS;j++){
     is_element_in_molecule[j] = 0;
   }
@@ -515,10 +518,10 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
   MPI_Comm_rank(MPI_COMM_WORLD,&mpi_skip_flag);
 #endif
   
-  if(!atomed_initialized){
+  /*  if(!atomed_initialized){
     fill_ed_tables(B);
     atomed_initialized = 1;
-  }
+    }*/
   for(int j = 0 ;j< ELEMENTS;j++){
     is_element_in_molecule[j] = 0;
   }
@@ -782,10 +785,99 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
 	continue;
       }
       /* Multiply the scattering factor with the ilumination function (should it be the square root of it?)*/
-      scattering_factor = scattering_factor_cache[mol->atomic_number[j]]*atom_ilumination[j];
+      scattering_factor = scattering_factor_cache[mol->atomic_number[j]]*sqrt(atom_ilumination[j]);
 /*      scattering_factor = 1;*/
       sp_real(res->F[i]) += scattering_factor*cos(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));
       sp_imag(res->F[i]) += scattering_factor*sin(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));
+    }
+    res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
+  }
+  syncronize_patterns(res);
+  return res;
+}
+
+
+Diffraction_Pattern * compute_fresnel_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size,float B,Experiment * exp){
+  int i,j;
+  double scattering_factor;
+  double scattering_vector_length;
+  double scattering_factor_cache[ELEMENTS];
+  int is_element_in_molecule[ELEMENTS];
+  Diffraction_Pattern * res = malloc(sizeof(Diffraction_Pattern));
+  int HKL_list_start = 0;
+  int HKL_list_end = 0;
+  int points_per_percent;
+  double * atom_ilumination = malloc(sizeof(double)*mol->natoms);
+  double k;
+  double distance = HKL_list[2]*exp->wavelength;
+  get_my_loop_start_and_end(HKL_list_size,&HKL_list_start,&HKL_list_end);
+
+  if(!atomsf_initialized){
+    fill_ff_tables();
+    atomsf_initialized = 1;
+  }
+
+  res->F = malloc(sizeof(Complex)*HKL_list_size);
+  res->ints = malloc(sizeof(float)*HKL_list_size);
+  res->HKL_list = malloc(sizeof(float)*3*HKL_list_size);
+  memcpy(res->HKL_list,HKL_list,sizeof(float)*3*HKL_list_size);
+  res->HKL_list_size = HKL_list_size;
+  for(j = 0 ;j< ELEMENTS;j++){
+    is_element_in_molecule[j] = 0;
+  }
+  for(j = 0 ;j< mol->natoms;j++){
+    is_element_in_molecule[mol->atomic_number[j]] = 1;
+    atom_ilumination[j] = ilumination_function(exp,&(mol->pos[j*3]));
+  }
+
+  points_per_percent = (HKL_list_end-HKL_list_start)/100;
+  for(i = HKL_list_start;i<HKL_list_end;i++){
+#ifdef MPI    
+    if(is_mpi_master()){
+      if(i % points_per_percent == 0){
+	fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+      }
+    }
+#else
+      if(i % points_per_percent == 0){
+	fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+      }
+
+#endif
+
+    sp_real(res->F[i]) = 0;
+    sp_imag(res->F[i]) = 0;
+    scattering_vector_length = sqrt(HKL_list[3*i]*HKL_list[3*i]+HKL_list[3*i+1]*HKL_list[3*i+1]+HKL_list[3*i+2]*HKL_list[3*i+2]);
+    for(j = 0;j<ELEMENTS;j++){
+      if(is_element_in_molecule[j]){
+	scattering_factor_cache[j] = scatt_factor(scattering_vector_length,j,B);
+      }
+    }
+    k = 2*M_PI/exp->wavelength;
+    for(j = 0 ;j< mol->natoms;j++){
+      if(!mol->atomic_number[j]){
+	continue;
+      }
+      /* Multiply the scattering factor with the ilumination function (should it be the square root of it?)*/
+      scattering_factor = scattering_factor_cache[mol->atomic_number[j]]*sqrt(atom_ilumination[j]);
+      /*      scattering_factor = 1;*/
+      
+
+      sp_real(res->F[i]) += scattering_factor*cos(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2])+
+	M_PI/(exp->wavelength*distance)*(mol->pos[j*3]*mol->pos[j*3]+mol->pos[j*3+1]*mol->pos[j*3+1]));
+      sp_imag(res->F[i]) += scattering_factor*sin(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2])
+						  -M_PI/(exp->wavelength*distance)*(mol->pos[j*3]*mol->pos[j*3]+mol->pos[j*3+1]*mol->pos[j*3+1]));
+
+      /*
+      sp_real(res->F[i]) += scattering_factor*cos(k/(2*distance)*((exp->wavelength*HKL_list[3*i]-mol->pos[j*3])*
+												     (exp->wavelength*HKL_list[3*i]-mol->pos[j*3])+
+												     (exp->wavelength*HKL_list[3*i+1]-mol->pos[j*3+1])*
+												     (exp->wavelength*HKL_list[3*i+1]-mol->pos[j*3+1])));
+      sp_real(res->F[i]) += scattering_factor*sin(k/(2*distance)*((exp->wavelength*HKL_list[3*i]-mol->pos[j*3])*
+												     (exp->wavelength*HKL_list[3*i]-mol->pos[j*3])+
+												     (exp->wavelength*HKL_list[3*i+1]-mol->pos[j*3+1])*
+												     (exp->wavelength*HKL_list[3*i+1]-mol->pos[j*3+1])));
+      */
     }
     res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
   }

@@ -24,6 +24,7 @@
 #include <math.h>
 #include "config.h"
 #include "molecule.h"
+#include "spimage.h"
 
 
 static char legal_atom_names[106][2] ;
@@ -54,7 +55,7 @@ Molecule * get_Molecule_from_formula(Chem_Formula * form, Options * opts){
 	}while(distance > opts->box_dimension/2.0);
       }else if(opts->box_type == BOX_PARALLEL){
 	for(d = 0;d<3;d++){
-	  res->pos[3*j+d] = drand48()*opts->box_dimension;
+	  res->pos[3*j+d] = p_drand48()*opts->box_dimension;
 	}	
       }
     }

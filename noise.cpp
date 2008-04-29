@@ -29,6 +29,7 @@
 
 #include "config.h"
 #include "noise.h"
+#include "spimage.h"
 
 static StochasticLib2 * sto = NULL;
 
@@ -53,5 +54,18 @@ void generate_poisson_noise(CCD * det){
   det->photon_count = (float *)malloc(sizeof(float)*det->nx*det->ny*det->nz);
   for(i = 0;i<det->nx*det->ny*det->nz;i++){
     det->photon_count[i] = get_poisson_random_number(det->photons_per_pixel[i]*det->quantum_efficiency);
+  }  
+}
+
+void generate_gaussian_noise(CCD * det){
+  int i;
+  init_random_generator();
+  if(!det->photons_per_pixel){
+    fprintf(stderr,"Please calculate photons per pixel first\n");
+    return;
+  }
+  det->photon_count = (float *)malloc(sizeof(float)*det->nx*det->ny*det->nz);
+  for(i = 0;i<det->nx*det->ny*det->nz;i++){
+    det->photon_count[i] = ((p_drand48()-0.5))*sqrt(det->photons_per_pixel[i]*det->quantum_efficiency)+det->photons_per_pixel[i]*det->quantum_efficiency;
   }  
 }

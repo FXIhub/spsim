@@ -79,4 +79,5 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
 void multiply_pattern_on_list_with_scattering_factor(complex double * f,int Z,float * HKL_list, int HKL_list_size,float B);
 void apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Options * opts);
 Diffraction_Pattern * compute_box_on_list(Box box, float * HKL_list, int HKL_list_size);
+Diffraction_Pattern * compute_fresnel_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size,float B,Experiment * exp);
 #endif 

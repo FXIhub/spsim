@@ -27,6 +27,7 @@ void init_random_generator();
 extern "C" {
 #endif
   void generate_poisson_noise(CCD * det);
+  void generate_gaussian_noise(CCD * det);
 #ifdef __cplusplus
 }
 #endif

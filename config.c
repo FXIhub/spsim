@@ -33,6 +33,11 @@ Options * set_defaults(){
   opt->chem_formula = calloc(1,sizeof(Chem_Formula));
   opt->experiment = calloc(1,sizeof(Experiment));
   opt->detector = calloc(1,sizeof(CCD));
+  opt->detector->binning_x = 1;
+  opt->detector->binning_y = 1;
+  opt->detector->binning_z = 1;
+  opt->detector->center_x = 0;
+  opt->detector->center_y = 0;
   opt->box_type = BOX_SPHERICAL;
   opt->box_dimension = 1e-9;
   opt->use_fft_for_sf = 0;
@@ -43,7 +48,6 @@ Options * set_defaults(){
   opt->euler_orientation[1]= 0;
   opt->euler_orientation[2]= 0;
   opt->random_orientation = 0;
-  
   return opt;
 }
 
@@ -105,6 +109,12 @@ void read_options_file(char * filename, Options * res){
   }
   if(config_lookup(&config,"detector_distance")){
     res->detector->distance = config_lookup_float(&config,"detector_distance");
+  }
+  if(config_lookup(&config,"detector_center_x")){
+    res->detector->center_x = config_lookup_float(&config,"detector_center_x");
+  }
+  if(config_lookup(&config,"detector_center_y")){
+    res->detector->center_y = config_lookup_float(&config,"detector_center_y");
   }
   if(config_lookup(&config,"detector_width")){
     res->detector->width = config_lookup_float(&config,"detector_width");
@@ -289,6 +299,10 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_float(s,res->detector->height);
   s = config_setting_add(root,"detector_depth",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->detector->depth);
+  s = config_setting_add(root,"detector_center_x",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->detector->center_x);
+  s = config_setting_add(root,"detector_center_y",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->detector->center_y);
   s = config_setting_add(root,"detector_pixel_width",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->detector->pixel_width);
   s = config_setting_add(root,"detector_pixel_height",CONFIG_TYPE_FLOAT);

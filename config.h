@@ -106,6 +106,9 @@ typedef struct{
   int spherical;
   float gaussian_blurring;
   float real_space_blurring;
+  /* Center of the detector in relation to the beam (by definition the beam follows the z axis) */
+  float center_x;
+  float center_y;
 }CCD;
 
 
