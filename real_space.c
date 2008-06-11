@@ -35,16 +35,19 @@ Image * calculate_noiseless_real_space(Options * opts, Diffraction_Pattern * pat
 			     opts->detector->nz/opts->detector->binning_z);
   real_space->phased = 1;
   real_space->shifted = 0;
+  int i = 0;
   for(int x = 0;x<sp_image_x(real_space);x++){
     for(int y = 0;y<sp_image_y(real_space);y++){
       for(int z = 0;z<sp_image_z(real_space);z++){
 
 	Complex phased = pattern->F[(x*opts->detector->binning_x)*opts->detector->ny*opts->detector->nz+
 				(y*opts->detector->binning_y)*opts->detector->nz+z*opts->detector->binning_z];
+
 /*	sp_cscale(phased,1.0/sp_cabs(phased));
 	sp_cscale(phased,opts->detector->noiseless_output[i++]);*/
-	sp_image_set(real_space,x,y,z,phased);
+	sp_image_set(real_space,x,y,z,sp_cscale(phased,sqrt(opts->detector->noiseless_output[i])/sp_cabs(phased)));
 	sp_i3matrix_set(real_space->mask,x,y,z,1);
+	i++;
       }
     }
   }

@@ -461,9 +461,13 @@ Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experim
 	  p.f[k] = 1;    
 	  /* We have to multiply the position with the dimension of the box because the
 	     fourier sample are taken between 0..1 (equivalent to 0..0.5,-0.5..0) */
-	  p.x[k*3] = mol->pos[j*3]/(rs_pixel_x)/nx; 
-	  p.x[k*3+1] = mol->pos[j*3+1]/(rs_pixel_y)/ny; 
-	  p.x[k*3+2] = mol->pos[j*3+2]/(rs_pixel_z)/nz; 
+
+	  /* For some unknown reason I have to take the negative of the position otherwise the patterns came out inverted.
+	     I have absolutely no idea why! It can even be a bug in the NFFT library. I should check this out better
+	  */
+	  p.x[k*3] = -mol->pos[j*3]/(rs_pixel_x)/nx; 
+	  p.x[k*3+1] = -mol->pos[j*3+1]/(rs_pixel_y)/ny; 
+	  p.x[k*3+2] = -mol->pos[j*3+2]/(rs_pixel_z)/nz; 
 	  k++;
 	}
       }
@@ -586,9 +590,13 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
 	  p.f[k] = 1;    
 	  /* We have to multiply the position with the dimension of the box because the
 	     fourier sample are taken between 0..1 (equivalent to 0..0.5,-0.5..0) */
-	  p.x[k*3] = mol->pos[j*3]/max_x[0];
-	  p.x[k*3+1] = mol->pos[j*3+1]/max_x[1];
-	  p.x[k*3+2] = mol->pos[j*3+2]/max_x[2];
+	  /* For some unknown reason I have to take the negative of the position otherwise the patterns came out inverted.
+	     I have absolutely no idea why! It can even be a bug in the NFFT library. I should check this out better.
+	     It might have to do with the order of the output!
+	  */
+	  p.x[k*3] = -mol->pos[j*3]/max_x[0];
+	  p.x[k*3+1] = -mol->pos[j*3+1]/max_x[1];
+	  p.x[k*3+2] = -mol->pos[j*3+2]/max_x[2];
 	  k++;
 	}
       }

@@ -152,7 +152,7 @@ int main(int argc, char ** argv){
 #endif
 
   gaussian_blur_pattern(opts,pattern);
-  gaussian_blur_real_space(opts,pattern);
+  //  gaussian_blur_real_space(opts,pattern);
 
   write_3D_array_to_vtk(pattern->ints,opts->detector->nx,opts->detector->ny,opts->detector->nz,
 			"scattering_factor.vtk");  
