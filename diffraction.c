@@ -285,7 +285,7 @@ void apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Option
   /* grow list to accomodate more patterns */
   *HKL_list = realloc(*HKL_list,*HKL_list_size*opts->n_patterns*sizeof(float)*d);
   real * tmp = v->data;
-  for(k = 1;k<opts->n_patterns;k++){
+  for(k = 0;k<opts->n_patterns;k++){
     memcpy(&((*HKL_list)[d*(*HKL_list_size)*k]),*HKL_list,sizeof(float)*d*(*HKL_list_size));
     if(opts->random_orientation){
       rot = sp_rot_uniform();

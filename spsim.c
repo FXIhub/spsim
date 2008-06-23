@@ -166,7 +166,7 @@ int main(int argc, char ** argv){
   calculate_photons_per_pixel(pattern,opts->detector,opts->experiment);
   write_3D_array_to_vtk(opts->detector->photons_per_pixel,opts->detector->nx,opts->detector->ny,
 			opts->detector->nz,"pattern.vtk");
-  generate_poisson_noise(opts->detector);
+  generate_gaussian_noise(opts->detector);
   write_3D_array_to_vtk(opts->detector->photon_count,opts->detector->nx,opts->detector->ny,
 			opts->detector->nz,"photon_count.vtk");
 
@@ -218,16 +218,30 @@ int main(int argc, char ** argv){
   noiseless->detector->pixel_size[1] = opts->detector->pixel_height*opts->detector->binning_y;
   noiseless->detector->detector_distance = opts->detector->distance;
   i = 0;
+  //  for(int u = 0; u < opts->n_patterns; u++) {
+  //printf("pattern %i\n",u);
   for(int x = 0;x<sp_image_x(noiseless);x++){
     for(int y = 0;y<sp_image_y(noiseless);y++){
       for(int z = 0;z<sp_image_z(noiseless);z++){
+	//printf("%i %i %i\n",x,y,z);
 	sp_image_set(noiseless,x,y,z,sp_cinit(opts->detector->noiseless_output[i++],0));
+	//printf("set image to %g\n",opts->detector->noiseless_output[i-1]);
 	sp_i3matrix_set(noiseless->mask,x,y,z,1);
+	//printf("set mask\n");
       }
     }
   }
+  //char buffer_u[1024];
+  //printf("init buffer\n");
+  //sprintf(buffer_u,"noiseless%i.h5",u);
+  //sp_image_write(noiseless,buffer_u,sizeof(real));
+  //printf("write h5\n");
+  //sprintf(buffer_u,"noiseless%i.vtk",u);
+  //sp_image_write(noiseless,buffer_u,0);
+  //printf("write vtk\n");
   sp_image_write(noiseless,"noiseless_output.h5",sizeof(real));
   sp_image_write(noiseless,"noiseless_output.vtk",0);
+  //}
   
 
 
