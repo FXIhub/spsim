@@ -21,6 +21,7 @@
 #include <math.h>
 #include <string.h>
 #include <float.h>
+#include <complex.h>
 #include <spimage.h>
 #include <nfft/nfft3.h>
 #include <nfft/options.h>
