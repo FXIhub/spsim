@@ -458,7 +458,7 @@ Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experim
       for(int j = 0 ;j< mol->natoms;j++){
 	if(mol->atomic_number[j] == Z){
 
-	  p.f[k] = 1;    
+	  p.f[k] = 1;
 	  /* We have to multiply the position with the dimension of the box because the
 	     fourier sample are taken between 0..1 (equivalent to 0..0.5,-0.5..0) */
 
