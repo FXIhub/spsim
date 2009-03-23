@@ -166,7 +166,8 @@ int main(int argc, char ** argv){
   calculate_photons_per_pixel(pattern,opts->detector,opts->experiment);
   write_3D_array_to_vtk(opts->detector->photons_per_pixel,opts->detector->nx,opts->detector->ny,
 			opts->detector->nz,"pattern.vtk");
-  generate_gaussian_noise(opts->detector);
+  //generate_gaussian_noise(opts->detector);
+  generate_poisson_noise(opts->detector);
   write_3D_array_to_vtk(opts->detector->photon_count,opts->detector->nx,opts->detector->ny,
 			opts->detector->nz,"photon_count.vtk");
 

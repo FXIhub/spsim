@@ -795,8 +795,8 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
       /* Multiply the scattering factor with the ilumination function (should it be the square root of it?)*/
       scattering_factor = scattering_factor_cache[mol->atomic_number[j]]*sqrt(atom_ilumination[j]);
 /*      scattering_factor = 1;*/
-      sp_real(res->F[i]) += scattering_factor*cos(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));
-      sp_imag(res->F[i]) += scattering_factor*sin(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]));
+      sp_real(res->F[i]) += scattering_factor*cos(2*M_PI*(HKL_list[3*i]*-mol->pos[j*3]+HKL_list[3*i+1]*-mol->pos[j*3+1]+HKL_list[3*i+2]*-mol->pos[j*3+2]));
+      sp_imag(res->F[i]) += scattering_factor*sin(2*M_PI*(HKL_list[3*i]*-mol->pos[j*3]+HKL_list[3*i+1]*-mol->pos[j*3+1]+HKL_list[3*i+2]*-mol->pos[j*3+2]));
     }
     res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
   }
