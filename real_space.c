@@ -45,7 +45,11 @@ Image * calculate_noiseless_real_space(Options * opts, Diffraction_Pattern * pat
 
 /*	sp_cscale(phased,1.0/sp_cabs(phased));
 	sp_cscale(phased,opts->detector->noiseless_output[i++]);*/
-	sp_image_set(real_space,x,y,z,sp_cscale(phased,sqrt(opts->detector->noiseless_output[i])/sp_cabs(phased)));
+	if(sp_cabs(phased)){
+	  sp_image_set(real_space,x,y,z,sp_cscale(phased,sqrt(opts->detector->noiseless_output[i])/sp_cabs(phased)));
+	}else{
+	  sp_image_set(real_space,x,y,z,phased);
+	}
 	sp_i3matrix_set(real_space->mask,x,y,z,1);
 	i++;
       }
