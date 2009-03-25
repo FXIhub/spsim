@@ -34,13 +34,13 @@ ELSE(WIN32)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wall -g ")
 ENDIF(WIN32)
 
-LIST(APPEND SPSIM_LIBRARY_LIST ${SPIMAGE_LIBRARY} ${LIBCONFIG_LIBRARY} ${MATH_LIBRARY} ${HDF5_LIBRARY} ${TIFF_LIBRARY} ${PNG_LIBRARY} ${FFTW_LIBRARY} ${NFFT_LIBRARY} ${GSL_LIBRARY} ${GSLCBLAS_LIBRARY})
+LIST(APPEND SPSIM_LIBRARY_LIST ${SPIMAGE_LIBRARY} ${LIBCONFIG_LIBRARY} ${MATH_LIBRARY} ${HDF5_LIBRARY} ${TIFF_LIBRARY} ${PNG_LIBRARY} ${FFTW_LIBRARY} ${NFFT_LIBRARY} ${GSL_LIBRARIES})
 
 
 
 INCLUDE_DIRECTORIES(${SPIMAGE_INCLUDE_DIR} ${TIFF_INCLUDE_DIR} ${HDF5_INCLUDE_DIR} ${FFTW3_INCLUDE_DIR} ${PNG_INCLUDE_DIR} saddle ${NFFT_INCLUDE_DIR} libconfig)
-ADD_EXECUTABLE(spsim spsim.c config.c diffraction.c molecule.c io.c mpi.c noise.cpp amplification.c real_space.c libconfig/grammar.c libconfig/libconfig.c libconfig/scanner.c)
-ADD_EXECUTABLE(box_deconvolute box_deconvolute.c config.c diffraction.c molecule.c io.c mpi.c noise.cpp amplification.c real_space.c libconfig/grammar.c libconfig/libconfig.c libconfig/scanner.c)
+ADD_EXECUTABLE(spsim spsim.c config.c diffraction.c molecule.c io.c mpi.c noise.c amplification.c real_space.c libconfig/grammar.c libconfig/libconfig.c libconfig/scanner.c)
+ADD_EXECUTABLE(box_deconvolute box_deconvolute.c config.c diffraction.c molecule.c io.c mpi.c noise.c amplification.c real_space.c libconfig/grammar.c libconfig/libconfig.c libconfig/scanner.c)
 
 ADD_EXECUTABLE(image_integrate image_integrate.c)
 TARGET_LINK_LIBRARIES(spsim ${SPSIM_LIBRARY_LIST})
