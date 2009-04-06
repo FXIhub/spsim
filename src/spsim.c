@@ -139,8 +139,9 @@ int main(int argc, char ** argv){
       }else if(opts->use_nfft_for_sf){
 	pattern = compute_pattern_on_list_by_nfft(mol,HKL_list,HKL_list_size,opts->detector,opts->b_factor);
       }else{
-		pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);
-		//		pattern = compute_fresnel_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);
+	pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);
+	//		pattern = vector_compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);	
+	//		pattern = compute_fresnel_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);
       }
     }
   }
