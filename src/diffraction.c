@@ -737,15 +737,15 @@ Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experime
 
 Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size,float B,Experiment * exp){
   int i,j;
-  double scattering_factor;
-  double scattering_vector_length;
-  double scattering_factor_cache[ELEMENTS];
+  float scattering_factor;
+  float scattering_vector_length;
+  float scattering_factor_cache[ELEMENTS];
   int is_element_in_molecule[ELEMENTS];
   Diffraction_Pattern * res = malloc(sizeof(Diffraction_Pattern));
   int HKL_list_start = 0;
   int HKL_list_end = 0;
   int points_per_percent;
-  double * atom_ilumination = malloc(sizeof(double)*mol->natoms);
+  float * atom_ilumination = malloc(sizeof(float)*mol->natoms);
   get_my_loop_start_and_end(HKL_list_size,&HKL_list_start,&HKL_list_end);
 
   if(!atomsf_initialized){
