@@ -17,7 +17,8 @@
  *
  */
 
-
+#ifndef _MPI_COMM_H_
+#define _MPI_COMM_H_ 1
 
 #include "diffraction.h"
 
@@ -37,5 +38,7 @@ int mpi_receive_pattern(Diffraction_Pattern * pat);
 int mpi_send_pattern(Diffraction_Pattern * pat);
 int mpi_sum_receive_pattern(Diffraction_Pattern * pat);
 int mpi_sum_send_pattern(Diffraction_Pattern * pat);
+
+#endif
 
 #endif

@@ -23,7 +23,7 @@
 #include "diffraction.h"
 #include "molecule.h"
 #include "io.h"
-#include "mpi.h"
+#include "mpi_comm.h"
 #include "noise.h"
 #include "amplification.h"
 #include "real_space.h"
@@ -32,6 +32,7 @@
 
 void test_deconvolute(Image * input, Image * box){
   real p = sp_point_convolute(input,box,500*1000+500);
+  p = 1;
 }
 
 void gaussian_blur_pattern(Options * opts,Diffraction_Pattern * pattern){

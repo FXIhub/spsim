@@ -135,6 +135,7 @@ typedef struct {
   float euler_orientation[3];
   int random_orientation;
   int n_patterns;
+  int vectorize;
 }Options;
 
 

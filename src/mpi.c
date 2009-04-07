@@ -23,7 +23,7 @@
 
 #ifdef MPI
 
-#include "mpi.h"
+#include "mpi_comm.h"
 
 #endif
 
@@ -119,7 +119,6 @@ int mpi_receive_pattern(Diffraction_Pattern * pat){
 int mpi_sum_receive_pattern(Diffraction_Pattern * pat){
   int np;
   int i,j;
-  int start,end;
   MPI_Status status;
   MPI_Comm_size(MPI_COMM_WORLD,&np);
   Complex * buffer = malloc(sizeof(Complex)*pat->HKL_list_size);

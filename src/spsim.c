@@ -23,7 +23,7 @@
 #include "diffraction.h"
 #include "molecule.h"
 #include "io.h"
-#include "mpi.h"
+#include "mpi_comm.h"
 #include "noise.h"
 #include "amplification.h"
 #include "real_space.h"
@@ -31,7 +31,7 @@
 void gaussian_blur_real_space(Options * opts,Diffraction_Pattern * pattern){
   Image * real_space = calculate_noiseless_real_space(opts,pattern);
   float radius = opts->detector->real_space_blurring;
-  float d_c = sqrt(opts->detector->nx*opts->detector->nx/4+opts->detector->ny*opts->detector->ny/4+opts->detector->nz*opts->detector->nz/4);
+  //  float d_c = sqrt(opts->detector->nx*opts->detector->nx/4+opts->detector->ny*opts->detector->ny/4+opts->detector->nz*opts->detector->nz/4);
   if(!radius){
     return;
   }
@@ -128,7 +128,11 @@ int main(int argc, char ** argv){
       }else if(opts->use_nfft_for_sf){
 	pattern = compute_pattern_by_nfft(mol,opts->detector,opts->experiment,opts->b_factor,HKL_list);
       }else{
-	pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);
+	if(opts->vectorize){
+	  pattern = vector_compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);	
+	}else{
+	  pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);
+	}
       }
     }else{
       HKL_list = get_HKL_list_for_detector(opts->detector,opts->experiment, &HKL_list_size);
@@ -139,9 +143,11 @@ int main(int argc, char ** argv){
       }else if(opts->use_nfft_for_sf){
 	pattern = compute_pattern_on_list_by_nfft(mol,HKL_list,HKL_list_size,opts->detector,opts->b_factor);
       }else{
-	pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);
-	//		pattern = vector_compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);	
-	//		pattern = compute_fresnel_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);
+	if(opts->vectorize){
+	  pattern = vector_compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);	
+	}else{
+	  pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);
+	}
       }
     }
   }

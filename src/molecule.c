@@ -25,7 +25,7 @@
 #include "config.h"
 #include "molecule.h"
 #include "spimage.h"
-
+#include "mpi_comm.h"
 
 static char legal_atom_names[106][2] ;
 static void get_legal_atom_names();

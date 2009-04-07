@@ -25,7 +25,7 @@
 #include <time.h>
 #include "config.h"
 #include "diffraction.h"
-#include "mpi.h"
+#include "mpi_comm.h"
 #include "io.h"
 
 int descend_complex_compare(const void * pa,const void * pb);

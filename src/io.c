@@ -23,7 +23,7 @@
 #include "diffraction.h"
 
 #include "io.h"
-#include "mpi.h"
+#include "mpi_comm.h"
 
 
 

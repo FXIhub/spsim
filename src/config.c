@@ -25,7 +25,7 @@
 #include <math.h>
 
 #include "config.h"
-#include "mpi.h"
+#include "mpi_comm.h"
 
 
 Options * set_defaults(){
@@ -48,6 +48,7 @@ Options * set_defaults(){
   opt->euler_orientation[1]= 0;
   opt->euler_orientation[2]= 0;
   opt->random_orientation = 0;
+  opt->vectorize = 1;
   return opt;
 }
 
@@ -231,6 +232,9 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"number_of_patterns")){
     res->n_patterns = config_lookup_int(&config,"number_of_patterns");
   }
+  if(config_lookup(&config,"vectorize")){
+    res->vectorize = config_lookup_int(&config,"vectorize");
+  }
 
   res->detector->nx = rint(res->detector->width/res->detector->pixel_width);
   res->detector->ny = rint(res->detector->height/res->detector->pixel_height);
@@ -378,6 +382,8 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_int(s,res->random_orientation);
   s = config_setting_add(root,"number_of_patterns",CONFIG_TYPE_INT);
   config_setting_set_int(s,res->n_patterns);
+  s = config_setting_add(root,"vectorize",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->vectorize);
 
 
   if(res->sf_filename[0]){

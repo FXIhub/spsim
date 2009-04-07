@@ -29,7 +29,7 @@
 #include <nfft/window_defines.h>
 #include "config.h"
 #include "diffraction.h"
-#include "mpi.h"
+#include "mpi_comm.h"
 #include "io.h"
 #include "box.h"
 #include "sse_mathfun.h"
@@ -93,7 +93,7 @@ static void fill_ed_tables(float B){
     B = 1;
   }
   for(int Z = 0;Z<ELEMENTS;Z++){
-    double min_b = sp_min(sp_min(sp_min(atomsf[Z][4],atomsf[Z][5]),atomsf[Z][6]),atomsf[Z][7]);
+    //    double min_b = sp_min(sp_min(sp_min(atomsf[Z][4],atomsf[Z][5]),atomsf[Z][6]),atomsf[Z][7]);
     for(int i = 0;i<4;i++){
       atomed[Z][i] = 8*pow(M_PI,1.5)*(atomsf[Z][i])/pow((atomsf[Z][i+4]+B),1.5);
     }
@@ -837,7 +837,7 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
   }
   for(j = 0 ;j< mol->natoms;j++){
     is_element_in_molecule[mol->atomic_number[j]] = 1;
-    atom_ilumination[j] = ilumination_function(exp,&(mol->pos[j*3]));
+    atom_ilumination[j] = sqrt(ilumination_function(exp,&(mol->pos[j*3])));
   }
 
   points_per_percent = (HKL_list_end-HKL_list_start)/100;
@@ -864,24 +864,21 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
       }
     }
     for(j = 0 ;j< 4*(mol->natoms/4);j+=4){
+      
       /* Multiply the scattering factor with the ilumination function (should it be the square root of it?)*/
-      float scattering_factor[4] = {scattering_factor_cache[mol->atomic_number[j]]*sqrt(atom_ilumination[j]),
-				    scattering_factor_cache[mol->atomic_number[j+1]]*sqrt(atom_ilumination[j+1]),
-				    scattering_factor_cache[mol->atomic_number[j+2]]*sqrt(atom_ilumination[j+2]),
-				    scattering_factor_cache[mol->atomic_number[j+3]]*sqrt(atom_ilumination[j+3])};
-/*      scattering_factor = 1;*/
+      v4sf sf = {scattering_factor_cache[mol->atomic_number[j]]*atom_ilumination[j],
+				    scattering_factor_cache[mol->atomic_number[j+1]]*atom_ilumination[j+1],
+				    scattering_factor_cache[mol->atomic_number[j+2]]*atom_ilumination[j+2],
+				    scattering_factor_cache[mol->atomic_number[j+3]]*atom_ilumination[j+3]};
+
       float tmp[4] = {2*M_PI*(HKL_list[3*i]*-mol->pos[j*3]+HKL_list[3*i+1]*-mol->pos[j*3+1]+HKL_list[3*i+2]*-mol->pos[j*3+2]),
 		      2*M_PI*(HKL_list[3*i]*-mol->pos[(j+1)*3]+HKL_list[3*i+1]*-mol->pos[(j+1)*3+1]+HKL_list[3*i+2]*-mol->pos[(j+1)*3+2]),
 		      2*M_PI*(HKL_list[3*i]*-mol->pos[(j+2)*3]+HKL_list[3*i+1]*-mol->pos[(j+2)*3+1]+HKL_list[3*i+2]*-mol->pos[(j+2)*3+2]),
 		      2*M_PI*(HKL_list[3*i]*-mol->pos[(j+3)*3]+HKL_list[3*i+1]*-mol->pos[(j+3)*3+1]+HKL_list[3*i+2]*-mol->pos[(j+3)*3+2])};
-
-      v4sf sf = __builtin_ia32_loadups(scattering_factor);
       v4sf phase = __builtin_ia32_loadups(tmp);
-      //            v4sf sin_phase = sin_ps(phase);
-      //    v4sf cos_phase = cos_ps(phase);
-	      v4sf sin_phase;
-	       v4sf cos_phase;
-	       sincos_ps(phase,&sin_phase,&cos_phase);
+      v4sf sin_phase;
+      v4sf cos_phase;
+      sincos_ps(phase,&sin_phase,&cos_phase);
       sin_phase = __builtin_ia32_mulps(sin_phase,sf);
       cos_phase = __builtin_ia32_mulps(cos_phase,sf);
       __builtin_ia32_storeups(tmp,cos_phase);
@@ -1014,7 +1011,6 @@ double box_fourier_transform(Box box, float h, float k, float l){
 Diffraction_Pattern * compute_box_on_list(Box box, float * HKL_list, int HKL_list_size){  
   int i;
   Diffraction_Pattern * res = malloc(sizeof(Diffraction_Pattern));
-  double scattering_vector_length;
   res->F = malloc(sizeof(Complex)*HKL_list_size);
   res->ints = malloc(sizeof(float)*HKL_list_size);
   res->HKL_list = malloc(sizeof(float)*3*HKL_list_size);
