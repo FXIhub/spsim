@@ -48,6 +48,9 @@ typedef struct{
   /* real physical position */
   float * pos;
   /* may optionally contain the boundaries of pos */
+  /* atoms are represented by delta functions*/
+  int delta_atoms;
+
 }Molecule;
 
 typedef struct{
@@ -136,6 +139,8 @@ typedef struct {
   int random_orientation;
   int n_patterns;
   int vectorize;
+  int delta_atoms;
+  int fast_exit;
 }Options;
 
 

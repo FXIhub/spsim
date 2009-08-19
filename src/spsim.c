@@ -126,12 +126,12 @@ int main(int argc, char ** argv){
       if(opts->use_fft_for_sf){
 	pattern = compute_pattern_by_fft(mol,opts->detector,opts->experiment,opts->b_factor);
       }else if(opts->use_nfft_for_sf){
-	pattern = compute_pattern_by_nfft(mol,opts->detector,opts->experiment,opts->b_factor,HKL_list);
+	pattern = compute_pattern_by_nfft(mol,opts->detector,opts->experiment,opts->b_factor,HKL_list,opts);
       }else{
 	if(opts->vectorize){
-	  pattern = vector_compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);	
+	  pattern = vector_compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment,opts);	
 	}else{
-	  pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);
+	  pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment,opts);
 	}
       }
     }else{
@@ -141,12 +141,12 @@ int main(int argc, char ** argv){
 	fprintf(stderr,"Cannot use fft for 2D pattern calculation!\n");
 	abort();
       }else if(opts->use_nfft_for_sf){
-	pattern = compute_pattern_on_list_by_nfft(mol,HKL_list,HKL_list_size,opts->detector,opts->b_factor);
+	pattern = compute_pattern_on_list_by_nfft(mol,HKL_list,HKL_list_size,opts->detector,opts->b_factor,opts);
       }else{
 	if(opts->vectorize){
-	  pattern = vector_compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);	
+	  pattern = vector_compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment,opts);	
 	}else{
-	  pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment);
+	  pattern = compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment,opts);
 	}
       }
     }
@@ -161,8 +161,41 @@ int main(int argc, char ** argv){
   gaussian_blur_pattern(opts,pattern);
   //  gaussian_blur_real_space(opts,pattern);
 
-  write_3D_array_to_vtk(pattern->ints,opts->detector->nx,opts->detector->ny,opts->detector->nz,
-			"scattering_factor.vtk");  
+  Image * scattering_amp = sp_image_alloc(opts->detector->nx,opts->detector->ny,opts->detector->nz);
+
+  i = 0;
+  for(int x = 0;x<sp_image_x(scattering_amp);x++){
+    for(int y = 0;y<sp_image_y(scattering_amp);y++){
+      for(int z = 0;z<sp_image_z(scattering_amp);z++){
+	sp_image_set(scattering_amp,x,y,z,pattern->F[i++]);
+	sp_i3matrix_set(scattering_amp->mask,x,y,z,1);
+      }
+    }
+  }
+
+  Image * scattering_int = sp_image_alloc(opts->detector->nx,opts->detector->ny,opts->detector->nz);
+
+  i = 0;
+  for(int x = 0;x<sp_image_x(scattering_int);x++){
+    for(int y = 0;y<sp_image_y(scattering_int);y++){
+      for(int z = 0;z<sp_image_z(scattering_int);z++){
+	sp_image_set(scattering_int,x,y,z,sp_cinit(pattern->ints[i++],0));
+	sp_i3matrix_set(scattering_int->mask,x,y,z,1);
+      }
+    }
+  }
+
+  scattering_amp->phased = 1;
+  sp_image_write(scattering_amp,"scattering_amp.h5",0);
+  sp_image_write(scattering_int,"scattering_int.h5",0);
+  if(opts->fast_exit){
+#ifdef MPI
+    MPI_Finalize();
+#endif
+    return 0;
+  }
+  write_3D_array_to_vtk(pattern->ints,opts->detector->nx,opts->detector->ny,opts->detector->nz,"scattering_factor.vtk");  
+
   write_3D_array_as_structured_grid_to_vtk(pattern->ints,opts->detector,HKL_list,HKL_list_size,opts->n_patterns,"ewald.vtk");  
   calculate_thomson_correction(opts->detector);
   calculate_pixel_solid_angle(opts->detector);
@@ -189,7 +222,7 @@ int main(int argc, char ** argv){
       }
     }
   }
-  output->detector->lambda = opts->experiment->wavelength;
+  output->detector->wavelength = opts->experiment->wavelength;
   output->detector->pixel_size[0] = opts->detector->pixel_width*opts->detector->binning_x;
   output->detector->pixel_size[1] = opts->detector->pixel_height*opts->detector->binning_y;
   output->detector->detector_distance = opts->detector->distance;
@@ -209,7 +242,7 @@ int main(int argc, char ** argv){
       }
     }
   }
-  output->detector->lambda = opts->experiment->wavelength;
+  output->detector->wavelength = opts->experiment->wavelength;
   output->detector->pixel_size[0] = opts->detector->pixel_width*opts->detector->binning_x;
   output->detector->pixel_size[1] = opts->detector->pixel_height*opts->detector->binning_y;
   output->detector->detector_distance = opts->detector->distance;
@@ -221,7 +254,7 @@ int main(int argc, char ** argv){
   calculate_noiseless_detector_output(opts->detector,opts->experiment);
   noiseless = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,
 			     opts->detector->nz/opts->detector->binning_z);
-  noiseless->detector->lambda = opts->experiment->wavelength;
+  noiseless->detector->wavelength = opts->experiment->wavelength;
   noiseless->detector->pixel_size[0] = opts->detector->pixel_width*opts->detector->binning_x;
   noiseless->detector->pixel_size[1] = opts->detector->pixel_height*opts->detector->binning_y;
   noiseless->detector->detector_distance = opts->detector->distance;
@@ -251,7 +284,6 @@ int main(int argc, char ** argv){
   sp_image_write(noiseless,"noiseless_output.vtk",0);
   //}
   
-
 
   if(pattern->F){
     Image * rs = calculate_noiseless_real_space(opts,pattern);

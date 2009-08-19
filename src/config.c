@@ -49,6 +49,8 @@ Options * set_defaults(){
   opt->euler_orientation[2]= 0;
   opt->random_orientation = 0;
   opt->vectorize = 1;
+  opt->delta_atoms = 0;
+  opt->fast_exit = 0;
   return opt;
 }
 
@@ -235,6 +237,12 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"vectorize")){
     res->vectorize = config_lookup_int(&config,"vectorize");
   }
+  if(config_lookup(&config,"delta_atoms")){
+    res->delta_atoms = config_lookup_int(&config,"delta_atoms");
+  }
+  if(config_lookup(&config,"fast_exit")){
+    res->fast_exit = config_lookup_int(&config,"fast_exit");
+  }
 
   res->detector->nx = rint(res->detector->width/res->detector->pixel_width);
   res->detector->ny = rint(res->detector->height/res->detector->pixel_height);
@@ -384,6 +392,10 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_int(s,res->n_patterns);
   s = config_setting_add(root,"vectorize",CONFIG_TYPE_INT);
   config_setting_set_int(s,res->vectorize);
+  s = config_setting_add(root,"delta_atoms",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->delta_atoms);
+  s = config_setting_add(root,"fast_exit",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->fast_exit);
 
 
   if(res->sf_filename[0]){

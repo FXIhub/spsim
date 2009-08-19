@@ -66,6 +66,7 @@ Image * calculate_noiseless_real_space(Options * opts, Diffraction_Pattern * pat
   sp_image_free(rs);
   /* Move mass to the middle of the image */
   sp_image_write(real_space,"real_space_uncentered.vtk",0);
+  sp_image_write(real_space,"real_space_uncentered.h5",0);
   sp_vector * center = sp_image_center_of_mass(real_space);
   /*FM: This is buggy the center of mass should take wrap around into account*/
   sp_image_translate(real_space,sp_image_x(real_space)/2-center->data[0],

@@ -390,7 +390,7 @@ void multiply_pattern_on_list_with_scattering_factor(complex double * f,int Z,fl
   }
 }
 
-Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experiment * exp, float B,float * HKL_list){
+Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experiment * exp, float B,float * HKL_list,Options * opts){
   double alpha_x = atan(det->width/(2.0 * det->distance));
   double alpha_y = atan(det->height/(2.0 * det->distance));
   double alpha_z = atan(det->depth/(2.0 * det->distance));
@@ -483,8 +483,11 @@ Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experim
       }else{
 	nfft_adjoint(&p);  
       }
-      multiply_pattern_with_scattering_factor(p.f_hat,Z,nx,ny,nz,
-					      rs_pixel_x,rs_pixel_y,rs_pixel_z,B);
+      
+      if(!opts->delta_atoms){
+	multiply_pattern_with_scattering_factor(p.f_hat,Z,nx,ny,nz,
+						rs_pixel_x,rs_pixel_y,rs_pixel_z,B);
+      }
       for(int k = 0;k<nx*ny*nz;k++){
 	sp_real(res->F[k]) += creal(p.f_hat[k]);
 	sp_imag(res->F[k]) += cimag(p.f_hat[k]);
@@ -500,7 +503,7 @@ Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experim
 }
 
 
-Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL_list, int HKL_list_size,CCD * det, float B){
+Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL_list, int HKL_list_size,CCD * det, float B,Options * opts){
   int is_element_in_molecule[ELEMENTS];
 /* in meters defines the limit up to which we compute the electron density */
   Diffraction_Pattern * res = malloc(sizeof(Diffraction_Pattern));
@@ -629,7 +632,9 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
       }else{
 	nnfft_adjoint(&p);  
       }
-      multiply_pattern_on_list_with_scattering_factor(p.f_hat,Z,HKL_list,HKL_list_size,B);
+      if(!opts->delta_atoms){
+	multiply_pattern_on_list_with_scattering_factor(p.f_hat,Z,HKL_list,HKL_list_size,B);
+      }
       for(int k = 0;k<HKL_list_size;k++){
 	sp_real(res->F[k]) += creal(p.f_hat[k]);
 	sp_imag(res->F[k]) += cimag(p.f_hat[k]);
@@ -737,7 +742,7 @@ Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experime
   return res;
 }
 
-Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size,float B,Experiment * exp){
+Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size,float B,Experiment * exp,Options * opts){
   int i,j;
   float scattering_factor;
   float scattering_vector_length;
@@ -768,7 +773,7 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
     atom_ilumination[j] = ilumination_function(exp,&(mol->pos[j*3]));
   }
 
-  points_per_percent = (HKL_list_end-HKL_list_start)/100;
+  points_per_percent = 1+(HKL_list_end-HKL_list_start)/100;
   for(i = HKL_list_start;i<HKL_list_end;i++){
 #ifdef MPI    
     if(is_mpi_master()){
@@ -799,8 +804,13 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
       scattering_factor = scattering_factor_cache[mol->atomic_number[j]]*sqrt(atom_ilumination[j]);
 /*      scattering_factor = 1;*/
       float tmp = 2*M_PI*(HKL_list[3*i]*-mol->pos[j*3]+HKL_list[3*i+1]*-mol->pos[j*3+1]+HKL_list[3*i+2]*-mol->pos[j*3+2]);
-      sp_real(res->F[i]) += scattering_factor*cos(tmp);
-      sp_imag(res->F[i]) += scattering_factor*sin(tmp);
+      if(!opts->delta_atoms){
+	sp_real(res->F[i]) += scattering_factor*cos(tmp);
+	sp_imag(res->F[i]) += scattering_factor*sin(tmp);
+      }else{
+	sp_real(res->F[i]) += cos(tmp);
+	sp_imag(res->F[i]) += sin(tmp);
+      }
     }
     res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
   }
@@ -809,7 +819,7 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
 }
 
 
-Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size,float B,Experiment * exp){
+Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size,float B,Experiment * exp,Options * opts){
   int i,j;
   float scattering_factor;
   float scattering_vector_length;
@@ -840,7 +850,7 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
     atom_ilumination[j] = sqrt(ilumination_function(exp,&(mol->pos[j*3])));
   }
 
-  points_per_percent = (HKL_list_end-HKL_list_start)/100;
+  points_per_percent = 1+(HKL_list_end-HKL_list_start)/100;
   for(i = HKL_list_start;i<HKL_list_end;i++){
 #ifdef MPI    
     if(is_mpi_master()){
@@ -879,8 +889,10 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
       v4sf sin_phase;
       v4sf cos_phase;
       sincos_ps(phase,&sin_phase,&cos_phase);
-      sin_phase = __builtin_ia32_mulps(sin_phase,sf);
-      cos_phase = __builtin_ia32_mulps(cos_phase,sf);
+      if(!opts->delta_atoms){
+	sin_phase = __builtin_ia32_mulps(sin_phase,sf);
+	cos_phase = __builtin_ia32_mulps(cos_phase,sf);
+      }
       __builtin_ia32_storeups(tmp,cos_phase);
       float sum = 0;
       for(int ii = 0;ii<4;ii++){
@@ -942,7 +954,7 @@ Diffraction_Pattern * compute_fresnel_pattern_on_list(Molecule * mol, float * HK
     atom_ilumination[j] = ilumination_function(exp,&(mol->pos[j*3]));
   }
 
-  points_per_percent = (HKL_list_end-HKL_list_start)/100;
+  points_per_percent = 1+(HKL_list_end-HKL_list_start)/100;
   for(i = HKL_list_start;i<HKL_list_end;i++){
 #ifdef MPI    
     if(is_mpi_master()){
