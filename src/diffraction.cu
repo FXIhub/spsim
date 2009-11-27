@@ -184,7 +184,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list(Molecule * mol, float * HKL_l
     sp_imag(res->F[i]) = thrust::reduce(begin, end);
     res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
   }
-  printf("%g atoms.pixel/s",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
+  printf("%g atoms.pixel/s\n",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
   return res;  
 #endif 
 }
@@ -259,7 +259,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
   sp_cuda_check_errors();
   cutilSafeCall(cudaMemcpy(res->F,d_F,sizeof(cufftComplex)*HKL_list_size,cudaMemcpyDeviceToHost));
   cutilSafeCall(cudaMemcpy(res->ints,d_I,sizeof(float)*HKL_list_size,cudaMemcpyDeviceToHost));
-  printf("%g atoms.pixel/s",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
+  printf("%g atoms.pixel/s\n",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
   return res;  
 #endif 
 }

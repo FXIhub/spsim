@@ -818,7 +818,7 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
     res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
   }
   syncronize_patterns(res);
-  printf("%g atoms.pixel/s",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
+  printf("%g atoms.pixel/s\n",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
   return res;
 }
 
@@ -922,7 +922,7 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
     res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
   }
   syncronize_patterns(res);
-  printf("%g atoms.pixel/s",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
+  printf("%g atoms.pixel/s\n",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
   return res;
 }
 
