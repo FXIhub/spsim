@@ -28,6 +28,10 @@
 #include <complex.h>
 #include "box.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
 /* 
    We're always gonna use 3D diffraction patterns 
 
@@ -63,6 +67,8 @@ float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_
 /* Computes the diffraction pattern of a given structure on a given set of HKL points */
 Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size, float B,Experiment * exp,Options * opts);
 
+Diffraction_Pattern * cuda_compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size, float B,Experiment * exp,Options * opts);
+
 Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size, float B,Experiment * exp,Options * opts);
 
 void calculate_pixel_solid_angle(CCD * det);
@@ -82,4 +88,10 @@ void multiply_pattern_on_list_with_scattering_factor(complex double * f,int Z,fl
 void apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Options * opts);
 Diffraction_Pattern * compute_box_on_list(Box box, float * HKL_list, int HKL_list_size);
 Diffraction_Pattern * compute_fresnel_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size,float B,Experiment * exp);
+
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif /* __cplusplus */
+
+
 #endif 

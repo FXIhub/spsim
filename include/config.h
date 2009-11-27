@@ -50,7 +50,6 @@ typedef struct{
   /* may optionally contain the boundaries of pos */
   /* atoms are represented by delta functions*/
   int delta_atoms;
-
 }Molecule;
 
 typedef struct{
@@ -112,6 +111,7 @@ typedef struct{
   /* Center of the detector in relation to the beam (by definition the beam follows the z axis) */
   float center_x;
   float center_y;
+
 }CCD;
 
 
@@ -141,6 +141,12 @@ typedef struct {
   int vectorize;
   int delta_atoms;
   int fast_exit;
+  /* replicates the molecule to create a crystal */
+  /* unit cells along a,b,c */
+  int crystal_size[3];
+  /* in the usual a,b,c alpha,beta,gamma order */
+  float crystal_cell[6];
+  int use_cuda;
 }Options;
 
 

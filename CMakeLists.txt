@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 2.6)
 PROJECT (spsim)
 
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/cuda")
+SET(USE_CUDA ON CACHE BOOL "If ON use try to use CUDA.")
 
 find_package(GSL)
 find_package(SpImage REQUIRED)
@@ -15,6 +17,21 @@ find_package(ZLIB REQUIRED)
 find_package(JPEG REQUIRED)
 find_package(NFFT REQUIRED)
 
+IF(USE_CUDA)
+  IF(CMAKE_VERSION)
+    # CMAKE VERSION was first defined in 2.6.3. Sorry for the hack
+    find_package(CUDA QUIET)
+  ELSE(CMAKE_VERSION)
+    message(STATUS "cmake 2.6.3 or higher required to use CUDA")
+  ENDIF(CMAKE_VERSION)
+
+  IF(CUDA_FOUND)
+    #set(CUDA_VERBOSE_BUILD ON)
+    ADD_DEFINITIONS(-D_USE_CUDA)
+  ENDIF(CUDA_FOUND)
+ELSE(USE_CUDA)
+  UNSET(CUDA_FOUND)
+ENDIF(USE_CUDA)
 
 SET(MPI OFF CACHE BOOL "If ON use MPI for parallelization if possible.")
 

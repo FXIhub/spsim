@@ -49,8 +49,18 @@ Options * set_defaults(){
   opt->euler_orientation[2]= 0;
   opt->random_orientation = 0;
   opt->vectorize = 1;
+  opt->use_cuda = 1;
   opt->delta_atoms = 0;
   opt->fast_exit = 0;
+  opt->crystal_size[0] = 1;
+  opt->crystal_size[1] = 1;
+  opt->crystal_size[2] = 1;
+  opt->crystal_cell[0] = 0;
+  opt->crystal_cell[1] = 0;
+  opt->crystal_cell[2] = 0;
+  opt->crystal_cell[3] = 90;
+  opt->crystal_cell[4] = 90;
+  opt->crystal_cell[5] = 90;
   return opt;
 }
 
@@ -243,6 +253,37 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"fast_exit")){
     res->fast_exit = config_lookup_int(&config,"fast_exit");
   }
+  if(config_lookup(&config,"crystal_size_a")){
+    res->crystal_size[0] = config_lookup_int(&config,"crystal_size_a");
+  }
+  if(config_lookup(&config,"crystal_size_b")){
+    res->crystal_size[1] = config_lookup_int(&config,"crystal_size_b");
+  }
+  if(config_lookup(&config,"crystal_size_c")){
+    res->crystal_size[2] = config_lookup_int(&config,"crystal_size_c");
+  }
+  if(config_lookup(&config,"crystal_cell_a")){
+    res->crystal_cell[0] = config_lookup_float(&config,"crystal_cell_a");
+  }
+  if(config_lookup(&config,"crystal_cell_b")){
+    res->crystal_cell[1] = config_lookup_float(&config,"crystal_cell_b");
+  }
+  if(config_lookup(&config,"crystal_cell_c")){
+    res->crystal_cell[2] = config_lookup_float(&config,"crystal_cell_c");
+  }
+  if(config_lookup(&config,"crystal_cell_alpha")){
+    res->crystal_cell[3] = config_lookup_float(&config,"crystal_cell_alpha");
+  }
+  if(config_lookup(&config,"crystal_cell_beta")){
+    res->crystal_cell[4] = config_lookup_float(&config,"crystal_cell_beta");
+  }
+  if(config_lookup(&config,"crystal_cell_gamma")){
+    res->crystal_cell[5] = config_lookup_float(&config,"crystal_cell_gamma");
+  }
+  if(config_lookup(&config,"use_cuda")){
+    res->use_cuda = config_lookup_int(&config,"use_cuda");
+  }
+
 
   res->detector->nx = rint(res->detector->width/res->detector->pixel_width);
   res->detector->ny = rint(res->detector->height/res->detector->pixel_height);
@@ -396,6 +437,29 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_int(s,res->delta_atoms);
   s = config_setting_add(root,"fast_exit",CONFIG_TYPE_INT);
   config_setting_set_int(s,res->fast_exit);
+
+  s = config_setting_add(root,"crystal_size_a",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->crystal_size[0]);
+  s = config_setting_add(root,"crystal_size_b",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->crystal_size[1]);
+  s = config_setting_add(root,"crystal_size_c",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->crystal_size[2]);
+
+  s = config_setting_add(root,"crystal_cell_a",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->crystal_cell[0]);
+  s = config_setting_add(root,"crystal_cell_b",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->crystal_cell[1]);
+  s = config_setting_add(root,"crystal_cell_c",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->crystal_cell[2]);
+  s = config_setting_add(root,"crystal_cell_alpha",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->crystal_cell[3]);
+  s = config_setting_add(root,"crystal_cell_beta",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->crystal_cell[4]);
+  s = config_setting_add(root,"crystal_cell_gamma",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->crystal_cell[5]);
+
+  s = config_setting_add(root,"use_cuda",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->use_cuda);
 
 
   if(res->sf_filename[0]){
