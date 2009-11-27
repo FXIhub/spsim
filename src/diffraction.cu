@@ -15,7 +15,7 @@ __global__ void CUDA_scattering_at_k(float* real_part,float * imag_part, int * a
 				     const float * HKL_list,const float * pos,const int k,const int natoms);
 
 __global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const int * Z,const float * pos,
-					       const float * HKL_list,const int hkl_size,const int natoms,const float * atomsf);
+					       const float * HKL_list,const int hkl_size,const int natoms,const float * atomsf,const float B);
 #define ELEMENTS 100
 static float atomsf[ELEMENTS][9] = 
 #include "atomsf.cdata"
@@ -252,10 +252,11 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
   float * d_I;
   cutilSafeCall(cudaMalloc((void **)&d_I,sizeof(float)*HKL_list_size));
 
-  CUDA_scattering_from_all_atoms<<<number_of_blocks, threads_per_block>>>(d_F,d_I,d_atomic_number,d_atomic_pos,d_HKL_list,HKL_list_size,mol->natoms,d_atomsf);
-
+  CUDA_scattering_from_all_atoms<<<number_of_blocks, threads_per_block>>>(d_F,d_I,d_atomic_number,d_atomic_pos,d_HKL_list,HKL_list_size,mol->natoms,d_atomsf,B);
+  sp_cuda_check_errors();
   cutilSafeCall(cudaMemcpy(res->F,d_F,sizeof(cufftComplex)*HKL_list_size,cudaMemcpyDeviceToHost));
   cutilSafeCall(cudaMemcpy(res->ints,d_I,sizeof(float)*HKL_list_size,cudaMemcpyDeviceToHost));
+  printf("100%% done\n");
   return res;  
 #endif 
 }
@@ -274,31 +275,32 @@ __global__ void CUDA_scattering_at_k(float* real_part,float * imag_part, int * a
   }
 }
 
-__global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const int * Z,const float * pos, const float * HKL_list,const int hkl_size,const int natoms,const float * atomsf){
+__global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const int * Z,const float * pos, const float * HKL_list,const int hkl_size,const int natoms,const float * atomsf,const float B){
   const int id = blockIdx.x*blockDim.x + threadIdx.x;
   if(id<hkl_size){
     int lastZ = -1;
     float sf = 0;
-    float d = sqrt(HKL_list[3*id]*HKL_list[3*id]+HKL_list[3*id+1]*HKL_list[3*id+1]+HKL_list[3*id+2]*HKL_list[3*id+2]) * 1e-10;
-    float B = 5;
-	
+    float d = sqrt(HKL_list[3*id]*HKL_list[3*id]+HKL_list[3*id+1]*HKL_list[3*id+1]+HKL_list[3*id+2]*HKL_list[3*id+2]) * 1e-10F;
+    F[id].x = 0;
+    F[id].y = 0;
+    I[id] = 0;
     for(int i = 0;i<natoms;i++){ 
       if(!Z[i]){
 	continue;
       }
       if(lastZ != Z[i]){
-	float sf = 0;
+	sf = 0;
 	/* the 0.25 is there because the 's' used by the aproxumation is 'd/2' */
 	for(int j = 0;j<4;j++){
-	  sf+= atomsf[Z[i]*9+j]*exp(-(atomsf[Z[i]*9+j+4]+B)*d*d*0.25);
+	  sf+= atomsf[Z[i]*9+j]*exp(-(atomsf[Z[i]*9+j+4]+B)*d*d*0.25F);
 	}                
-	sf += atomsf[Z[i]*9+8]*exp(-B*d*d/0.25);
+	sf += atomsf[Z[i]*9+8]*exp(-B*d*d/0.25F);
 	lastZ = Z[i];
       }
       float tmp = 2*3.14159265F*(HKL_list[3*id]*-pos[i*3]+HKL_list[3*id+1]*-pos[i*3+1]+HKL_list[3*id+2]*-pos[i*3+2]);      
       F[id].x += sf*cos(tmp);
       F[id].y += sf*sin(tmp);
     }
-    I[id] =  sqrt(F[id].x*F[id].x + F[id].y*F[id].y);
+    I[id] =  F[id].x*F[id].x + F[id].y*F[id].y;
   }    
 }
