@@ -213,10 +213,10 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
 
   /* sort atoms by atomic number */
   float * sorted_pos = (float *) malloc(sizeof(float)*mol->natoms*3);
-  int * sorted_atomic_number = (int *) malloc(sizeof(float)*mol->natoms);
+  int * sorted_atomic_number = (int *) malloc(sizeof(int)*mol->natoms);
   /* on the odd indexes we keep a key corresponding to the original index
      and on the even indexes we keep the atomic number */ 
-  int * sorted_map = (int *) malloc(sizeof(float)*mol->natoms*2);
+  int * sorted_map = (int *) malloc(sizeof(int)*mol->natoms*2);
   for(int i = 0;i<mol->natoms;i++){
     sorted_map[2*i] = mol->atomic_number[i];
     sorted_map[2*i+1] = i;
@@ -225,9 +225,9 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
   /* make use of the sorted keys to sort the positions also */
   for(int i = 0;i<mol->natoms;i++){
     sorted_atomic_number[i] = sorted_map[2*i];
-    sorted_pos[3*i] = mol->pos[sorted_atomic_number[2*i+1]*3];
-    sorted_pos[3*i+1] = mol->pos[sorted_atomic_number[2*i+1]*3+1];
-    sorted_pos[3*i+2] = mol->pos[sorted_atomic_number[2*i+1]*3+2];
+    sorted_pos[3*i] = mol->pos[sorted_map[2*i+1]*3];
+    sorted_pos[3*i+1] = mol->pos[sorted_map[2*i+1]*3+1];
+    sorted_pos[3*i+2] = mol->pos[sorted_map[2*i+2]*3+2];
   }
 
   res->F = (Complex *)malloc(sizeof(Complex)*HKL_list_size);
