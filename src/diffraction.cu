@@ -116,6 +116,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list(Molecule * mol, float * HKL_l
 #ifndef _USE_CUDA
   sp_error_fatal("Can't use cuda when not compiled for CUDA");
 #else
+  int timer = sp_timer_start();
   int i,j;
   float scattering_vector_length;
   float scattering_factor_cache[ELEMENTS];
@@ -183,6 +184,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list(Molecule * mol, float * HKL_l
     sp_imag(res->F[i]) = thrust::reduce(begin, end);
     res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
   }
+  printf("%g atoms.pixel/s",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
   return res;  
 #endif 
 }
@@ -202,6 +204,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
 #ifndef _USE_CUDA
   sp_error_fatal("Can't use cuda when not compiled for CUDA");
 #else
+  int timer = sp_timer_start();
   Diffraction_Pattern * res = (Diffraction_Pattern *)malloc(sizeof(Diffraction_Pattern));
   int threads_per_block = 64;
   int number_of_blocks = (HKL_list_size+threads_per_block-1)/threads_per_block;
@@ -256,7 +259,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
   sp_cuda_check_errors();
   cutilSafeCall(cudaMemcpy(res->F,d_F,sizeof(cufftComplex)*HKL_list_size,cudaMemcpyDeviceToHost));
   cutilSafeCall(cudaMemcpy(res->ints,d_I,sizeof(float)*HKL_list_size,cudaMemcpyDeviceToHost));
-  printf("100%% done\n");
+  printf("%g atoms.pixel/s",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
   return res;  
 #endif 
 }

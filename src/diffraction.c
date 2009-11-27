@@ -745,6 +745,7 @@ Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experime
 }
 
 Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size,float B,Experiment * exp,Options * opts){
+  int timer = sp_timer_start();
   int i,j;
   float scattering_factor;
   float scattering_vector_length;
@@ -817,11 +818,13 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
     res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
   }
   syncronize_patterns(res);
+  printf("%g atoms.pixel/s",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
   return res;
 }
 
 
 Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size,float B,Experiment * exp,Options * opts){
+  int timer = sp_timer_start();
   int i,j;
   float scattering_factor;
   float scattering_vector_length;
@@ -919,6 +922,7 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
     res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
   }
   syncronize_patterns(res);
+  printf("%g atoms.pixel/s",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
   return res;
 }
 
