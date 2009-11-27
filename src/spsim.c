@@ -150,7 +150,7 @@ int main(int argc, char ** argv){
       }else{
 #ifdef _USE_CUDA
 	if(opts->use_cuda){
-	  pattern = cuda_compute_pattern_on_list(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment,opts);	
+	  pattern = cuda_compute_pattern_on_list2(mol,HKL_list,HKL_list_size,opts->b_factor,opts->experiment,opts);	
 	}else
 #endif
 	if(opts->vectorize){
