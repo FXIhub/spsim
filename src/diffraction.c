@@ -50,6 +50,8 @@ static float atomed[ELEMENTS][11];
 static int atomsf_initialized = 0;
 static int atomed_initialized = 0;
 
+void multiply_pattern_on_list_with_scattering_factor(complex double * f,int Z,float * HKL_list, int HKL_list_size,float B);
+
 
 static float sp_mod(float a, float b){
   while(a < 0){
