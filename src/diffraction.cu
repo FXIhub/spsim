@@ -15,7 +15,7 @@ __global__ void CUDA_scattering_at_k(float* real_part,float * imag_part, int * a
 				     const float * HKL_list,const float * pos,const int k,const int natoms);
 
 __global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const int * Z,const float * pos,
-					       const float * HKL_list,const int hkl_size,const int natoms,const float * atomsf,const float B);
+					       const float * HKL_list,const int hkl_size,const int start_atom, const int end_atom,const int natoms,const float * atomsf,const float B);
 #define ELEMENTS 100
 static float atomsf[ELEMENTS][9] = 
 #include "atomsf.cdata"
@@ -252,10 +252,19 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
   cutilSafeCall(cudaMemcpy(d_atomsf,atomsf,sizeof(float)*9*ELEMENTS,cudaMemcpyHostToDevice));
   cufftComplex * d_F;
   cutilSafeCall(cudaMalloc((void **)&d_F,sizeof(cufftComplex)*HKL_list_size));
+  cutilSafeCall(cudaMemset(d_F,0,sizeof(cufftComplex)*HKL_list_size));
+  
   float * d_I;
   cutilSafeCall(cudaMalloc((void **)&d_I,sizeof(float)*HKL_list_size));
+  cutilSafeCall(cudaMemset(d_I,0,sizeof(float)*HKL_list_size));
 
-  CUDA_scattering_from_all_atoms<<<number_of_blocks, threads_per_block>>>(d_F,d_I,d_atomic_number,d_atomic_pos,d_HKL_list,HKL_list_size,mol->natoms,d_atomsf,B);
+  /* we have to do this in chunks so we don't block the card forever */
+  const int chunk_size = 1000;
+  for(int i = 0;i<mol->natoms;i+=chunk_size){ 
+    int end_atom = sp_min(i+chunk_size,mol->natoms);
+    int start_atom = i;
+    CUDA_scattering_from_all_atoms<<<number_of_blocks, threads_per_block>>>(d_F,d_I,d_atomic_number,d_atomic_pos,d_HKL_list,HKL_list_size,start_atom,end_atom,mol->natoms,d_atomsf,B);
+  }
   sp_cuda_check_errors();
   cutilSafeCall(cudaMemcpy(res->F,d_F,sizeof(cufftComplex)*HKL_list_size,cudaMemcpyDeviceToHost));
   cutilSafeCall(cudaMemcpy(res->ints,d_I,sizeof(float)*HKL_list_size,cudaMemcpyDeviceToHost));
@@ -278,15 +287,12 @@ __global__ void CUDA_scattering_at_k(float* real_part,float * imag_part, int * a
   }
 }
 
-__global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const int * Z,const float * pos, const float * HKL_list,const int hkl_size,const int natoms,const float * atomsf,const float B){
+__global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const int * Z,const float * pos, const float * HKL_list,const int hkl_size,const int start_atom,const int end_atom, const int natoms,const float * atomsf,const float B){
   const int id = blockIdx.x*blockDim.x + threadIdx.x;
   if(id<hkl_size){
     int lastZ = -1;
     float sf = 0;
     float d = sqrt(HKL_list[3*id]*HKL_list[3*id]+HKL_list[3*id+1]*HKL_list[3*id+1]+HKL_list[3*id+2]*HKL_list[3*id+2]) * 1e-10F;
-    F[id].x = 0;
-    F[id].y = 0;
-    I[id] = 0;
     for(int i = 0;i<natoms;i++){ 
       if(!Z[i]){
 	continue;
@@ -304,6 +310,8 @@ __global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const 
       F[id].x += sf*cos(tmp);
       F[id].y += sf*sin(tmp);
     }
-    I[id] =  F[id].x*F[id].x + F[id].y*F[id].y;
   }    
+  if(end_atom == natoms){
+    I[id] =  F[id].x*F[id].x + F[id].y*F[id].y;
+  }
 }
