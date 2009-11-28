@@ -207,9 +207,12 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
 #else
   int timer = sp_timer_start();
   Diffraction_Pattern * res = (Diffraction_Pattern *)malloc(sizeof(Diffraction_Pattern));
-  int threads_per_block = 64;
-  int number_of_blocks = (HKL_list_size+threads_per_block-1)/threads_per_block;
- 
+  dim3 threads_per_block(8,8);
+  const int HKL_side = (sqrt(HKL_list_size)+1);
+  dim3 number_of_blocks( (HKL_side+threads_per_block.x-1)/threads_per_block.x,
+			 (HKL_side+threads_per_block.y-1)/threads_per_block.y );
+  
+  printf("Using %d blocks\n",number_of_blocks.x*number_of_blocks.y);
   if(!atomsf_initialized){
     fill_ff_tables();
     atomsf_initialized = 1;
@@ -267,8 +270,8 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
     int start_atom = i;
     CUDA_scattering_from_all_atoms<<<number_of_blocks, threads_per_block>>>(d_F,d_I,d_atomic_number,d_atomic_pos,d_HKL_list,HKL_list_size,start_atom,end_atom,mol->natoms,d_atomsf,B);
     cudaThreadSynchronize();
+    sp_cuda_check_errors();
   }
-  sp_cuda_check_errors();
   calculate_pattern_from_crystal_cuda(d_I,d_F,d_HKL_list, HKL_list_size, opts);
   cudaMemcpy(res->F,d_F,sizeof(cufftComplex)*HKL_list_size,cudaMemcpyDeviceToHost);
   cudaMemcpy(res->ints,d_I,sizeof(float)*HKL_list_size,cudaMemcpyDeviceToHost);
@@ -293,7 +296,8 @@ __global__ void CUDA_scattering_at_k(float* real_part,float * imag_part, int * a
 }
 
 __global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const int * Z,const float * pos, const float * HKL_list,const int hkl_size,const int start_atom,const int end_atom, const int natoms,const float * atomsf,const float B){
-  const int id = blockIdx.x*blockDim.x + threadIdx.x;
+  //  const int id = blockIdx.x*blockDim.x + threadIdx.x;
+  const int id = ((blockIdx.y*blockDim.y + threadIdx.y)*gridDim.x + blockIdx.x )*blockDim.x + threadIdx.x;
   if(id<hkl_size){
     int lastZ = -1;
     float sf = 0;
@@ -315,8 +319,8 @@ __global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const 
       F[id].x += sf*cos(tmp);
       F[id].y += sf*sin(tmp);
     }
+    if(end_atom == natoms){
+      I[id] =  F[id].x*F[id].x + F[id].y*F[id].y;
+    }
   }    
-  if(end_atom == natoms){
-    I[id] =  F[id].x*F[id].x + F[id].y*F[id].y;
-  }
 }
