@@ -1,5 +1,6 @@
 #include "diffraction.h"
 #include "config.h"
+#include "crystal.h"
 #include <thrust/sort.h>
 #include <thrust/reduce.h>
 #include <thrust/host_vector.h>
@@ -265,8 +266,10 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
     int end_atom = sp_min(i+chunk_size,mol->natoms);
     int start_atom = i;
     CUDA_scattering_from_all_atoms<<<number_of_blocks, threads_per_block>>>(d_F,d_I,d_atomic_number,d_atomic_pos,d_HKL_list,HKL_list_size,start_atom,end_atom,mol->natoms,d_atomsf,B);
+    cudaThreadSynchronize();
   }
   sp_cuda_check_errors();
+  calculate_pattern_from_crystal_cuda(d_I,d_F,d_HKL_list, HKL_list_size, opts);
   cudaMemcpy(res->F,d_F,sizeof(cufftComplex)*HKL_list_size,cudaMemcpyDeviceToHost);
   cudaMemcpy(res->ints,d_I,sizeof(float)*HKL_list_size,cudaMemcpyDeviceToHost);
   sp_cuda_check_errors();

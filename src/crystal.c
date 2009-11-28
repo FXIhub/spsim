@@ -36,7 +36,7 @@ void crystal_cell_matrix(Options * opts,float * matrix){
   matrix[8] = sqrt(opts->crystal_cell[2]*opts->crystal_cell[2]-(matrix[6])*(matrix[6])-(matrix[7])*(matrix[7]));
 }
 
-Complex * calculate_pattern_from_crystal(Complex * F,float * HKL_list, int HKL_list_size,Options * opts){
+void calculate_pattern_from_crystal(float * I, Complex * F,float * HKL_list, int HKL_list_size,Options * opts){
   float cell[9];
   Complex * cF = (Complex *)malloc(sizeof(Complex)*HKL_list_size);
   crystal_cell_matrix(opts,cell);
@@ -44,13 +44,16 @@ Complex * calculate_pattern_from_crystal(Complex * F,float * HKL_list, int HKL_l
     cF[i] = sp_cinit(0,0);
   }
   float dr[3];
+  int k =0;
   for(int a = 0;a<opts->crystal_size[0];a++){
     for(int b = 0;b<opts->crystal_size[1];b++){
       for(int c = 0;c<opts->crystal_size[2];c++){
 	dr[0] = cell[0]*a+cell[3]*b+cell[6]*c;
 	dr[1] = cell[1]*a+cell[4]*b+cell[7]*c;
 	dr[2] = cell[2]*a+cell[5]*b+cell[8]*c;
-	printf(".\n");
+	printf("%f%% done\n",
+	       100.0*k/(opts->crystal_size[0]*opts->crystal_size[1]*opts->crystal_size[2]));
+	k++;
 	for(int i =0 ;i<HKL_list_size;i++){	  
 	  float phi = 2*M_PI*(HKL_list[3*i]*-dr[0]+HKL_list[3*i+1]*-dr[1]+HKL_list[3*i+2]*-dr[2]) + sp_carg(F[i]);
 	  float amp = sp_cabs(F[i]);
@@ -60,5 +63,9 @@ Complex * calculate_pattern_from_crystal(Complex * F,float * HKL_list, int HKL_l
       }
     }
   }
-  return cF;
+  for(int i =0 ;i<HKL_list_size;i++){
+    F[i] = cF[i];
+    I[i] = sp_cabs2(F[i]);
+  }
+  free(cF);
 }
