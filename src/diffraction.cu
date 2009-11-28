@@ -239,7 +239,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
   memcpy(res->HKL_list,HKL_list,sizeof(float)*3*HKL_list_size);
   res->HKL_list_size = HKL_list_size;
   int * d_atomic_number;
-  cutilSafeCall(cudaMalloc((void **)&d_atomic_number,sizeof(int)*mol->natoms));
+  (cudaMalloc((void **)&d_atomic_number,sizeof(int)*mol->natoms));
   cutilSafeCall(cudaMemcpy(d_atomic_number,sorted_atomic_number,sizeof(int)*mol->natoms,cudaMemcpyHostToDevice));
   float * d_atomic_pos;
   cutilSafeCall(cudaMalloc((void **)&d_atomic_pos,sizeof(float)*mol->natoms*3));
@@ -261,6 +261,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
   /* we have to do this in chunks so we don't block the card forever */
   const int chunk_size = 1000;
   for(int i = 0;i<mol->natoms;i+=chunk_size){ 
+    printf("%f%% done\n",(100.0*i)/mol->natoms);
     int end_atom = sp_min(i+chunk_size,mol->natoms);
     int start_atom = i;
     CUDA_scattering_from_all_atoms<<<number_of_blocks, threads_per_block>>>(d_F,d_I,d_atomic_number,d_atomic_pos,d_HKL_list,HKL_list_size,start_atom,end_atom,mol->natoms,d_atomsf,B);
@@ -294,7 +295,7 @@ __global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const 
     int lastZ = -1;
     float sf = 0;
     float d = sqrt(HKL_list[3*id]*HKL_list[3*id]+HKL_list[3*id+1]*HKL_list[3*id+1]+HKL_list[3*id+2]*HKL_list[3*id+2]) * 1e-10F;
-    for(int i = 0;i<natoms;i++){ 
+    for(int i = start_atom;i<end_atom;i++){ 
       if(!Z[i]){
 	continue;
       }
