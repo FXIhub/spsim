@@ -20,8 +20,11 @@
 #define _CRYSTAL_H_ 1
 
 #include "config.h"
+#include <spimage.h>
+
 
 typedef enum{CrystalA,CrystalB,CrystalC}CrystalAxis;
-void crystal_axis_to_cartesian(Options * opts,CrystalAxis axis,int * x,int * y,int *z);
-
+void crystal_axis_to_cartesian(Options * opts,CrystalAxis axis,float * x,float * y,float *z);
+void crystal_cell_matrix(Options * opts,float * matrix);
+Complex * calculate_pattern_from_crystal(Complex * F,float * HKL_list, int HKL_list_size,Options * opts);
 #endif
