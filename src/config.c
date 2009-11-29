@@ -61,6 +61,7 @@ Options * set_defaults(){
   opt->crystal_cell[3] = 90;
   opt->crystal_cell[4] = 90;
   opt->crystal_cell[5] = 90;
+  opt->wavelength_samples = 5;
   return opt;
 }
 
@@ -184,6 +185,9 @@ void read_options_file(char * filename, Options * res){
 
   if(config_lookup(&config,"experiment_wavelength")){
     res->experiment->wavelength = config_lookup_float(&config,"experiment_wavelength");
+  }
+  if(config_lookup(&config,"experiment_bandwidth")){
+    res->experiment->bandwidth = config_lookup_float(&config,"experiment_bandwidth");
   }
   if(config_lookup(&config,"experiment_exposure_time")){
     res->experiment->exposure_time = config_lookup_float(&config,"experiment_exposure_time");
@@ -385,6 +389,8 @@ void write_options_file(char * filename, Options * res){
 
   s = config_setting_add(root,"experiment_wavelength",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->experiment->wavelength);
+  s = config_setting_add(root,"experiment_bandwidth",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->experiment->bandwidth);
   s = config_setting_add(root,"experiment_exposure_time",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->experiment->exposure_time);
   s = config_setting_add(root,"experiment_beam_intensity",CONFIG_TYPE_FLOAT);
@@ -460,6 +466,8 @@ void write_options_file(char * filename, Options * res){
 
   s = config_setting_add(root,"use_cuda",CONFIG_TYPE_INT);
   config_setting_set_int(s,res->use_cuda);
+  s = config_setting_add(root,"wavelength_samples",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->wavelength_samples);
 
 
   if(res->sf_filename[0]){

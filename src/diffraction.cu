@@ -17,6 +17,14 @@ __global__ void CUDA_scattering_at_k(float* real_part,float * imag_part, int * a
 
 __global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const int * Z,const float * pos,
 					       const float * HKL_list,const int hkl_size,const int start_atom, const int end_atom,const int natoms,const float * atomsf,const float B);
+__global__ 
+void CUDA_spectrum_scattering_from_all_atoms(cufftComplex * F,float * I, const int * Z,
+					     const float * pos, const float * HKL_list,
+					     const int hkl_size,const int start_atom,
+					     const int end_atom, const int natoms,
+					     const float * atomsf,const float B,
+					     const float wavelength, const float bandwidth,
+					     const int wavelength_samples);
 #define ELEMENTS 100
 static float atomsf[ELEMENTS][9] = 
 #include "atomsf.cdata"
@@ -264,11 +272,21 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
 
   /* we have to do this in chunks so we don't block the card forever */
   const int chunk_size = 1000;
+
+  /* extra loop around the wavelengths */
+  if(opts->wavelength_samples >1 && (opts->wavelength_samples & 1) == 0){
+    opts->wavelength_samples++;
+  }
+
   for(int i = 0;i<mol->natoms;i+=chunk_size){ 
     printf("%f%% done\n",(100.0*i)/mol->natoms);
     int end_atom = sp_min(i+chunk_size,mol->natoms);
     int start_atom = i;
-    CUDA_scattering_from_all_atoms<<<number_of_blocks, threads_per_block>>>(d_F,d_I,d_atomic_number,d_atomic_pos,d_HKL_list,HKL_list_size,start_atom,end_atom,mol->natoms,d_atomsf,B);
+    if(exp->bandwidth == 0 || opts->wavelength_samples == 1){
+      CUDA_scattering_from_all_atoms<<<number_of_blocks, threads_per_block>>>(d_F,d_I,d_atomic_number,d_atomic_pos,d_HKL_list,HKL_list_size,start_atom,end_atom,mol->natoms,d_atomsf,B);
+    }else{
+      CUDA_spectrum_scattering_from_all_atoms<<<number_of_blocks, threads_per_block>>>(d_F,d_I,d_atomic_number,d_atomic_pos,d_HKL_list,HKL_list_size,start_atom,end_atom,mol->natoms,d_atomsf,B,exp->wavelength,exp->bandwidth,opts->wavelength_samples);
+    }
     cudaThreadSynchronize();
     sp_cuda_check_errors();
   }
@@ -318,6 +336,68 @@ __global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const 
       float tmp = 2*3.14159265F*(HKL_list[3*id]*-pos[i*3]+HKL_list[3*id+1]*-pos[i*3+1]+HKL_list[3*id+2]*-pos[i*3+2]);      
       F[id].x += sf*cos(tmp);
       F[id].y += sf*sin(tmp);
+    }
+    if(end_atom == natoms){
+      I[id] =  F[id].x*F[id].x + F[id].y*F[id].y;
+    }
+  }    
+}
+
+
+
+__global__ 
+void CUDA_spectrum_scattering_from_all_atoms(cufftComplex * F,float * I, const int * Z,
+					     const float * pos, const float * HKL_list,
+					     const int hkl_size,const int start_atom,
+					     const int end_atom, const int natoms,
+					     const float * atomsf,const float B,
+					     const float wavelength, const float bandwidth,
+					     const int wavelength_samples){
+  //  const int id = blockIdx.x*blockDim.x + threadIdx.x;
+  const int id = ((blockIdx.y*blockDim.y + threadIdx.y)*gridDim.x + blockIdx.x )*blockDim.x + threadIdx.x;
+  if(id<hkl_size){
+    const float H = HKL_list[3*id];
+    const float K = HKL_list[3*id+1];
+    const float L = HKL_list[3*id+2];
+    /* The 2.0 is due to the fact that the bandwidth corresponds to 2 sigma*/
+    const float w_stddev = (wavelength-(wavelength*(1-bandwidth/2)))/2.0;
+    const float pi = 3.14159265;
+    const float one_over_sqrt_two_pi = 1/(sqrt(2*pi));
+    int lastZ = -1;
+    float sf = 0;
+    float d = sqrt(HKL_list[3*id]*HKL_list[3*id]+HKL_list[3*id+1]*HKL_list[3*id+1]+HKL_list[3*id+2]*HKL_list[3*id+2]) * 1e-10F;
+    for(int i = start_atom;i<end_atom;i++){ 
+      if(!Z[i]){
+	continue;
+      }
+      if(lastZ != Z[i]){
+	sf = 0;
+	/* the 0.25 is there because the 's' used by the aproxumation is 'd/2' */
+	for(int j = 0;j<4;j++){
+	  sf+= atomsf[Z[i]*9+j]*exp(-(atomsf[Z[i]*9+j+4]+B)*d*d*0.25F);
+	}                
+	sf += atomsf[Z[i]*9+8]*exp(-B*d*d/0.25F);
+	lastZ = Z[i];
+      }
+      float total_weight = 0;
+      cufftComplex f = {0,0};
+      for(int j = 0;j < wavelength_samples;j++){
+	float new_wavelength = (wavelength*(1-bandwidth/2))+
+	  (((float)j/(wavelength_samples-1))*wavelength*bandwidth);
+	const float h = H*wavelength/new_wavelength;
+	const float k = K*wavelength/new_wavelength;
+	const float l = L*wavelength/new_wavelength;
+	const float std_deviations = (new_wavelength-wavelength)/w_stddev;
+	const float weight = exp(-std_deviations*std_deviations/2);
+	total_weight += weight;
+	float tmp = 2*pi*(h*-pos[i*3]+k*-pos[i*3+1]+l*-pos[i*3+2]);      
+	f.x += sf*cos(tmp)*weight;
+	f.y += sf*sin(tmp)*weight;
+      }
+      f.x = f.x/total_weight;
+      f.y = f.y/total_weight;
+      F[id].x += f.x;
+      F[id].y += f.y;
     }
     if(end_atom == natoms){
       I[id] =  F[id].x*F[id].x + F[id].y*F[id].y;

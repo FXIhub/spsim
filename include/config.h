@@ -54,6 +54,8 @@ typedef struct{
 
 typedef struct{
   float wavelength; /* in meters */
+  float bandwidth; /* percentage around the peak accounting for 95% of the energy.
+		      The 95% corresponds to 2 sigma stddev assuming gaussian spectrum. */
   float exposure_time; /* in seconds */
   float beam_intensity; /* In photons/(time.area) */
   float beam_center_x; /* in meters */
@@ -111,7 +113,6 @@ typedef struct{
   /* Center of the detector in relation to the beam (by definition the beam follows the z axis) */
   float center_x;
   float center_y;
-
 }CCD;
 
 
@@ -147,6 +148,8 @@ typedef struct {
   /* in the usual a,b,c alpha,beta,gamma order */
   float crystal_cell[6];
   int use_cuda;
+  int wavelength_samples; /* number of wavelengths to sample during
+			      the bandwidth effect calculation*/
 }Options;
 
 
