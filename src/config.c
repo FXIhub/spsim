@@ -287,6 +287,9 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"use_cuda")){
     res->use_cuda = config_lookup_int(&config,"use_cuda");
   }
+  if(config_lookup(&config,"wavelength_samples")){
+    res->wavelength_samples = config_lookup_int(&config,"wavelength_samples");
+  }
 
 
   res->detector->nx = rint(res->detector->width/res->detector->pixel_width);
