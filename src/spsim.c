@@ -19,6 +19,9 @@
 
 #include <stdlib.h>
 #include <spimage.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 #include "config.h"
 #include "diffraction.h"
 #include "molecule.h"
@@ -101,12 +104,17 @@ int main(int argc, char ** argv){
   MPI_Init(&argc, &argv);
 #endif
   read_options_file("spsim.conf",opts);
+  if(opts->random_seed < 0){
+    opts->random_seed = getpid();
+  }
+  sp_srand(opts->random_seed);
   write_options_file("spsim.confout", opts);
   if(opts->detector->nz > 1){
     is3D = 1;
   }else{
     is3D = 0;
   }
+
   if(opts->input_type == CHEM_FORMULA){
     mol = get_Molecule_from_formula(opts->chem_formula,opts);
     write_pdb_from_mol("molout.pdb",mol);

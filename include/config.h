@@ -150,6 +150,7 @@ typedef struct {
   int use_cuda;
   int wavelength_samples; /* number of wavelengths to sample during
 			      the bandwidth effect calculation*/
+  int random_seed;
 }Options;
 
 

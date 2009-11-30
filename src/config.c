@@ -62,6 +62,7 @@ Options * set_defaults(){
   opt->crystal_cell[4] = 90;
   opt->crystal_cell[5] = 90;
   opt->wavelength_samples = 5;
+  opt->random_seed = -1;
   return opt;
 }
 
@@ -290,6 +291,9 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"wavelength_samples")){
     res->wavelength_samples = config_lookup_int(&config,"wavelength_samples");
   }
+  if(config_lookup(&config,"random_seed")){
+    res->random_seed = config_lookup_int(&config,"random_seed");
+  }
 
 
   res->detector->nx = rint(res->detector->width/res->detector->pixel_width);
@@ -471,6 +475,8 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_int(s,res->use_cuda);
   s = config_setting_add(root,"wavelength_samples",CONFIG_TYPE_INT);
   config_setting_set_int(s,res->wavelength_samples);
+  s = config_setting_add(root,"random_seed",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->random_seed);
 
 
   if(res->sf_filename[0]){

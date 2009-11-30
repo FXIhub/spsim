@@ -215,7 +215,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
 #else
   int timer = sp_timer_start();
   Diffraction_Pattern * res = (Diffraction_Pattern *)malloc(sizeof(Diffraction_Pattern));
-  dim3 threads_per_block(8,8);
+  dim3 threads_per_block(16,16);
   const int HKL_side = (sqrt(HKL_list_size)+1);
   dim3 number_of_blocks( (HKL_side+threads_per_block.x-1)/threads_per_block.x,
 			 (HKL_side+threads_per_block.y-1)/threads_per_block.y );
@@ -271,7 +271,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
   cutilSafeCall(cudaMemset(d_I,0,sizeof(float)*HKL_list_size));
 
   /* we have to do this in chunks so we don't block the card forever */
-  const int chunk_size = 1000;
+  const int chunk_size = 100;
 
   /* extra loop around the wavelengths */
   if(opts->wavelength_samples >1 && (opts->wavelength_samples & 1) == 0){
@@ -320,6 +320,7 @@ __global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const 
     int lastZ = -1;
     float sf = 0;
     float d = sqrt(HKL_list[3*id]*HKL_list[3*id]+HKL_list[3*id+1]*HKL_list[3*id+1]+HKL_list[3*id+2]*HKL_list[3*id+2]) * 1e-10F;
+    const float hkl[3] = {HKL_list[3*id],HKL_list[3*id+1],HKL_list[3*id+2]};
     for(int i = start_atom;i<end_atom;i++){ 
       if(!Z[i]){
 	continue;
@@ -333,7 +334,7 @@ __global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const 
 	sf += atomsf[Z[i]*9+8]*exp(-B*d*d/0.25F);
 	lastZ = Z[i];
       }
-      float tmp = 2*3.14159265F*(HKL_list[3*id]*-pos[i*3]+HKL_list[3*id+1]*-pos[i*3+1]+HKL_list[3*id+2]*-pos[i*3+2]);      
+      float tmp = 2*3.14159265F*(hkl[0]*-pos[i*3]+hkl[1]*-pos[i*3+1]+hkl[2]*-pos[i*3+2]);      
       F[id].x += sf*cos(tmp);
       F[id].y += sf*sin(tmp);
     }
