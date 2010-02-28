@@ -100,6 +100,7 @@ int main(int argc, char ** argv){
   Image * noiseless;
   Image * output;
   Molecule * mol = NULL;
+  Rotation ** rot = NULL;
 #ifdef MPI
   MPI_Init(&argc, &argv);
 #endif
@@ -130,7 +131,7 @@ int main(int argc, char ** argv){
   }else{
     if(is3D){
       HKL_list = get_HKL_list_for_3d_detector(opts->detector,opts->experiment, &HKL_list_size);
-      apply_orientation_to_HKL_list(&HKL_list,&HKL_list_size,opts);
+      rot = apply_orientation_to_HKL_list(&HKL_list,&HKL_list_size,opts);
       if(opts->use_fft_for_sf){
 	pattern = compute_pattern_by_fft(mol,opts->detector,opts->experiment,opts->b_factor);
       }else if(opts->use_nfft_for_sf){
@@ -153,7 +154,7 @@ int main(int argc, char ** argv){
       }
     }else{
       HKL_list = get_HKL_list_for_detector(opts->detector,opts->experiment, &HKL_list_size);
-      apply_orientation_to_HKL_list(&HKL_list,&HKL_list_size,opts);
+      rot = apply_orientation_to_HKL_list(&HKL_list,&HKL_list_size,opts);
       if(opts->use_fft_for_sf){
 	fprintf(stderr,"Cannot use fft for 2D pattern calculation!\n");
 	abort();
@@ -252,6 +253,10 @@ int main(int argc, char ** argv){
   output->detector->pixel_size[0] = opts->detector->pixel_width*opts->detector->binning_x;
   output->detector->pixel_size[1] = opts->detector->pixel_height*opts->detector->binning_y;
   output->detector->detector_distance = opts->detector->distance;
+  if(rot){
+    output->detector->orientation = *rot[0];
+  }
+
   sp_image_write(output,"photon_out.h5",sizeof(real));
   /*      sp_image_write(output,"photon_out.vtk",0);*/
 
@@ -284,6 +289,9 @@ int main(int argc, char ** argv){
   noiseless->detector->pixel_size[0] = opts->detector->pixel_width*opts->detector->binning_x;
   noiseless->detector->pixel_size[1] = opts->detector->pixel_height*opts->detector->binning_y;
   noiseless->detector->detector_distance = opts->detector->distance;
+  if(rot){
+    noiseless->detector->orientation = *(rot[0]);
+  }
   i = 0;
   //  for(int u = 0; u < opts->n_patterns; u++) {
   //printf("pattern %i\n",u);

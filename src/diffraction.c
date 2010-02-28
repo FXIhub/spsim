@@ -281,8 +281,8 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
 }
 
 
-void apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Options * opts){
-  Rotation * rot;
+Rotation ** apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Options * opts){
+  Rotation ** rot = sp_malloc(sizeof(Rotation *)*opts->n_patterns);
   int d = 3;
   int i,j,k;
   sp_vector * v = sp_vector_alloc(3);
@@ -293,13 +293,13 @@ void apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Option
   for(k = 0;k<opts->n_patterns;k++){
     memcpy(&((*HKL_list)[d*(*HKL_list_size)*k]),*HKL_list,sizeof(float)*d*(*HKL_list_size));
     if(opts->random_orientation){
-      rot = sp_rot_uniform();
+      rot[k] = sp_rot_uniform();
     }else{
-      rot = sp_rot_euler(opts->euler_orientation[0],opts->euler_orientation[1],opts->euler_orientation[2]);
+      rot[k] = sp_rot_euler(opts->euler_orientation[0],opts->euler_orientation[1],opts->euler_orientation[2]);
     }
     for(i = 0;i<*HKL_list_size;i++){
       v->data = &((*HKL_list)[(*HKL_list_size*k+i)*d]);
-      u = sp_matrix_vector_prod(rot->R,v);
+      u = sp_matrix_vector_prod(rot[k]->R,v);
       for(j = 0;j<d;j++){
 	(*HKL_list)[(*HKL_list_size*k+i)*d+j] = u->data[j];
       }
@@ -309,6 +309,7 @@ void apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Option
   v->data = tmp;
   sp_vector_free(v);
   *HKL_list_size = *HKL_list_size*opts->n_patterns;
+  return rot;
 }
 
 float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_size){
