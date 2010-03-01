@@ -281,8 +281,8 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
 }
 
 
-Rotation ** apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Options * opts){
-  Rotation ** rot = sp_malloc(sizeof(Rotation *)*opts->n_patterns);
+SpRotation ** apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Options * opts){
+  SpRotation ** rot = sp_malloc(sizeof(SpRotation *)*opts->n_patterns);
   int d = 3;
   int i,j,k;
   sp_vector * v = sp_vector_alloc(3);
@@ -299,7 +299,7 @@ Rotation ** apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size
     }
     for(i = 0;i<*HKL_list_size;i++){
       v->data = &((*HKL_list)[(*HKL_list_size*k+i)*d]);
-      u = sp_matrix_vector_prod(rot[k]->R,v);
+      u = sp_matrix_vector_prod(rot[k],v);
       for(j = 0;j<d;j++){
 	(*HKL_list)[(*HKL_list_size*k+i)*d+j] = u->data[j];
       }

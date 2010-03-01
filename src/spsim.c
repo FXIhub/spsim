@@ -100,7 +100,7 @@ int main(int argc, char ** argv){
   Image * noiseless;
   Image * output;
   Molecule * mol = NULL;
-  Rotation ** rot = NULL;
+  SpRotation ** rot = NULL;
 #ifdef MPI
   MPI_Init(&argc, &argv);
 #endif
@@ -254,7 +254,7 @@ int main(int argc, char ** argv){
   output->detector->pixel_size[1] = opts->detector->pixel_height*opts->detector->binning_y;
   output->detector->detector_distance = opts->detector->distance;
   if(rot){
-    output->detector->orientation = *rot[0];
+    output->detector->orientation = rot[0];
   }
 
   sp_image_write(output,"photon_out.h5",sizeof(real));
@@ -290,7 +290,7 @@ int main(int argc, char ** argv){
   noiseless->detector->pixel_size[1] = opts->detector->pixel_height*opts->detector->binning_y;
   noiseless->detector->detector_distance = opts->detector->distance;
   if(rot){
-    noiseless->detector->orientation = *(rot[0]);
+    noiseless->detector->orientation = rot[0];
   }
   i = 0;
   //  for(int u = 0; u < opts->n_patterns; u++) {
