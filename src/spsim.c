@@ -224,6 +224,29 @@ int main(int argc, char ** argv){
   write_3D_array_to_vtk(pattern->ints,opts->detector->nx,opts->detector->ny,opts->detector->nz,"scattering_factor.vtk");  
 
   write_3D_array_as_structured_grid_to_vtk(pattern->ints,opts->detector,HKL_list,HKL_list_size,opts->n_patterns,"ewald.vtk");  
+  for(int n = 0;n<opts->n_patterns;n++){
+    Image * ints = sp_image_alloc(opts->detector->nx,opts->detector->ny,opts->detector->nz);    
+    i = 0;
+    for(int x = 0;x<sp_image_x(ints);x++){
+      for(int y = 0;y<sp_image_y(ints);y++){
+	for(int z = 0;z<sp_image_z(ints);z++){
+	  sp_image_set(ints,x,y,z,sp_cinit(pattern->ints[sp_image_size(ints)*n+i++],0));
+	  sp_i3matrix_set(ints->mask,x,y,z,1);
+	}
+      }
+    }
+    ints->detector->wavelength = opts->experiment->wavelength;
+    ints->detector->pixel_size[0] = opts->detector->pixel_width*opts->detector->binning_x;
+    ints->detector->pixel_size[1] = opts->detector->pixel_height*opts->detector->binning_y;
+    ints->detector->detector_distance = opts->detector->distance;
+    if(rot){
+      ints->detector->orientation = rot[n];
+    }
+    char buffer[1024];
+    sprintf(buffer,"intensities-%05d.h5",n);
+    sp_image_write(ints,buffer,sizeof(real));    
+    sp_image_free(ints);
+  }
   calculate_thomson_correction(opts->detector);
   calculate_pixel_solid_angle(opts->detector);
   /*  write_3D_array_to_vtk(opts->detector->thomson_correction,opts->detector->nx,opts->detector->ny,
