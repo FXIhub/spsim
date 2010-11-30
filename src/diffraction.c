@@ -24,9 +24,9 @@
 #include <float.h>
 #include <complex.h>
 #include <spimage.h>
-#include <nfft/nfft3.h>
-#include <nfft/options.h>
-#include <nfft/window_defines.h>
+#include <nfft3.h>
+//#include <nfft/options.h>
+//#include <nfft/window_defines.h>
 #include "config.h"
 #include "diffraction.h"
 #include "mpi_comm.h"
@@ -218,6 +218,7 @@ static double ilumination_function(Experiment * exper,float * pos){
   /* calculate distance from the center of the beam */
   dist2 = (pos[0]-exper->beam_center_x)*(pos[0]-exper->beam_center_x)+(pos[1]-exper->beam_center_y)*(pos[1]-exper->beam_center_y);
   sigma = exper->beam_fwhm/2.355;
+  printf("here\n");
   return exp(-dist2/(2*sigma*sigma));
 }
 
