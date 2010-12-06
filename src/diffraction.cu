@@ -254,7 +254,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
     sorted_atomic_number[i] = sorted_map[2*i];
     sorted_pos[3*i] = mol->pos[sorted_map[2*i+1]*3];
     sorted_pos[3*i+1] = mol->pos[sorted_map[2*i+1]*3+1];
-    sorted_pos[3*i+2] = mol->pos[sorted_map[2*i+2]*3+2];
+    sorted_pos[3*i+2] = mol->pos[sorted_map[2*i+1]*3+2];
   }
 
   res->F = (Complex *)malloc(sizeof(Complex)*HKL_list_size);
