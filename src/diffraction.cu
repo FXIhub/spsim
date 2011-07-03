@@ -303,7 +303,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
     cudaThreadSynchronize();
     sp_cuda_check_errors();
   }
-  calculate_pattern_from_crystal_cuda(d_I,d_F,d_HKL_list, HKL_list_size, opts);
+  //  calculate_pattern_from_crystal_cuda(d_I,d_F,d_HKL_list, HKL_list_size, opts);
   cudaMemcpy(res->F,d_F,sizeof(cufftComplex)*HKL_list_size,cudaMemcpyDeviceToHost);
   cudaMemcpy(res->ints,d_I,sizeof(float)*HKL_list_size,cudaMemcpyDeviceToHost);
   sp_cuda_check_errors();
@@ -357,9 +357,9 @@ __global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const 
 	lastZ = Z[i];
       }
       float tmp = 2*3.14159265F*(hkl[0]*-pos[i*3]+hkl[1]*-pos[i*3+1]+hkl[2]*-pos[i*3+2]);      
-      sf *= sqrt(cuda_ilumination_function(&pos[i*3], beam_center, beam_fwhm));
-      F[id].x += sf*cos(tmp);
-      F[id].y += sf*sin(tmp);
+      float ilum = sqrt(cuda_ilumination_function(&pos[i*3], beam_center, beam_fwhm));
+      F[id].x += ilum*sf*cos(tmp);
+      F[id].y += ilum*sf*sin(tmp);
     }
     if(end_atom == natoms){
       I[id] =  F[id].x*F[id].x + F[id].y*F[id].y;
