@@ -176,7 +176,7 @@ static float  scatt_factor(float d,int Z,float B){
   for(i = 0;i<4;i++){
     res+= atomsf[Z][i]*exp(-(atomsf[Z][i+4]+B)*d*d*0.25);
   }                
-  res += atomsf[Z][8]*exp(-B*d*d/0.25);
+  res += atomsf[Z][8]*exp(-B*d*d*0.25);
   return res;    
 }
 

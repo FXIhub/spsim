@@ -173,7 +173,7 @@ l(x,y) = \frac{1}{\lambda} - \frac{1}{\lambda^2\chi}
 Then the molecular scattering factors are calculated on those coordinates, using CCP4's atomsf.lib to get the atomic scattering factors.
 Assuming $n$ atoms at positions $(x_j,y_j,z_j)$ and using $a_i$,$b_i$ and $c$ from atomsf.lib.
 \begin{equation}
-  f_{0j}(h,k,l) = \sum_{i=1}^{4} a_i exp(-b_i\sin^2\Biggl[\frac{\sqrt{h^2+k^2+l^2}}{2}\Biggl]) + c
+  f_{0j}(h,k,l) = \sum_{i=1}^{4} a_i exp(-b_i\Biggl[\frac{\sqrt{h^2+k^2+l^2}}{2}\Biggl]) + c
 \end{equation}
 \begin{equation}
   F(h,k,l) = \sum_{j=1}^{n} \{f_{0j}(h,k,l) \cos\{2 \pi (h x_j+k y_j + l z_j)\}\} + i \sum_{j=1}^{j=n}\{f_{0j}(h,k,l) \sin\{2 \pi (h x_j+k y_j + l z_j)\}\}
