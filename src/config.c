@@ -63,6 +63,16 @@ Options * set_defaults(){
   opt->crystal_cell[5] = 90;
   opt->wavelength_samples = 5;
   opt->random_seed = -1;
+  opt->output_sf_vtk = 0;
+  opt->output_scatt_int = 0;
+  opt->output_ewald_vtk = 0;
+  opt->output_intensities = 0;
+  opt->output_noiseless_photons = 1;
+  opt->output_photons = 1;
+  opt->output_electron_pixel_vtk = 0;
+  opt->output_noiseless_count = 0;
+  opt->output_count = 0;
+  opt->output_realspace_histogram = 0;
   return opt;
 }
 
@@ -295,6 +305,13 @@ void read_options_file(char * filename, Options * res){
     res->random_seed = config_lookup_int(&config,"random_seed");
   }
 
+  if(config_lookup(&config,"output_noiseless_photons")){
+    res->output_noiseless_photons = config_lookup_int(&config,"output_noiseless_photons");
+  }
+  if(config_lookup(&config,"output_photons")){
+    res->output_photons = config_lookup_int(&config,"output_photons");
+  }
+
 
   res->detector->nx = rint(res->detector->width/res->detector->pixel_width);
   res->detector->ny = rint(res->detector->height/res->detector->pixel_height);
@@ -477,6 +494,10 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_int(s,res->wavelength_samples);
   s = config_setting_add(root,"random_seed",CONFIG_TYPE_INT);
   config_setting_set_int(s,res->random_seed);
+  s = config_setting_add(root,"output_photons",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->output_photons);
+  s = config_setting_add(root,"output_noiseless_photons",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->output_noiseless_photons);
 
 
   if(res->sf_filename[0]){

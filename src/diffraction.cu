@@ -205,6 +205,12 @@ Diffraction_Pattern * cuda_compute_pattern_on_list(Molecule * mol, float * HKL_l
     sp_imag(res->F[i]) = thrust::reduce(begin, end);
     res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
   }
+  cudaFree(d_real_part);
+  cudaFree(d_imag_part);
+  cudaFree(d_atomic_number);
+  cudaFree(d_sf_cache);
+  cudaFree(d_HKL_list);
+  cudaFree(d_atomic_pos);
   printf("%g atoms.pixel/s\n",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
   return res;  
 #endif 

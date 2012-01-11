@@ -75,7 +75,7 @@ void calculate_pixel_solid_angle(CCD * det);
 
 void calculate_thomson_correction(CCD * det);
 
-void calculate_photons_per_pixel(Diffraction_Pattern * pattern, CCD * det, Experiment * experiment);
+void calculate_photons_per_pixel(Diffraction_Pattern * pattern, Options * opts);
 
 Diffraction_Pattern * load_pattern_from_file(CCD * det,char * filename, 
 					     float * HKL_list, int HKL_list_size);
@@ -84,7 +84,7 @@ void write_hkl_grid(float * list, Molecule * mol,CCD * det);
 Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experiment * exp,float B);
 Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experiment * exp, float B,float * HKL_list,Options * opts);
 Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL_list, int HKL_list_size, CCD * det,float B,Options * opts);
-SpRotation ** apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Options * opts);
+SpRotation * apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Options * opts);
 Diffraction_Pattern * compute_box_on_list(Box box, float * HKL_list, int HKL_list_size);
 Diffraction_Pattern * compute_fresnel_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size,float B,Experiment * exp);
 

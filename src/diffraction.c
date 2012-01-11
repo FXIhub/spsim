@@ -282,34 +282,28 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
 }
 
 
-SpRotation ** apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Options * opts){
-  SpRotation ** rot = sp_malloc(sizeof(SpRotation *)*opts->n_patterns);
+SpRotation * apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Options * opts){
+  SpRotation * rot;
   int d = 3;
-  int i,j,k;
+  int i,j;
   sp_vector * v = sp_vector_alloc(3);
   sp_vector * u = sp_vector_alloc(3);
-  /* grow list to accomodate more patterns */
-  *HKL_list = realloc(*HKL_list,*HKL_list_size*opts->n_patterns*sizeof(float)*d);
   real * tmp = v->data;
-  for(k = 0;k<opts->n_patterns;k++){
-    memcpy(&((*HKL_list)[d*(*HKL_list_size)*k]),*HKL_list,sizeof(float)*d*(*HKL_list_size));
-    if(opts->random_orientation){
-      rot[k] = sp_rot_uniform();
-    }else{
-      rot[k] = sp_rot_euler(opts->euler_orientation[0],opts->euler_orientation[1],opts->euler_orientation[2]);
+  if(opts->random_orientation){
+    rot = sp_rot_uniform();
+  }else{
+    rot = sp_rot_euler(opts->euler_orientation[0],opts->euler_orientation[1],opts->euler_orientation[2]);
+  }
+  for(i = 0;i<*HKL_list_size;i++){
+    v->data = &((*HKL_list)[i*d]);
+    u = sp_matrix_vector_prod(rot,v);
+    for(j = 0;j<d;j++){
+      (*HKL_list)[i*d+j] = u->data[j];
     }
-    for(i = 0;i<*HKL_list_size;i++){
-      v->data = &((*HKL_list)[(*HKL_list_size*k+i)*d]);
-      u = sp_matrix_vector_prod(rot[k],v);
-      for(j = 0;j<d;j++){
-	(*HKL_list)[(*HKL_list_size*k+i)*d+j] = u->data[j];
-      }
-      sp_vector_free(u);		          
-    }
+    sp_vector_free(u);		          
   }
   v->data = tmp;
   sp_vector_free(v);
-  *HKL_list_size = *HKL_list_size*opts->n_patterns;
   return rot;
 }
 
@@ -1153,7 +1147,9 @@ void calculate_pixel_solid_angle(CCD * det){
 }                    
 
 
-void calculate_photons_per_pixel(Diffraction_Pattern * pattern, CCD * det, Experiment * experiment){
+void calculate_photons_per_pixel(Diffraction_Pattern * pattern, Options * opts){
+  CCD * det = opts->detector;
+  Experiment * experiment = opts->experiment;
   int i;
   if(!det->thomson_correction){
     calculate_thomson_correction(det);

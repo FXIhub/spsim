@@ -117,7 +117,7 @@ int main(int argc, char ** argv){
 			opts->detector->nz,"box_thomson_correction.vtk");
   write_3D_array_to_vtk(opts->detector->solid_angle,opts->detector->nx,opts->detector->ny,
 			opts->detector->nz,"box_solid_angle.vtk");
-  calculate_photons_per_pixel(pattern,opts->detector,opts->experiment);
+  calculate_photons_per_pixel(pattern,opts);
   write_3D_array_to_vtk(opts->detector->photons_per_pixel,opts->detector->nx,opts->detector->ny,
 			opts->detector->nz,"box_pattern.vtk");
   generate_poisson_noise(opts->detector);
