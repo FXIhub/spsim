@@ -306,9 +306,8 @@ int main(int argc, char ** argv){
       write_3D_array_to_vtk(opts->detector->electrons_per_pixel,opts->detector->nx,opts->detector->ny,opts->detector->nz,buffer);
     }
 
-    if(opts->output_count){
-      calculate_real_detector_output(opts->detector,opts->experiment);
-      
+    calculate_real_detector_output(opts->detector,opts->experiment);
+    if(opts->output_count){      
       Image * output = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,opts->detector->nz/opts->detector->binning_z);
       i = 0;
       for(int x = 0;x<sp_image_x(output);x++){
@@ -366,7 +365,22 @@ int main(int argc, char ** argv){
     free(pattern->ints);
     free(pattern->HKL_list);
     free(pattern);
+    free(opts->detector->photons_per_pixel);
+    free(opts->detector->thomson_correction);
+    free(opts->detector->solid_angle);
+    free(opts->detector->photon_count);
+    free(opts->detector->electrons_per_pixel);
+    free(opts->detector->real_output);
+    free(opts->detector->noiseless_output);
   }
+  free(mol->atomic_number);
+  free(mol->pos);  
+  free(opts->chem_formula);
+  free(opts->experiment);
+  free(opts->detector);
+  free(opts);
+  free(rot);
+
   return 0;
 }
   

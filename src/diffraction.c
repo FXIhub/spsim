@@ -287,7 +287,6 @@ SpRotation * apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_siz
   int d = 3;
   int i,j;
   sp_vector * v = sp_vector_alloc(3);
-  sp_vector * u = sp_vector_alloc(3);
   real * tmp = v->data;
   if(opts->random_orientation){
     rot = sp_rot_uniform();
@@ -296,7 +295,7 @@ SpRotation * apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_siz
   }
   for(i = 0;i<*HKL_list_size;i++){
     v->data = &((*HKL_list)[i*d]);
-    u = sp_matrix_vector_prod(rot,v);
+    sp_vector * u = sp_matrix_vector_prod(rot,v);
     for(j = 0;j<d;j++){
       (*HKL_list)[i*d+j] = u->data[j];
     }
@@ -1226,4 +1225,5 @@ void write_hkl_grid(float * list, Molecule * mol,CCD * det){
     index += 3*(det->binning_x-1)*(det->ny);
   }
   sp_image_write(hkl_grid,"hkl_grid.h5",sizeof(real));
+  sp_image_free(hkl_grid);
 }

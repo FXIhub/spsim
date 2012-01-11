@@ -167,5 +167,6 @@ float * read_VTK_to_array(int nx, int ny, int nz, char * filename){
     res[i++] = strtod(start,&end);
   }
   fclose(fp);
+  free(buffer);
   return res;
 }
