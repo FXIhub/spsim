@@ -97,8 +97,6 @@ int main(int argc, char ** argv){
   int HKL_list_size = 0;
   int i;
   int is3D = 0;
-  Image * noiseless;
-  Image * output;
   Molecule * mol = NULL;
   SpRotation ** rot = NULL;
   char buffer[1024];
@@ -254,7 +252,7 @@ int main(int argc, char ** argv){
     
     if(opts->output_noiseless_photons){
       i = 0;
-      output = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,opts->detector->nz/opts->detector->binning_z);
+      Image * output = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,opts->detector->nz/opts->detector->binning_z);
       
       for(int x = 0;x<sp_image_x(output);x++){
 	for(int y = 0;y<sp_image_y(output);y++){
@@ -280,7 +278,7 @@ int main(int argc, char ** argv){
     
     if(opts->output_photons){
       i = 0;
-      output = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,opts->detector->nz/opts->detector->binning_z);
+      Image * output = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,opts->detector->nz/opts->detector->binning_z);
       
       for(int x = 0;x<sp_image_x(output);x++){
 	for(int y = 0;y<sp_image_y(output);y++){
@@ -311,7 +309,7 @@ int main(int argc, char ** argv){
     if(opts->output_count){
       calculate_real_detector_output(opts->detector,opts->experiment);
       
-      output = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,opts->detector->nz/opts->detector->binning_z);
+      Image * output = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,opts->detector->nz/opts->detector->binning_z);
       i = 0;
       for(int x = 0;x<sp_image_x(output);x++){
 	for(int y = 0;y<sp_image_y(output);y++){
@@ -334,7 +332,7 @@ int main(int argc, char ** argv){
     calculate_noiseless_detector_output(opts->detector,opts->experiment);
 
     if(opts->output_noiseless_count){
-      noiseless = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,opts->detector->nz/opts->detector->binning_z);
+      Image * noiseless = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,opts->detector->nz/opts->detector->binning_z);
       noiseless->detector->wavelength = opts->experiment->wavelength;
       noiseless->detector->pixel_size[0] = opts->detector->pixel_width*opts->detector->binning_x;
       noiseless->detector->pixel_size[1] = opts->detector->pixel_height*opts->detector->binning_y;
@@ -367,6 +365,7 @@ int main(int argc, char ** argv){
     free(pattern->F);
     free(pattern->ints);
     free(pattern->HKL_list);
+    free(pattern);
   }
   return 0;
 }

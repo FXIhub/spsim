@@ -208,9 +208,10 @@ Diffraction_Pattern * cuda_compute_pattern_on_list(Molecule * mol, float * HKL_l
   cudaFree(d_real_part);
   cudaFree(d_imag_part);
   cudaFree(d_atomic_number);
+  cudaFree(d_atomic_pos);
   cudaFree(d_sf_cache);
   cudaFree(d_HKL_list);
-  cudaFree(d_atomic_pos);
+  free(atom_ilumination);
   printf("%g atoms.pixel/s\n",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
   return res;  
 #endif 
@@ -314,6 +315,15 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
   cudaMemcpy(res->ints,d_I,sizeof(float)*HKL_list_size,cudaMemcpyDeviceToHost);
   sp_cuda_check_errors();
   printf("%g atoms.pixel/s\n",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
+  cudaFree(d_I);
+  cudaFree(d_F);
+  cudaFree(d_atomsf);
+  cudaFree(d_HKL_list);
+  cudaFree(d_atomic_pos);
+  cudaFree(d_atomic_number);
+  free(sorted_pos);
+  free(sorted_atomic_number);
+  free(sorted_map);
   return res;  
 #endif 
 }
