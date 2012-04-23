@@ -49,7 +49,11 @@ Options * set_defaults(){
   opt->euler_orientation[2]= 0;
   opt->random_orientation = 0;
   opt->vectorize = 1;
+#ifdef _USE_CUDA
   opt->use_cuda = 1;
+#else
+  opt->use_cuda = 0;
+#endif
   opt->delta_atoms = 0;
   opt->fast_exit = 0;
   opt->crystal_size[0] = 1;
@@ -297,6 +301,13 @@ void read_options_file(char * filename, Options * res){
   }
   if(config_lookup(&config,"use_cuda")){
     res->use_cuda = config_lookup_int(&config,"use_cuda");
+#ifndef _USE_CUDA
+    if(res->use_cuda){
+      res->use_cuda = 0;
+      fprintf(stderr,"Warning: use_cuda set to true but spsim was not compiled with CUDA support!\n");
+      fprintf(stderr,"Warning: Setting use_cuda to false.\n");
+    }
+#endif    
   }
   if(config_lookup(&config,"wavelength_samples")){
     res->wavelength_samples = config_lookup_int(&config,"wavelength_samples");

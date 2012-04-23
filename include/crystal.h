@@ -31,7 +31,9 @@ typedef enum{CrystalA,CrystalB,CrystalC}CrystalAxis;
 void crystal_axis_to_cartesian(Options * opts,CrystalAxis axis,float * x,float * y,float *z);
 void crystal_cell_matrix(Options * opts,float * matrix);
   void calculate_pattern_from_crystal(float * I,Complex * F,float * HKL_list, int HKL_list_size,Options * opts);
+#ifdef _USE_CUDA
   void calculate_pattern_from_crystal_cuda(float * d_I, cufftComplex * d_F,float * d_HKL_list, int HKL_list_size,Options * opts);
+#endif
 
 #ifdef __cplusplus
 }  /* extern "C" */
