@@ -68,3 +68,36 @@ INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/")
 INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/libconfig")
 
 ADD_SUBDIRECTORY(src)
+
+########### Macosx Bundling ###############
+IF(APPLE)
+  ADD_CUSTOM_TARGET(macosx_bundle perl scripts/macosx_dependencies.pl ${CMAKE_INSTALL_PREFIX}  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} COMMENT "making the macosx bundle." VERBATIM)
+#  ADD_CUSTOM_TARGET(macosx_bundle perl scripts/macosx_dependencies.pl ${CMAKE_INSTALL_PREFIX} DEPENDS install  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} COMMENT "making the macosx bundle." VERBATIM)
+ENDIF()
+
+########### Linux Bundling ###############
+
+IF(LINUX)
+  ADD_CUSTOM_TARGET(linux_bundle perl scripts/linux_dependencies.pl ${CMAKE_INSTALL_PREFIX}   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} COMMENT "making the linux bundle." VERBATIM)
+#  ADD_CUSTOM_TARGET(macosx_bundle perl scripts/macosx_dependencies.pl ${CMAKE_INSTALL_PREFIX} DEPENDS install  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} COMMENT "making the macosx bundle." VERBATIM)
+ENDIF()
+
+
+########### Windows Bundling ###############
+
+IF(WIN32)
+  ADD_CUSTOM_TARGET(windows_bundle perl scripts/windows_dependencies.pl ${CMAKE_INSTALL_PREFIX}   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} COMMENT "making the windows bundle." VERBATIM)
+#  ADD_CUSTOM_TARGET(macosx_bundle perl scripts/macosx_dependencies.pl ${CMAKE_INSTALL_PREFIX} DEPENDS install  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} COMMENT "making the macosx bundle." VERBATIM)
+ENDIF()
+
+set(top_level_DOCFILES
+  AUTHORS
+  COPYING
+  Changelog
+  Copyright
+  PROBLEMS
+  README
+  )
+install(FILES ${top_level_DOCFILES} DESTINATION doc)
+install(FILES doc/UserManual.pdf DESTINATION doc)
+install(DIRECTORY examples DESTINATION .)
