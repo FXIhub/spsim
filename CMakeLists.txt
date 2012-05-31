@@ -93,9 +93,7 @@ ENDIF()
 set(top_level_DOCFILES
   AUTHORS
   COPYING
-  Changelog
-  Copyright
-  PROBLEMS
+  COPYRIGHT
   README
   )
 install(FILES ${top_level_DOCFILES} DESTINATION doc)

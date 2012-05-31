@@ -301,14 +301,28 @@ void read_options_file(char * filename, Options * res){
   }
   if(config_lookup(&config,"use_cuda")){
     res->use_cuda = config_lookup_int(&config,"use_cuda");
+  }
 #ifndef _USE_CUDA
-    if(res->use_cuda){
+  if(res->use_cuda){
+    res->use_cuda = 0;
+    fprintf(stderr,"Warning: use_cuda set to true but spsim was not compiled with CUDA support!\n");
+    fprintf(stderr,"Warning: Setting use_cuda to false.\n");
+  }
+#else
+  if(res->use_cuda){
+    int deviceCount;
+    cudaError_t cudaResultCode = cudaGetDeviceCount(&deviceCount);
+    if(cudaResultCode != cudaSuccess){
       res->use_cuda = 0;
-      fprintf(stderr,"Warning: use_cuda set to true but spsim was not compiled with CUDA support!\n");
+      fprintf(stderr,"Warning: use_cuda set to true but got \"%s\" while initializing CUDA!\n",cudaGetErrorString(cudaResultCode));
+      fprintf(stderr,"Warning: Setting use_cuda to false.\n");
+    }else if(deviceCount == 0){
+      res->use_cuda = 0;
+      fprintf(stderr,"Warning: use_cuda set to true but did not find any CUDA devices!\n");
       fprintf(stderr,"Warning: Setting use_cuda to false.\n");
     }
-#endif    
   }
+#endif
   if(config_lookup(&config,"wavelength_samples")){
     res->wavelength_samples = config_lookup_int(&config,"wavelength_samples");
   }
