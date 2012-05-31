@@ -252,7 +252,7 @@ int main(int argc, char ** argv){
     
     if(opts->output_noiseless_photons){
       i = 0;
-      Image * output = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,opts->detector->nz/opts->detector->binning_z);
+      Image * output = sp_image_alloc(opts->detector->nx,opts->detector->ny,opts->detector->nz);
       
       for(int x = 0;x<sp_image_x(output);x++){
 	for(int y = 0;y<sp_image_y(output);y++){
@@ -278,7 +278,7 @@ int main(int argc, char ** argv){
     
     if(opts->output_photons){
       i = 0;
-      Image * output = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,opts->detector->nz/opts->detector->binning_z);
+      Image * output = sp_image_alloc(opts->detector->nx,opts->detector->ny,opts->detector->nz);
       
       for(int x = 0;x<sp_image_x(output);x++){
 	for(int y = 0;y<sp_image_y(output);y++){
