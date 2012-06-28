@@ -66,6 +66,7 @@ typedef struct{
 			  */
   float beam_energy; /* in joules. Total pulse energy */
   float photon_energy; /* in eV. Alternative way to specify wavelength */
+  float focal_diameter; /* in m. Focal spot diameter */
 }Experiment;
 
 typedef struct{

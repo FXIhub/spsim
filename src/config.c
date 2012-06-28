@@ -225,6 +225,9 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"experiment_beam_energy")){
     res->experiment->beam_energy = config_lookup_float(&config,"experiment_beam_energy");
   }
+  if(config_lookup(&config,"experiment_focal_diameter")){
+    res->experiment->focal_diameter = config_lookup_float(&config,"experiment_focal_diameter");
+  }
 
   if(config_lookup_string(&config,"precalculated_sf")){
     strcpy(res->sf_filename,config_lookup_string(&config,"precalculated_sf"));
@@ -359,7 +362,7 @@ void read_options_file(char * filename, Options * res){
     float lambda = 1.240e-6/res->experiment->photon_energy;
     if(res->experiment->wavelength){
       if((lambda-res->experiment->wavelength)/(lambda+res->experiment->wavelength) > 0.01){
-	fprintf(stderr,"Warning: experimental_wavelength does not agree with experimental_photon_energy!\n");
+	fprintf(stderr,"Warning: experiment_wavelength does not agree with experiment_photon_energy!\n");
       }
     }else{
       res->experiment->wavelength = lambda;
@@ -369,14 +372,14 @@ void read_options_file(char * filename, Options * res){
       float eV = 1.240e-6/res->experiment->wavelength;
       res->experiment->photon_energy = eV;
     }else{
-      fprintf(stderr,"Warning: you need to specify the experimental_wavelength!\n");
+      fprintf(stderr,"Warning: you need to specify the experiment_wavelength!\n");
     }
   }
   if(!res->experiment->beam_intensity){
-    if(res->experiment->beam_fwhm && res->experiment->beam_energy){
+    if(res->experiment->focal_diameter && res->experiment->beam_energy){
       float eV = 1.240e-6/res->experiment->wavelength;
       float nphotons = res->experiment->beam_energy*6.24150974e18/eV;
-      float area = res->experiment->beam_fwhm*res->experiment->beam_fwhm;
+      float area = res->experiment->focal_diameter*res->experiment->focal_diameter;
       res->experiment->beam_intensity = nphotons/area;
     }
   }
@@ -487,6 +490,8 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_float(s,res->experiment->beam_energy);
   s = config_setting_add(root,"experiment_photon_energy",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->experiment->photon_energy);
+  s = config_setting_add(root,"experiment_focal_diameter",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->experiment->focal_diameter);
 
 
   s = config_setting_add(root,"box_dimension",CONFIG_TYPE_FLOAT);
