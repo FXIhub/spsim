@@ -64,6 +64,8 @@ typedef struct{
 			     to 2.355*sigma or 2*sqrt(2*ln(2))*sigma 
 			     Implicitly assumes gaussian pulse profile
 			  */
+  float beam_energy; /* in joules. Total pulse energy */
+  float photon_energy; /* in eV. Alternative way to specify wavelength */
 }Experiment;
 
 typedef struct{

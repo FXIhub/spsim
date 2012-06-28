@@ -201,6 +201,9 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"experiment_wavelength")){
     res->experiment->wavelength = config_lookup_float(&config,"experiment_wavelength");
   }
+  if(config_lookup(&config,"experiment_photon_energy")){
+    res->experiment->photon_energy = config_lookup_float(&config,"experiment_photon_energy");
+  }
   if(config_lookup(&config,"experiment_bandwidth")){
     res->experiment->bandwidth = config_lookup_float(&config,"experiment_bandwidth");
   }
@@ -219,6 +222,10 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"experiment_beam_fwhm")){
     res->experiment->beam_fwhm = config_lookup_float(&config,"experiment_beam_fwhm");
   }
+  if(config_lookup(&config,"experimental_beam_energy")){
+    res->experiment->beam_energy = config_lookup_float(&config,"experiment_beam_energy");
+  }
+
   if(config_lookup_string(&config,"precalculated_sf")){
     strcpy(res->sf_filename,config_lookup_string(&config,"precalculated_sf"));
   }
@@ -348,6 +355,31 @@ void read_options_file(char * filename, Options * res){
   }
      
 
+  if(res->experiment->photon_energy){
+    float lambda = 1.240e-6/res->experiment->photon_energy;
+    if(res->experiment->wavelength){
+      if((lambda-res->experiment->wavelength)/(lambda+res->experiment->wavelength) > 0.01){
+	fprintf(stderr,"Warning: experimental_wavelength does not agree with experimental_photon_energy!\n");
+      }
+    }else{
+      res->experiment->wavelength = lambda;
+    }
+  }else{
+    if(res->experiment->wavelength){
+      float eV = 1.240e-6/res->experiment->wavelength;
+      res->experiment->photon_energy = eV;
+    }else{
+      fprintf(stderr,"Warning: you need to specify the experimental_wavelength!\n");
+    }
+  }
+  if(!res->experiment->beam_intensity){
+    if(res->experiment->beam_fwhm && res->experiment->beam_energy){
+      float eV = 1.240e-6/res->experiment->wavelength;
+      float nphotons = res->experiment->beam_energy*6.24150974e18/eV;
+      float area = res->experiment->beam_fwhm*res->experiment->beam_fwhm;
+      res->experiment->beam_intensity = nphotons/area;
+    }
+  }
 }
 
 
@@ -451,6 +483,10 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_float(s,res->experiment->beam_center_y);
   s = config_setting_add(root,"experiment_beam_fwhm",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->experiment->beam_fwhm);
+  s = config_setting_add(root,"experiment_beam_energy",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->experiment->beam_energy);
+  s = config_setting_add(root,"experiment_photon_energy",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->experiment->photon_energy);
 
 
   s = config_setting_add(root,"box_dimension",CONFIG_TYPE_FLOAT);
