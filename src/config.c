@@ -222,7 +222,7 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"experiment_beam_fwhm")){
     res->experiment->beam_fwhm = config_lookup_float(&config,"experiment_beam_fwhm");
   }
-  if(config_lookup(&config,"experimental_beam_energy")){
+  if(config_lookup(&config,"experiment_beam_energy")){
     res->experiment->beam_energy = config_lookup_float(&config,"experiment_beam_energy");
   }
 
