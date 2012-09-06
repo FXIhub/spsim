@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
+ *\
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -24,9 +24,11 @@
 #include <float.h>
 #include <complex.h>
 #include <spimage.h>
+
+#ifdef NFFT_SUPPORT
 #include <nfft3.h>
-//#include <nfft/options.h>
-//#include <nfft/window_defines.h>
+#endif
+
 #include "config.h"
 #include "diffraction.h"
 #include "mpi_comm.h"
@@ -387,6 +389,7 @@ void multiply_pattern_on_list_with_scattering_factor(complex double * f,int Z,fl
   }
 }
 
+#ifdef NFFT_SUPPORT
 Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experiment * exp, float B,float * HKL_list,Options * opts){
   double alpha_x = atan(det->width/(2.0 * det->distance));
   double alpha_y = atan(det->height/(2.0 * det->distance));
@@ -476,7 +479,7 @@ Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experim
 	nfft_precompute_one_psi(&p);
       }
       if(is_element_in_molecule[Z] < 100){
-	ndft_adjoint(&p);  
+	nfft_adjoint(&p);  
       }else{
 	nfft_adjoint(&p);  
       }
@@ -625,7 +628,7 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
 	nnfft_precompute_phi_hut(&p);
     
       if(is_element_in_molecule[Z] < 10){
-	nndft_adjoint(&p);  
+	nnfft_adjoint(&p);  
       }else{
 	nnfft_adjoint(&p);  
       }
@@ -645,7 +648,7 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
   sum_patterns(res);
   return res;
 }
-
+#endif
 
 Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experiment * exp, float B){
   double alpha_x = atan(det->width/(2.0 * det->distance));

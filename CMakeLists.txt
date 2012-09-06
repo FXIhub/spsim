@@ -15,7 +15,16 @@ find_package(PNG REQUIRED)
 find_package(MATH REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(JPEG REQUIRED)
-find_package(NFFT REQUIRED)
+
+
+SET(USE_NFFT ON CACHE BOOL "If ON use NFFT.")
+if(USE_NFFT)
+  find_package(NFFT)
+endif(USE_NFFT)
+
+if(NFFT_FOUND)
+  ADD_DEFINITIONS(-DNFFT_SUPPORT)
+endif(NFFT_FOUND)
 
 IF(USE_CUDA)
   IF(CMAKE_VERSION)

@@ -138,7 +138,11 @@ int main(int argc, char ** argv){
 	if(opts->use_fft_for_sf){
 	  pattern = compute_pattern_by_fft(mol,opts->detector,opts->experiment,opts->b_factor);
 	}else if(opts->use_nfft_for_sf){
+  #ifdef NFFT_SUPPORT    
 	  pattern = compute_pattern_by_nfft(mol,opts->detector,opts->experiment,opts->b_factor,HKL_list,opts);
+  #else
+    fprintf(stderr,"spsim built without NFFT support!\n");
+  #endif
 	}else{
 #ifdef _USE_CUDA
 	  if(opts->use_cuda){
@@ -162,7 +166,11 @@ int main(int argc, char ** argv){
 	  fprintf(stderr,"Cannot use fft for 2D pattern calculation!\n");
 	  abort();
 	}else if(opts->use_nfft_for_sf){
+#ifdef NFFT_SUPPORT  
 	  pattern = compute_pattern_on_list_by_nfft(mol,HKL_list,HKL_list_size,opts->detector,opts->b_factor,opts);
+#else
+    fprintf(stderr,"spsim built without NFFT support!\n");
+#endif
 	}else{
 #ifdef _USE_CUDA
 	  if(opts->use_cuda){
