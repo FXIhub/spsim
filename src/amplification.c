@@ -55,7 +55,10 @@ void calculate_electrons_per_pixel(CCD * det, Experiment * experiment){
   int i;
   double h_c = 1.98644521e-25; /* Planck's constant * the speed of light */
   double photon_energy = h_c/experiment->wavelength; /* photon energy in joules */
-  float electrons_per_photon = photon_energy/det->electron_hole_production_energy;
+  float electrons_per_photon = 1;
+  if(det->electron_hole_production_energy){
+    electrons_per_photon = photon_energy/det->electron_hole_production_energy;
+  }
   if(!det->photon_count){
     fprintf(stderr,"Calculate photon_count first\n");
     return;
@@ -73,7 +76,10 @@ void calculate_electrons_per_pixel(CCD * det, Experiment * experiment){
 /* It doesn't take into account electron spill */
 void calculate_real_detector_output(CCD * det, Experiment * experiment){
   int i;
-  float ADC_constant = det->maximum_value/det->linear_full_well;
+  float ADC_constant = 1;
+  if(det->linear_full_well && det->maximum_value){
+    ADC_constant = det->maximum_value/det->linear_full_well;
+  }
   int x,y,z,xi,yi,zi;
   if(!det->electrons_per_pixel){
     fprintf(stderr,"Calculate electrons_per_pixel first\n");
@@ -115,7 +121,10 @@ void calculate_noiseless_detector_output(CCD * det, Experiment * experiment){
   double h_c = 1.98644521e-25; /* Planck's constant * the speed of light */
   double photon_energy = h_c/experiment->wavelength; /* photon energy in joules */
   float electrons_per_photon = photon_energy/det->electron_hole_production_energy;
-  float ADC_constant = det->maximum_value/det->linear_full_well;
+  float ADC_constant = 1;
+  if(det->linear_full_well && det->maximum_value){
+    ADC_constant = det->maximum_value/det->linear_full_well;
+  }
   int x,y,z,xi,yi,zi;
   if(!det->photons_per_pixel){
     fprintf(stderr,"Calculate photons_per_pixel first\n");
