@@ -105,6 +105,6 @@ set(top_level_DOCFILES
   COPYRIGHT
   README
   )
-install(FILES ${top_level_DOCFILES} DESTINATION doc)
-install(FILES doc/UserManual.pdf DESTINATION doc)
-install(DIRECTORY examples DESTINATION .)
+install(FILES ${top_level_DOCFILES} DESTINATION share/doc/spsim)
+install(FILES doc/UserManual.pdf DESTINATION share/doc/spsim)
+install(DIRECTORY examples DESTINATION share/doc/spsim)
