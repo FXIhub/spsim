@@ -346,7 +346,12 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"output_photons")){
     res->output_photons = config_lookup_int(&config,"output_photons");
   }
-
+  if(config_lookup(&config,"output_noiseless_count")){
+    res->output_noiseless_count = config_lookup_int(&config,"output_noiseless_count");
+  }
+  if(config_lookup(&config,"output_count")){
+    res->output_count = config_lookup_int(&config,"output_count");
+  }
 
   res->detector->nx = rint(res->detector->width/res->detector->pixel_width);
   res->detector->ny = rint(res->detector->height/res->detector->pixel_height);
@@ -564,6 +569,10 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_int(s,res->output_photons);
   s = config_setting_add(root,"output_noiseless_photons",CONFIG_TYPE_INT);
   config_setting_set_int(s,res->output_noiseless_photons);
+  s = config_setting_add(root,"output_count",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->output_count);
+  s = config_setting_add(root,"output_noiseless_count",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->output_noiseless_count);
 
 
   if(res->sf_filename[0]){
