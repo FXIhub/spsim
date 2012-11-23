@@ -258,7 +258,7 @@ static void get_legal_atom_names()
 {
      /* The full periodic table as 2 character identifiers, left-justified */
      
-     strcpy(&legal_atom_names[0], "H HeLIBEB C N O  FNE");
+     strcpy(&legal_atom_names[0], "H HELIBEB C N O F NE");
 
      strcpy(&(legal_atom_names[20]), "NAMGALSIP S CLARK CA"); 
 
@@ -267,7 +267,7 @@ static void get_legal_atom_names()
      strcpy(&legal_atom_names[80], "NBMOTCRURHPDAGCDINSN") ; 
      strcpy(&legal_atom_names[100], "SBTEI XECSBALACEPRND") ; 
      strcpy(&legal_atom_names[120], "PMSMEUGDTBDYHOERTMYB") ; 
-     strcpy(&legal_atom_names[140], "LUHFTA WREOSIRPTAUHg") ; 
+     strcpy(&legal_atom_names[140], "LUHFTAW REOSIRPTAUHG") ;
      strcpy(&legal_atom_names[160], "TLPBBIPOATRNFRRAACTH") ; 
      strcpy(&legal_atom_names[180], "PAU NPPUAMCMBKCFESFM") ; 
      strcpy(&legal_atom_names[200], "MDNOLRRFHA") ;
