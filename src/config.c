@@ -77,6 +77,8 @@ Options * set_defaults(){
   opt->output_noiseless_count = 0;
   opt->output_count = 0;
   opt->output_realspace_histogram = 0;
+  opt->output_scattering_factors = 0;
+  opt->output_real_space = 0;
   return opt;
 }
 
@@ -352,7 +354,12 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"output_count")){
     res->output_count = config_lookup_int(&config,"output_count");
   }
-
+  if(config_lookup(&config,"output_scattering_factors")){
+    res->output_scattering_factors = config_lookup_int(&config,"output_scattering_factors");
+  }
+  if(config_lookup(&config,"output_real_space")){
+    res->output_real_space = config_lookup_int(&config,"output_real_space");
+  }
   res->detector->nx = rint(res->detector->width/res->detector->pixel_width);
   res->detector->ny = rint(res->detector->height/res->detector->pixel_height);
   if(res->detector->pixel_depth){
@@ -573,7 +580,10 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_int(s,res->output_count);
   s = config_setting_add(root,"output_noiseless_count",CONFIG_TYPE_INT);
   config_setting_set_int(s,res->output_noiseless_count);
-
+  s = config_setting_add(root,"output_scattering_factors",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->output_scattering_factors);
+  s = config_setting_add(root,"output_real_space",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->output_real_space);
 
   if(res->sf_filename[0]){
     s = config_setting_add(root,"precalculated_sf",CONFIG_TYPE_STRING);

@@ -167,6 +167,8 @@ typedef struct {
   int output_noiseless_count;
   int output_count;
   int output_realspace_histogram;
+  int output_scattering_factors;
+  int output_real_space;
 }Options;
 
 

@@ -111,7 +111,7 @@ int main(int argc, char ** argv){
   sp_srand(opts->random_seed);
   write_options_file("spsim.confout", opts);
   if(opts->detector->nz > 1){
-    is3D = 1;
+      is3D = 1;
   }else{
     is3D = 0;
   }
@@ -279,6 +279,42 @@ int main(int argc, char ** argv){
       }
       sprintf(buffer,"noiseless_photon_out-%05d.cxi",n);
       sp_image_write(output,buffer,sizeof(real));
+      sp_image_free(output);
+    }
+
+    if(opts->output_scattering_factors || opts->output_real_space){
+      i = 0;
+      Image * output = sp_image_alloc(opts->detector->nx,opts->detector->ny,opts->detector->nz);
+
+      for(int x = 0;x<sp_image_x(output);x++){
+        for(int y = 0;y<sp_image_y(output);y++){
+          for(int z = 0;z<sp_image_z(output);z++){
+            sp_image_set(output,x,y,z,pattern->F[i++]);
+            sp_i3matrix_set(output->mask,x,y,z,1);
+          }
+        }
+      }
+      output->detector->wavelength = opts->experiment->wavelength;
+      output->detector->pixel_size[0] = opts->detector->pixel_width;
+      output->detector->pixel_size[1] = opts->detector->pixel_height;
+      output->detector->detector_distance = opts->detector->distance;
+      output->scaled = 1;
+      output->phased = 1;
+      if(rot){
+        output->detector->orientation = rot[n];
+      }
+      if(opts->output_scattering_factors){
+        sprintf(buffer,"scattering_factors-%05d.cxi",n);
+        sp_image_write(output,buffer,sizeof(real));
+      }
+      if(opts->output_real_space){
+        sp_gaussian_filter(output,sp_image_x(output)/2,1);
+        sp_image_fft_fast(output,output);
+        Image * routput = sp_image_shift(output);
+        sprintf(buffer,"real_space-%05d.cxi",n);
+        sp_image_write(routput,buffer,sizeof(real));
+        sp_image_free(routput);
+      }
       sp_image_free(output);
     }
     
