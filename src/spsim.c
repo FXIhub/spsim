@@ -90,6 +90,7 @@ void gaussian_blur_pattern(Options * opts,Diffraction_Pattern * pattern){
   }
 }
 
+#ifndef _LIBRARY
 int main(int argc, char ** argv){
   Options * opts = set_defaults();
   Diffraction_Pattern * pattern;
@@ -427,4 +428,5 @@ int main(int argc, char ** argv){
 
   return 0;
 }
+#endif /* _LIBRARY */
   

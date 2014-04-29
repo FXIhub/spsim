@@ -18,6 +18,8 @@ find_package(JPEG REQUIRED)
 
 
 SET(USE_NFFT ON CACHE BOOL "If ON use NFFT.")
+SET(BUILD_LIBRARY ON CACHE BOOL "If ON also build as shared library.")
+
 if(USE_NFFT)
   find_package(NFFT)
 endif(USE_NFFT)
