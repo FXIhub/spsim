@@ -27,7 +27,7 @@
 #include "spimage.h"
 #include "mpi_comm.h"
 
-static char legal_atom_names[106][2] ;
+static char legal_atom_names[212];
 static void get_legal_atom_names();
 static int getZfromSymbol(char * symbol);
 
@@ -242,8 +242,8 @@ static int getZfromSymbol(char * symbol)
   /* If we didn't match any try to match only the first letter */
   symbol[1] = ' ';
   for (z = 0; z < 106; z++){
-    if ((symbol[0] == legal_atom_names[z][0]) &&
-	(symbol[1] == legal_atom_names[z][1])) {
+    if ((symbol[0] == legal_atom_names[z*2+0]) &&
+	(symbol[1] == legal_atom_names[z*2+1])) {
       return z+1;     
     }
   }
@@ -258,17 +258,19 @@ static void get_legal_atom_names()
 {
      /* The full periodic table as 2 character identifiers, left-justified */
      
-     strcpy(legal_atom_names [0], "H HeLIBEB C N O  FNE") ;
-     strcpy(legal_atom_names[10], "NAMGALSIP S CLARK CA") ; 
-     strcpy(legal_atom_names[20], "SCTIV CRMNFECONICUZN") ; 
-     strcpy(legal_atom_names[30], "GAGEASSEBRKRRBSRY ZR") ; 
-     strcpy(legal_atom_names[40], "NBMOTCRURHPDAGCDINSN") ; 
-     strcpy(legal_atom_names[50], "SBTEI XECSBALACEPRND") ; 
-     strcpy(legal_atom_names[60], "PMSMEUGDTBDYHOERTMYB") ; 
-     strcpy(legal_atom_names[70], "LUHFTA WREOSIRPTAUHg") ; 
-     strcpy(legal_atom_names[80], "TLPBBIPOATRNFRRAACTH") ; 
-     strcpy(legal_atom_names[90], "PAU NPPUAMCMBKCFESFM") ; 
-     strcpy(legal_atom_names[100], "MDNOLRRFHA") ;
+     strcpy(&legal_atom_names[0], "H HeLIBEB C N O  FNE");
+
+     strcpy(&(legal_atom_names[20]), "NAMGALSIP S CLARK CA"); 
+
+     strcpy(&legal_atom_names[40], "SCTIV CRMNFECONICUZN") ; 
+     strcpy(&legal_atom_names[60], "GAGEASSEBRKRRBSRY ZR") ; 
+     strcpy(&legal_atom_names[80], "NBMOTCRURHPDAGCDINSN") ; 
+     strcpy(&legal_atom_names[100], "SBTEI XECSBALACEPRND") ; 
+     strcpy(&legal_atom_names[120], "PMSMEUGDTBDYHOERTMYB") ; 
+     strcpy(&legal_atom_names[140], "LUHFTA WREOSIRPTAUHg") ; 
+     strcpy(&legal_atom_names[160], "TLPBBIPOATRNFRRAACTH") ; 
+     strcpy(&legal_atom_names[180], "PAU NPPUAMCMBKCFESFM") ; 
+     strcpy(&legal_atom_names[200], "MDNOLRRFHA") ;
 
      return;
 }
