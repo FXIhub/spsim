@@ -7,7 +7,7 @@
 # also defined, but not for general use are
 #  NFFT_LIBRARY, where to find the NFFT library.
 
-FIND_PATH(NFFT_INCLUDE_DIR nfft/nfft3.h nfft3.h)
+FIND_PATH(NFFT_INCLUDE_DIR nfft3.h PATH_SUFFIXES nfft)
 
 SET(NFFT_NAMES ${NFFT_NAMES} nfft nfft3)
 FIND_LIBRARY(NFFT_LIBRARY NAMES ${NFFT_NAMES} )

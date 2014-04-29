@@ -49,7 +49,11 @@ Options * set_defaults(){
   opt->euler_orientation[2]= 0;
   opt->random_orientation = 0;
   opt->vectorize = 1;
+#ifdef _USE_CUDA
   opt->use_cuda = 1;
+#else
+  opt->use_cuda = 0;
+#endif
   opt->delta_atoms = 0;
   opt->fast_exit = 0;
   opt->crystal_size[0] = 1;
@@ -63,6 +67,18 @@ Options * set_defaults(){
   opt->crystal_cell[5] = 90;
   opt->wavelength_samples = 5;
   opt->random_seed = -1;
+  opt->output_sf_vtk = 0;
+  opt->output_scatt_int = 0;
+  opt->output_ewald_vtk = 0;
+  opt->output_intensities = 0;
+  opt->output_noiseless_photons = 1;
+  opt->output_photons = 1;
+  opt->output_electron_pixel_vtk = 0;
+  opt->output_noiseless_count = 0;
+  opt->output_count = 0;
+  opt->output_realspace_histogram = 0;
+  opt->output_scattering_factors = 0;
+  opt->output_real_space = 0;
   return opt;
 }
 
@@ -187,6 +203,9 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"experiment_wavelength")){
     res->experiment->wavelength = config_lookup_float(&config,"experiment_wavelength");
   }
+  if(config_lookup(&config,"experiment_photon_energy")){
+    res->experiment->photon_energy = config_lookup_float(&config,"experiment_photon_energy");
+  }
   if(config_lookup(&config,"experiment_bandwidth")){
     res->experiment->bandwidth = config_lookup_float(&config,"experiment_bandwidth");
   }
@@ -205,6 +224,13 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"experiment_beam_fwhm")){
     res->experiment->beam_fwhm = config_lookup_float(&config,"experiment_beam_fwhm");
   }
+  if(config_lookup(&config,"experiment_beam_energy")){
+    res->experiment->beam_energy = config_lookup_float(&config,"experiment_beam_energy");
+  }
+  if(config_lookup(&config,"experiment_focal_diameter")){
+    res->experiment->focal_diameter = config_lookup_float(&config,"experiment_focal_diameter");
+  }
+
   if(config_lookup_string(&config,"precalculated_sf")){
     strcpy(res->sf_filename,config_lookup_string(&config,"precalculated_sf"));
   }
@@ -288,6 +314,27 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"use_cuda")){
     res->use_cuda = config_lookup_int(&config,"use_cuda");
   }
+#ifndef _USE_CUDA
+  if(res->use_cuda){
+    res->use_cuda = 0;
+    fprintf(stderr,"Warning: use_cuda set to true but spsim was not compiled with CUDA support!\n");
+    fprintf(stderr,"Warning: Setting use_cuda to false.\n");
+  }
+#else
+  if(res->use_cuda){
+    int deviceCount;
+    cudaError_t cudaResultCode = cudaGetDeviceCount(&deviceCount);
+    if(cudaResultCode != cudaSuccess){
+      res->use_cuda = 0;
+      fprintf(stderr,"Warning: use_cuda set to true but got \"%s\" while initializing CUDA!\n",cudaGetErrorString(cudaResultCode));
+      fprintf(stderr,"Warning: Setting use_cuda to false.\n");
+    }else if(deviceCount == 0){
+      res->use_cuda = 0;
+      fprintf(stderr,"Warning: use_cuda set to true but did not find any CUDA devices!\n");
+      fprintf(stderr,"Warning: Setting use_cuda to false.\n");
+    }
+  }
+#endif
   if(config_lookup(&config,"wavelength_samples")){
     res->wavelength_samples = config_lookup_int(&config,"wavelength_samples");
   }
@@ -295,7 +342,24 @@ void read_options_file(char * filename, Options * res){
     res->random_seed = config_lookup_int(&config,"random_seed");
   }
 
-
+  if(config_lookup(&config,"output_noiseless_photons")){
+    res->output_noiseless_photons = config_lookup_int(&config,"output_noiseless_photons");
+  }
+  if(config_lookup(&config,"output_photons")){
+    res->output_photons = config_lookup_int(&config,"output_photons");
+  }
+  if(config_lookup(&config,"output_noiseless_count")){
+    res->output_noiseless_count = config_lookup_int(&config,"output_noiseless_count");
+  }
+  if(config_lookup(&config,"output_count")){
+    res->output_count = config_lookup_int(&config,"output_count");
+  }
+  if(config_lookup(&config,"output_scattering_factors")){
+    res->output_scattering_factors = config_lookup_int(&config,"output_scattering_factors");
+  }
+  if(config_lookup(&config,"output_real_space")){
+    res->output_real_space = config_lookup_int(&config,"output_real_space");
+  }
   res->detector->nx = rint(res->detector->width/res->detector->pixel_width);
   res->detector->ny = rint(res->detector->height/res->detector->pixel_height);
   if(res->detector->pixel_depth){
@@ -306,6 +370,31 @@ void read_options_file(char * filename, Options * res){
   }
      
 
+  if(res->experiment->photon_energy){
+    float lambda = 1.240e-6/res->experiment->photon_energy;
+    if(res->experiment->wavelength){
+      if((lambda-res->experiment->wavelength)/(lambda+res->experiment->wavelength) > 0.01){
+	fprintf(stderr,"Warning: experiment_wavelength does not agree with experiment_photon_energy!\n");
+      }
+    }else{
+      res->experiment->wavelength = lambda;
+    }
+  }else{
+    if(res->experiment->wavelength){
+      float eV = 1.240e-6/res->experiment->wavelength;
+      res->experiment->photon_energy = eV;
+    }else{
+      fprintf(stderr,"Warning: you need to specify the experiment_wavelength!\n");
+    }
+  }
+  if(!res->experiment->beam_intensity){
+    if(res->experiment->focal_diameter && res->experiment->beam_energy){
+      float eV = 1.240e-6/res->experiment->wavelength;
+      float nphotons = res->experiment->beam_energy*6.24150974e18/eV;
+      float area = res->experiment->focal_diameter*res->experiment->focal_diameter;
+      res->experiment->beam_intensity = nphotons/area;
+    }
+  }
 }
 
 
@@ -409,6 +498,12 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_float(s,res->experiment->beam_center_y);
   s = config_setting_add(root,"experiment_beam_fwhm",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->experiment->beam_fwhm);
+  s = config_setting_add(root,"experiment_beam_energy",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->experiment->beam_energy);
+  s = config_setting_add(root,"experiment_photon_energy",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->experiment->photon_energy);
+  s = config_setting_add(root,"experiment_focal_diameter",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->experiment->focal_diameter);
 
 
   s = config_setting_add(root,"box_dimension",CONFIG_TYPE_FLOAT);
@@ -477,7 +572,18 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_int(s,res->wavelength_samples);
   s = config_setting_add(root,"random_seed",CONFIG_TYPE_INT);
   config_setting_set_int(s,res->random_seed);
-
+  s = config_setting_add(root,"output_photons",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->output_photons);
+  s = config_setting_add(root,"output_noiseless_photons",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->output_noiseless_photons);
+  s = config_setting_add(root,"output_count",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->output_count);
+  s = config_setting_add(root,"output_noiseless_count",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->output_noiseless_count);
+  s = config_setting_add(root,"output_scattering_factors",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->output_scattering_factors);
+  s = config_setting_add(root,"output_real_space",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->output_real_space);
 
   if(res->sf_filename[0]){
     s = config_setting_add(root,"precalculated_sf",CONFIG_TYPE_STRING);

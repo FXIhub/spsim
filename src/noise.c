@@ -17,6 +17,9 @@ void init_random_generator(){
 int get_poisson_random_number(double L){
   return gsl_ran_poisson(r,L);
 }
+int get_poisson_gaussian_approximate_random_number(double L){
+  return L+gsl_ran_gaussian(r,sqrt(L));
+}
 
 
 void generate_poisson_noise(CCD * det){
@@ -28,7 +31,11 @@ void generate_poisson_noise(CCD * det){
   }
   det->photon_count = (float *)malloc(sizeof(float)*det->nx*det->ny*det->nz);
   for(i = 0;i<det->nx*det->ny*det->nz;i++){
-    det->photon_count[i] = get_poisson_random_number(det->photons_per_pixel[i]*det->quantum_efficiency);
+    if(det->photons_per_pixel[i]*det->quantum_efficiency < 1000){
+      det->photon_count[i] = get_poisson_random_number(det->photons_per_pixel[i]*det->quantum_efficiency);
+    }else{
+      det->photon_count[i] = get_poisson_gaussian_approximate_random_number(det->photons_per_pixel[i]*det->quantum_efficiency);
+    }
   }  
 }
 

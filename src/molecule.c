@@ -234,8 +234,8 @@ static int getZfromSymbol(char * symbol)
   }
   symbol[2] = 0;
   for (z = 0; z < 106; z++){
-    if ((symbol[0] == legal_atom_names[z][0]) &&
-	(symbol[1] == legal_atom_names[z][1])) {
+    if ((symbol[0] == legal_atom_names[z*2+0]) &&
+	(symbol[1] == legal_atom_names[z*2+1])) {
       return z+1;     
     }
   }
@@ -258,8 +258,7 @@ static void get_legal_atom_names()
 {
      /* The full periodic table as 2 character identifiers, left-justified */
      
-     strcpy(&legal_atom_names[0], "H HeLIBEB C N O  FNE");
-
+     strcpy(&legal_atom_names[0], "H HELIBEB C N O F NE");
      strcpy(&(legal_atom_names[20]), "NAMGALSIP S CLARK CA"); 
 
      strcpy(&legal_atom_names[40], "SCTIV CRMNFECONICUZN") ; 
@@ -267,7 +266,7 @@ static void get_legal_atom_names()
      strcpy(&legal_atom_names[80], "NBMOTCRURHPDAGCDINSN") ; 
      strcpy(&legal_atom_names[100], "SBTEI XECSBALACEPRND") ; 
      strcpy(&legal_atom_names[120], "PMSMEUGDTBDYHOERTMYB") ; 
-     strcpy(&legal_atom_names[140], "LUHFTA WREOSIRPTAUHg") ; 
+     strcpy(&legal_atom_names[140], "LUHFTAW REOSIRPTAUHG") ;
      strcpy(&legal_atom_names[160], "TLPBBIPOATRNFRRAACTH") ; 
      strcpy(&legal_atom_names[180], "PAU NPPUAMCMBKCFESFM") ; 
      strcpy(&legal_atom_names[200], "MDNOLRRFHA") ;
@@ -292,7 +291,7 @@ void    write_pdb_from_mol(char *filename,Molecule * mol){
   }
 
   for (i = 0; i <  mol->natoms; i++) {
-    fprintf(fpout,"ATOM  %5d  %.2s      A   1    %8.3f%8.3f%8.3f\n",i%99999,legal_atom_names[mol->atomic_number[i]-1],
+    fprintf(fpout,"ATOM  %5d  %.2s      A   1    %8.3f%8.3f%8.3f\n",i%99999,&legal_atom_names[mol->atomic_number[i]-1],
 	    mol->pos[i*3]*1e10,mol->pos[i*3+1]*1e10,mol->pos[i*3+2]*1e10);
   }
   fprintf(fpout, "END\n") ;

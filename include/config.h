@@ -64,6 +64,9 @@ typedef struct{
 			     to 2.355*sigma or 2*sqrt(2*ln(2))*sigma 
 			     Implicitly assumes gaussian pulse profile
 			  */
+  float beam_energy; /* in joules. Total pulse energy */
+  float photon_energy; /* in eV. Alternative way to specify wavelength */
+  float focal_diameter; /* in m. Focal spot diameter */
 }Experiment;
 
 typedef struct{
@@ -113,6 +116,8 @@ typedef struct{
   /* Center of the detector in relation to the beam (by definition the beam follows the z axis) */
   float center_x;
   float center_y;
+  /* Number of patterns */
+  int n_patterns;
 }CCD;
 
 
@@ -151,6 +156,19 @@ typedef struct {
   int wavelength_samples; /* number of wavelengths to sample during
 			      the bandwidth effect calculation*/
   int random_seed;
+
+  int output_sf_vtk;
+  int output_scatt_int;
+  int output_ewald_vtk;
+  int output_intensities;
+  int output_noiseless_photons;
+  int output_photons;
+  int output_electron_pixel_vtk;
+  int output_noiseless_count;
+  int output_count;
+  int output_realspace_histogram;
+  int output_scattering_factors;
+  int output_real_space;
 }Options;
 
 

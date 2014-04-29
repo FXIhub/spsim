@@ -20,19 +20,19 @@ void calculate_pattern_from_crystal_cuda(float * d_I, cufftComplex * d_F,float *
   crystal_cell_matrix(opts,cell);
   float dr[3];
   int k =0;
-  for(int a = 0;a<opts->crystal_size[0];a++){
-    for(int b = 0;b<opts->crystal_size[1];b++){
-      for(int c = 0;c<opts->crystal_size[2];c++){
-	dr[0] = cell[0]*a+cell[3]*b+cell[6]*c;
-	dr[1] = cell[1]*a+cell[4]*b+cell[7]*c;
-	dr[2] = cell[2]*a+cell[5]*b+cell[8]*c;
-	printf("%f%% done\n",
-	       100.0*k/(opts->crystal_size[0]*opts->crystal_size[1]*opts->crystal_size[2]));
-	k++;
-	CUDA_add_shifted_cell<<<number_of_blocks, threads_per_block>>>(d_cF,d_I,d_F,d_HKL_list,HKL_list_size,dr[0],dr[1],dr[2]);
-	cudaThreadSynchronize();
-      }
+  for(int dim = 0; dim<3;dim++){
+    for(int i = 0;i<opts->crystal_size[dim];i++){
+      dr[0] = cell[dim*3]*i;
+      dr[1] = cell[dim*3+1]*i;
+      dr[2] = cell[dim*3+2]*i;
+      printf("%f%% done\n",
+	     100.0*k/(opts->crystal_size[0]+opts->crystal_size[1]+opts->crystal_size[2]));
+      k++;
+      CUDA_add_shifted_cell<<<number_of_blocks, threads_per_block>>>(d_cF,d_I,d_F,d_HKL_list,HKL_list_size,dr[0],dr[1],dr[2]);
+      cudaThreadSynchronize();
+    
     }
+    cudaMemcpy(d_F,d_cF,sizeof(cufftComplex)*HKL_list_size,cudaMemcpyDeviceToDevice);
   }
   cudaFree(d_cF);
 }

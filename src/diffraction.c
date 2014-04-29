@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
+ *\
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -24,9 +24,11 @@
 #include <float.h>
 #include <complex.h>
 #include <spimage.h>
-#include <nfft/nfft3.h>
-#include <nfft/options.h>
-#include <nfft/window_defines.h>
+
+#ifdef NFFT_SUPPORT
+#include <nfft3.h>
+#endif
+
 #include "config.h"
 #include "diffraction.h"
 #include "mpi_comm.h"
@@ -176,7 +178,7 @@ static float  scatt_factor(float d,int Z,float B){
   for(i = 0;i<4;i++){
     res+= atomsf[Z][i]*exp(-(atomsf[Z][i+4]+B)*d*d*0.25);
   }                
-  res += atomsf[Z][8]*exp(-B*d*d/0.25);
+  res += atomsf[Z][8]*exp(-B*d*d*0.25);
   return res;    
 }
 
@@ -218,6 +220,7 @@ static double ilumination_function(Experiment * exper,float * pos){
   /* calculate distance from the center of the beam */
   dist2 = (pos[0]-exper->beam_center_x)*(pos[0]-exper->beam_center_x)+(pos[1]-exper->beam_center_y)*(pos[1]-exper->beam_center_y);
   sigma = exper->beam_fwhm/2.355;
+  printf("here\n");
   return exp(-dist2/(2*sigma*sigma));
 }
 
@@ -281,34 +284,27 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
 }
 
 
-SpRotation ** apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Options * opts){
-  SpRotation ** rot = sp_malloc(sizeof(SpRotation *)*opts->n_patterns);
+SpRotation * apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Options * opts){
+  SpRotation * rot;
   int d = 3;
-  int i,j,k;
+  int i,j;
   sp_vector * v = sp_vector_alloc(3);
-  sp_vector * u = sp_vector_alloc(3);
-  /* grow list to accomodate more patterns */
-  *HKL_list = realloc(*HKL_list,*HKL_list_size*opts->n_patterns*sizeof(float)*d);
   real * tmp = v->data;
-  for(k = 0;k<opts->n_patterns;k++){
-    memcpy(&((*HKL_list)[d*(*HKL_list_size)*k]),*HKL_list,sizeof(float)*d*(*HKL_list_size));
-    if(opts->random_orientation){
-      rot[k] = sp_rot_uniform();
-    }else{
-      rot[k] = sp_rot_euler(opts->euler_orientation[0],opts->euler_orientation[1],opts->euler_orientation[2]);
+  if(opts->random_orientation){
+    rot = sp_rot_uniform();
+  }else{
+    rot = sp_rot_euler(opts->euler_orientation[0],opts->euler_orientation[1],opts->euler_orientation[2]);
+  }
+  for(i = 0;i<*HKL_list_size;i++){
+    v->data = &((*HKL_list)[i*d]);
+    sp_vector * u = sp_matrix_vector_prod(rot,v);
+    for(j = 0;j<d;j++){
+      (*HKL_list)[i*d+j] = u->data[j];
     }
-    for(i = 0;i<*HKL_list_size;i++){
-      v->data = &((*HKL_list)[(*HKL_list_size*k+i)*d]);
-      u = sp_matrix_vector_prod(rot[k],v);
-      for(j = 0;j<d;j++){
-	(*HKL_list)[(*HKL_list_size*k+i)*d+j] = u->data[j];
-      }
-      sp_vector_free(u);		          
-    }
+    sp_vector_free(u);		          
   }
   v->data = tmp;
   sp_vector_free(v);
-  *HKL_list_size = *HKL_list_size*opts->n_patterns;
   return rot;
 }
 
@@ -393,6 +389,7 @@ void multiply_pattern_on_list_with_scattering_factor(complex double * f,int Z,fl
   }
 }
 
+#ifdef NFFT_SUPPORT
 Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experiment * exp, float B,float * HKL_list,Options * opts){
   double alpha_x = atan(det->width/(2.0 * det->distance));
   double alpha_y = atan(det->height/(2.0 * det->distance));
@@ -482,7 +479,7 @@ Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experim
 	nfft_precompute_one_psi(&p);
       }
       if(is_element_in_molecule[Z] < 100){
-	ndft_adjoint(&p);  
+	nfft_adjoint(&p);  
       }else{
 	nfft_adjoint(&p);  
       }
@@ -631,7 +628,7 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
 	nnfft_precompute_phi_hut(&p);
     
       if(is_element_in_molecule[Z] < 10){
-	nndft_adjoint(&p);  
+	nnfft_adjoint(&p);  
       }else{
 	nnfft_adjoint(&p);  
       }
@@ -651,7 +648,7 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
   sum_patterns(res);
   return res;
 }
-
+#endif
 
 Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experiment * exp, float B){
   double alpha_x = atan(det->width/(2.0 * det->distance));
@@ -1152,7 +1149,9 @@ void calculate_pixel_solid_angle(CCD * det){
 }                    
 
 
-void calculate_photons_per_pixel(Diffraction_Pattern * pattern, CCD * det, Experiment * experiment){
+void calculate_photons_per_pixel(Diffraction_Pattern * pattern, Options * opts){
+  CCD * det = opts->detector;
+  Experiment * experiment = opts->experiment;
   int i;
   if(!det->thomson_correction){
     calculate_thomson_correction(det);
@@ -1229,4 +1228,5 @@ void write_hkl_grid(float * list, Molecule * mol,CCD * det){
     index += 3*(det->binning_x-1)*(det->ny);
   }
   sp_image_write(hkl_grid,"hkl_grid.h5",sizeof(real));
+  sp_image_free(hkl_grid);
 }

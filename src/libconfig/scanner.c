@@ -14,13 +14,7 @@
 #define FLEX_BETA
 #endif
 
-/* First, we deal with  platform-specific or compiler-specific issues. */
 
-#ifdef _WIN32
-#define strdup _strup
-#else
-#define _XOPEN_SOURCE 500
-#endif
 
 /* begin standard C headers. */
 #include <stdio.h>
@@ -29,6 +23,22 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* First, we deal with  platform-specific or compiler-specific issues. */
+
+static char * p_strdup (const char *str)
+{
+    
+    size_t len = strlen(str);
+    
+    char *s = (char *)malloc(len + 1);
+    if (!s) {
+        return NULL;
+    }
+    
+    memcpy(s, str, len + 1);
+    
+    return s;
+}
 
 /* end standard C headers. */
 
@@ -1110,7 +1120,7 @@ YY_RULE_SETUP
 case 12:
 YY_RULE_SETUP
 #line 172 "scanner.l"
-{ yylval->sval = strdup(yytext); return(TOK_NAME); }
+{ yylval->sval = p_strdup(yytext); return(TOK_NAME); }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
@@ -1131,7 +1141,7 @@ case 16:
 /* rule 16 can match eol */
 YY_RULE_SETUP
 #line 176 "scanner.l"
-{ yylval->sval = strdup(make_string(yytext)); return(TOK_STRING); }
+{ yylval->sval = p_strdup(make_string(yytext)); return(TOK_STRING); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
