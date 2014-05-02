@@ -1,8 +1,14 @@
+#include <cmake_config.h>
+
+#ifdef GSL_FOUND
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
+#endif
+
 #include <spimage.h>
 #include "config.h"
 
+#ifdef GSL_FOUND
 static gsl_rng * r = NULL;
 
 void init_random_generator(){
@@ -21,8 +27,10 @@ int get_poisson_gaussian_approximate_random_number(double L){
   return L+gsl_ran_gaussian(r,sqrt(L));
 }
 
+#endif
 
 void generate_poisson_noise(CCD * det){
+#ifdef GSL_FOUND
   int i;
   init_random_generator();
   if(!det->photons_per_pixel){
@@ -37,6 +45,9 @@ void generate_poisson_noise(CCD * det){
       det->photon_count[i] = get_poisson_gaussian_approximate_random_number(det->photons_per_pixel[i]*det->quantum_efficiency);
     }
   }  
+#else
+  sp_error_fatal("spsim not compiled with GSL support");
+#endif
 }
 
 void generate_gaussian_noise(CCD * det){
