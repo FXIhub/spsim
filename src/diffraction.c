@@ -822,6 +822,7 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
 
 
 Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size,float B,Experiment * exp,Options * opts){
+#if defined __GNUC__ && !defined __clang__
   int timer = sp_timer_start();
   int i,j;
   float scattering_factor;
@@ -879,10 +880,10 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
     for(j = 0 ;j< 4*(mol->natoms/4);j+=4){
       
       /* Multiply the scattering factor with the ilumination function (should it be the square root of it?)*/
-      v4sf sf = {scattering_factor_cache[mol->atomic_number[j]]*atom_ilumination[j],
-				    scattering_factor_cache[mol->atomic_number[j+1]]*atom_ilumination[j+1],
-				    scattering_factor_cache[mol->atomic_number[j+2]]*atom_ilumination[j+2],
-				    scattering_factor_cache[mol->atomic_number[j+3]]*atom_ilumination[j+3]};
+      v4sf sf = {scattering_factor_cache[mol->atomic_number[j]]*sqrt(atom_ilumination[j]),
+                 scattering_factor_cache[mol->atomic_number[j+1]]*sqrt(atom_ilumination[j+1]),
+                 scattering_factor_cache[mol->atomic_number[j+2]]*sqrt(atom_ilumination[j+2]),
+                 scattering_factor_cache[mol->atomic_number[j+3]]*sqrt(atom_ilumination[j+3])};
 
       float tmp[4] = {2*M_PI*(HKL_list[3*i]*-mol->pos[j*3]+HKL_list[3*i+1]*-mol->pos[j*3+1]+HKL_list[3*i+2]*-mol->pos[j*3+2]),
 		      2*M_PI*(HKL_list[3*i]*-mol->pos[(j+1)*3]+HKL_list[3*i+1]*-mol->pos[(j+1)*3+1]+HKL_list[3*i+2]*-mol->pos[(j+1)*3+2]),
@@ -922,6 +923,10 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
   syncronize_patterns(res);
   printf("%g atoms.pixel/s\n",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
   return res;
+#else
+  fprintf(stderr,"Vector computation only supported with when compiling with gcc.\n Using serial version.\n");
+  return compute_pattern_on_list( mol, HKL_list, HKL_list_size, B, exp, opts);
+#endif
 }
 
 

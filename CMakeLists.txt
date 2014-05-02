@@ -6,6 +6,12 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/cuda")
 SET(USE_CUDA ON CACHE BOOL "If ON try to use CUDA.")
 
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  # Necessary due to CUDA compatibility problems
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
+endif()
+
+
 find_package(GSL)
 find_package(SpImage REQUIRED)
 find_package(TIFF REQUIRED)
@@ -39,6 +45,10 @@ IF(USE_CUDA)
   IF(CUDA_FOUND)
     #set(CUDA_VERBOSE_BUILD ON)
     ADD_DEFINITIONS(-D_USE_CUDA)
+    # Set a reasonable minimum arch
+    if(NOT CUDA_NVCC_FLAGS)
+      SET(CUDA_NVCC_FLAGS "-arch=sm_13")
+    endif()
     message(STATUS "CUDA found. Using CUDA")
   ELSE(CUDA_FOUND)
     message(STATUS "CUDA not found. Not using CUDA")
