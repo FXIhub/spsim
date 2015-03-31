@@ -250,7 +250,7 @@ int main(int argc, char ** argv){
       }
       char buffer[1024];
       sprintf(buffer,"intensities-%05d.cxi",n);
-      sp_image_write(ints,buffer,sizeof(real));    
+      sp_image_write(ints,buffer,0);    
       sp_image_free(ints);
     }
     
@@ -279,7 +279,7 @@ int main(int argc, char ** argv){
         output->detector->orientation = rot[n];
       }
       sprintf(buffer,"noiseless_photon_out-%05d.cxi",n);
-      sp_image_write(output,buffer,sizeof(real));
+      sp_image_write(output,buffer,0);
       sp_image_free(output);
     }
 
@@ -306,14 +306,14 @@ int main(int argc, char ** argv){
       }
       if(opts->output_scattering_factors){
         sprintf(buffer,"scattering_factors-%05d.cxi",n);
-        sp_image_write(output,buffer,sizeof(real));
+        sp_image_write(output,buffer,0);
       }
       if(opts->output_real_space){
         sp_gaussian_filter(output,sp_image_x(output)/2,1);
         sp_image_fft_fast(output,output);
         Image * routput = sp_image_shift(output);
         sprintf(buffer,"real_space-%05d.cxi",n);
-        sp_image_write(routput,buffer,sizeof(real));
+        sp_image_write(routput,buffer,0);
         sp_image_free(routput);
       }
       sp_image_free(output);
@@ -341,7 +341,7 @@ int main(int argc, char ** argv){
         output->detector->orientation = rot[n];
       }
       sprintf(buffer,"photon_out-%05d.cxi",n);
-      sp_image_write(output,buffer,sizeof(real));
+      sp_image_write(output,buffer,0);
       sp_image_free(output);
     }
 
@@ -368,7 +368,7 @@ int main(int argc, char ** argv){
       output->detector->pixel_size[1] = opts->detector->pixel_height*opts->detector->binning_y;
       output->detector->detector_distance = opts->detector->distance;
       sprintf(buffer,"counts_out-%05d.cxi",n);
-      sp_image_write(output,buffer,sizeof(real));
+      sp_image_write(output,buffer,0);
       sp_image_free(output);
     }
     
@@ -394,7 +394,7 @@ int main(int argc, char ** argv){
         }
       }
       sprintf(buffer,"noiseless_counts_out-%05d.cxi",n);
-      sp_image_write(noiseless,buffer,sizeof(real));
+      sp_image_write(noiseless,buffer,0);
       sp_image_free(noiseless);
     }
     if(opts->output_realspace_histogram && pattern->F){
