@@ -55,6 +55,8 @@ typedef struct{
   /* scattering vector list for unstructured grid */
   float * HKL_list;
   int HKL_list_size;  
+  /* possible rotation */
+  SpRotation * rot;
 }Diffraction_Pattern;
 
 
