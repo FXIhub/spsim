@@ -128,7 +128,7 @@ static float ilumination_function(Experiment * exper,float * pos){
   /* calculate distance from the center of the beam */
   dist2 = (pos[0]-exper->beam_center_x)*(pos[0]-exper->beam_center_x)+(pos[1]-exper->beam_center_y)*(pos[1]-exper->beam_center_y);
   sigma = exper->beam_fwhm/2.355;
-  printf("here\n");
+  //printf("here\n");
   return exp(-dist2/(2*sigma*sigma));
 }
 
@@ -212,7 +212,9 @@ Diffraction_Pattern * cuda_compute_pattern_on_list(Molecule * mol, float * HKL_l
   cudaFree(d_sf_cache);
   cudaFree(d_HKL_list);
   free(atom_ilumination);
-  printf("%g atoms.pixel/s\n",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
+  if (opts->verbosity_level > 0) {
+     printf("%g atoms.pixel/s\n",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
+  } 	     
   return res;  
 #endif 
 }
@@ -239,7 +241,9 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
   dim3 number_of_blocks( (HKL_side+threads_per_block.x-1)/threads_per_block.x,
 			 (HKL_side+threads_per_block.y-1)/threads_per_block.y );
   
-  printf("Using %d blocks\n",number_of_blocks.x*number_of_blocks.y);
+  if (opts->verbosity_level > 0) {
+     printf("Using %d blocks\n",number_of_blocks.x*number_of_blocks.y);
+  }
   if(!atomsf_initialized){
     fill_ff_tables();
     atomsf_initialized = 1;
@@ -298,7 +302,9 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
   }
 
   for(int i = 0;i<mol->natoms;i+=chunk_size){ 
-    printf("%f%% done\n",(100.0*i)/mol->natoms);
+    if (opts->verbosity_level > 0) {	      
+       printf("%f%% done\n",(100.0*i)/mol->natoms);
+    }
     int end_atom = sp_min(i+chunk_size,mol->natoms);
     int start_atom = i;
     float2 beam_center = {exp->beam_center_x,exp->beam_center_y};
@@ -314,7 +320,9 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
   cudaMemcpy(res->F,d_F,sizeof(cufftComplex)*HKL_list_size,cudaMemcpyDeviceToHost);
   cudaMemcpy(res->ints,d_I,sizeof(float)*HKL_list_size,cudaMemcpyDeviceToHost);
   sp_cuda_check_errors();
-  printf("%g atoms.pixel/s\n",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
+  if (opts->verbosity_level > 0) {
+     printf("%g atoms.pixel/s\n",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
+  }
   cudaFree(d_I);
   cudaFree(d_F);
   cudaFree(d_atomsf);

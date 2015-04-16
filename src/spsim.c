@@ -18,7 +18,6 @@
  */
 
 #include <stdlib.h>
-#include <spimage.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -143,9 +142,15 @@ Diffraction_Pattern * compute_sf(Molecule * mol, float * HKL_list, int HKL_list_
   return pattern;
 }
 
-
-
 void output_array(char * basename, int index, float * array, SpRotation * rot, Options * opts){
+  Image * img = make_image(array, rot, opts);
+  char buffer[1024];
+  sprintf(buffer,"%s-%05d.cxi", basename, index);
+  sp_image_write(img,buffer,0);    
+  sp_image_free(img);
+}
+
+Image * make_image(float * array, SpRotation * rot, Options * opts){
   Image * img = sp_image_alloc(opts->detector->nx,opts->detector->ny,opts->detector->nz);    
   int i = 0;
   for(int x = 0;x<sp_image_x(img);x++){
@@ -163,14 +168,42 @@ void output_array(char * basename, int index, float * array, SpRotation * rot, O
   if(rot){
     img->detector->orientation = rot;
   }
+  return img;
+}
+
+void output_carray(char * basename, int index, Complex * array, SpRotation * rot, Options * opts){
+  Image * img = make_cimage(array, rot, opts);
   char buffer[1024];
   sprintf(buffer,"%s-%05d.cxi", basename, index);
   sp_image_write(img,buffer,0);    
   sp_image_free(img);
 }
 
+void array_to_image(float * array, Image * img) {
+  int i = 0;
+  for(int x = 0;x<sp_image_x(img);x++){
+    for(int y = 0;y<sp_image_y(img);y++){
+      for(int z = 0;z<sp_image_z(img);z++){
+	sp_image_set(img,x,y,z,sp_cinit(array[i++],0));
+	sp_i3matrix_set(img->mask,x,y,z,1);
+      }
+    }
+  }
+}
 
-void output_carray(char * basename, int index, Complex * array, SpRotation * rot, Options * opts){
+void iarray_to_image(int * array, Image * img) {
+  int i = 0;
+  for(int x = 0;x<sp_image_x(img);x++){
+    for(int y = 0;y<sp_image_y(img);y++){
+      for(int z = 0;z<sp_image_z(img);z++){
+	sp_image_set(img,x,y,z,sp_cinit((float) array[i++],0));
+	sp_i3matrix_set(img->mask,x,y,z,1);
+      }
+    }
+  }
+}
+
+Image * make_cimage(Complex * array, SpRotation * rot, Options * opts){
   Image * img = sp_image_alloc(opts->detector->nx,opts->detector->ny,opts->detector->nz);    
   int i = 0;
   for(int x = 0;x<sp_image_x(img);x++){
@@ -188,10 +221,7 @@ void output_carray(char * basename, int index, Complex * array, SpRotation * rot
   if(rot){
     img->detector->orientation = rot;
   }
-  char buffer[1024];
-  sprintf(buffer,"%s-%05d.cxi", basename, index);
-  sp_image_write(img,buffer,0);    
-  sp_image_free(img);
+  return img;
 }
 
 void output_files( Diffraction_Pattern * pattern, Options * opts, int index){
@@ -266,12 +296,8 @@ Diffraction_Pattern * simulate_shot(Molecule * mol, Options * opts){
     
   generate_poisson_noise(opts->detector);
     
-
   calculate_electrons_per_pixel(opts->detector,opts->experiment);
   calculate_real_detector_output(opts->detector,opts->experiment);
-
-    
-    
   calculate_noiseless_detector_output(opts->detector,opts->experiment);
 
   free(HKL_list);
@@ -279,6 +305,11 @@ Diffraction_Pattern * simulate_shot(Molecule * mol, Options * opts){
 }
 
 void free_stuff(Diffraction_Pattern * pattern, Options * opts){
+  free_diffraction_pattern(pattern);
+  free_output_in_options(opts);
+}
+
+void free_diffraction_pattern(Diffraction_Pattern * pattern) {
   free(pattern->F);
   free(pattern->ints);
   free(pattern->HKL_list);
@@ -286,6 +317,9 @@ void free_stuff(Diffraction_Pattern * pattern, Options * opts){
     free(pattern->rot);
   }
   free(pattern);
+}
+
+void free_output_in_options(Options * opts){
   free(opts->detector->photons_per_pixel);
   free(opts->detector->thomson_correction);
   free(opts->detector->solid_angle);

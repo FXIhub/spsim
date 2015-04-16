@@ -297,3 +297,28 @@ void    write_pdb_from_mol(char *filename,Molecule * mol){
   fprintf(fpout, "END\n") ;
   fclose(fpout);
 }
+
+Molecule * alloc_molecule() {
+  Molecule * mol = malloc(sizeof(Molecule));
+  mol->natoms = 0;
+  mol->atomic_number = NULL;
+  mol->pos = NULL;
+  return mol;
+}
+
+void add_atom_to_molecule(Molecule * mol, int atomic_number, float pos0, float pos1, float pos2) {
+  int i = mol->natoms;
+  mol->natoms++;
+  mol->atomic_number = realloc(mol->atomic_number,sizeof(int)*mol->natoms);
+  mol->pos = realloc(mol->pos,sizeof(float)*mol->natoms*3);
+  mol->atomic_number[i] = atomic_number;
+  mol->pos[i*3+0] = pos0;
+  mol->pos[i*3+1] = pos1;
+  mol->pos[i*3+2] = pos2;
+}
+
+void free_molecule(Molecule * mol) {
+  free(mol->atomic_number);
+  free(mol->pos);
+  free(mol);
+}

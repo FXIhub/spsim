@@ -169,11 +169,12 @@ typedef struct {
   int output_realspace_histogram;
   int output_scattering_factors;
   int output_real_space;
+  int verbosity_level;
 }Options;
 
 
 void read_options_file(char * filename, Options * opt);
-void parse_options(int argc, char ** argv, Options * opt);
+//void parse_options(int argc, char ** argv, Options * opt);
 Options * set_defaults(void);
 void write_options_file(char * filename, Options * res);
 

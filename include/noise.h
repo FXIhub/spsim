@@ -20,9 +20,13 @@
 
 #ifndef _NOISE_H_
 #define _NOISE_H_ 1
+#ifdef GSL_FOUND
 /* returns a random number from the poisson distribution of mean L */
-int poisson_random_number(int L);
 void init_random_generator();
+int get_poisson_random_number(double L);
+int get_poisson_gaussian_approximate_random_number(double L);
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
