@@ -79,6 +79,7 @@ Options * set_defaults(){
   opt->output_realspace_histogram = 0;
   opt->output_scattering_factors = 0;
   opt->output_real_space = 0;
+  opt->verbosity_level = 1;
   return opt;
 }
 
@@ -395,6 +396,9 @@ void read_options_file(char * filename, Options * res){
       res->experiment->beam_intensity = nphotons/area;
     }
   }
+  if(config_lookup(&config,"verbosity_level")){
+    res->verbosity_level = config_lookup_int(&config,"verbosity_level");
+  }
 }
 
 
@@ -584,6 +588,8 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_int(s,res->output_scattering_factors);
   s = config_setting_add(root,"output_real_space",CONFIG_TYPE_INT);
   config_setting_set_int(s,res->output_real_space);
+  s = config_setting_add(root,"verbosity_level",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->verbosity_level);
 
   if(res->sf_filename[0]){
     s = config_setting_add(root,"precalculated_sf",CONFIG_TYPE_STRING);

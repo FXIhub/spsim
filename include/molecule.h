@@ -21,3 +21,8 @@
 Molecule * get_Molecule_from_formula(Chem_Formula * form, Options * opts);
 Molecule * get_Molecule_from_pdb(char * filename);
 void write_pdb_from_mol(char *filename,Molecule * mol);
+
+
+Molecule * alloc_molecule();
+void add_atom_to_molecule(Molecule * mol, int atomic_number, float pos0, float pos1, float pos2);
+void free_molecule(Molecule * mol);

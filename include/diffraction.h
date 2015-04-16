@@ -48,6 +48,8 @@ typedef struct{
   float * ints;
   /* scattering pattern */
   Complex * F;
+  /* number of pixels */
+  int N_pix;
   /* maximum scattering vector on each dimension */
   float max_s[3];
   /* scattering vector grid spacing on each dimension */
@@ -59,7 +61,12 @@ typedef struct{
   SpRotation * rot;
 }Diffraction_Pattern;
 
-
+  /*
+typedef Diffraction_Pattern Diffraction_Pattern_Py;
+Diffraction_Pattern_Py * get_diffraction_pattern_py(Diffraction_Pattern * pat);
+typedef Complex_Array_Py Complex;
+Complex_Array_Py * get_diffraction_amplitudes_py(Diffraction_Pattern * pat, Options * opts);
+  */
 
 /* Calculates the HKL indexes for all the pixels of a given detector */
 float * get_HKL_list_for_detector(CCD * det, Experiment * exp, int * HKL_list_size);
@@ -68,8 +75,10 @@ float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_
 /* Computes the diffraction pattern of a given structure on a given set of HKL points */
 Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size, float B,Experiment * exp,Options * opts);
 
+#ifdef _USE_CUDA
 Diffraction_Pattern * cuda_compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size, float B,Experiment * exp,Options * opts);
 Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_list, int HKL_list_size, float B,Experiment * exp,Options * opts);
+#endif
 
 Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size, float B,Experiment * exp,Options * opts);
 

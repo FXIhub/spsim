@@ -21,6 +21,8 @@
 #ifndef _SPSIM_H_
 #define _SPSIM_H_ 1
 
+#include <spimage.h>
+
 #include "config.h"
 #include "diffraction.h"
 #include "molecule.h"
@@ -38,10 +40,23 @@ extern "C"
 void gaussian_blur_real_space(Options * opts,Diffraction_Pattern * pattern);
 void gaussian_blur_pattern(Options * opts,Diffraction_Pattern * pattern);
 Molecule * get_molecule(Options * opts);
+
 float * get_HKL_list(Options * opts, int * HKL_list_size);
 Diffraction_Pattern * compute_sf(Molecule * mol, float * HKL_list, int HKL_list_size, Options * opts);
+
+Image * make_image(float * array, SpRotation * rot, Options * opts);
+Image * make_cimage(Complex * array, SpRotation * rot, Options * opts);
+void array_to_image(float * array, Image * img);
+void iarray_to_image(int * array, Image * img);
+void output_array(char * basename, int index, float * array, SpRotation * rot, Options * opts);
+void output_carray(char * basename, int index, Complex * array, SpRotation * rot, Options * opts);
 void output_files( Diffraction_Pattern * pattern, Options * opts, int index);
+
 Diffraction_Pattern * simulate_shot(Molecule * mol, Options * opts);
+
+void free_stuff(Diffraction_Pattern * pattern, Options * opts);
+void free_diffraction_pattern(Diffraction_Pattern * pattern);
+void free_output_in_options(Options * opts);
 
 #ifdef __cplusplus
 }  /* extern "C" */

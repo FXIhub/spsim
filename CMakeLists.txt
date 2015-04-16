@@ -1,5 +1,13 @@
 cmake_minimum_required(VERSION 2.6)
 
+if(POLICY CMP0042)
+  cmake_policy(SET CMP0042 NEW) # CMake 3.0
+endif()
+
+if(POLICY CMP0025)
+  cmake_policy(SET CMP0025 NEW) # CMake 3.0
+endif()
+
 PROJECT (spsim)
 
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -14,20 +22,14 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
 endif()
 
-
 find_package(GSL)
 find_package(SpImage REQUIRED)
-#find_package(TIFF REQUIRED)
 find_package(HDF5 REQUIRED)
 find_package(FFTW3 REQUIRED)
-#find_package(PNG REQUIRED)
-#find_package(MATH REQUIRED)
-#find_package(ZLIB REQUIRED)
-#find_package(JPEG REQUIRED)
-
 
 SET(USE_NFFT ON CACHE BOOL "If ON use NFFT.")
 SET(BUILD_LIBRARY ON CACHE BOOL "If ON also build as shared library.")
+SET(PYTHON_WRAPPERS ON CACHE BOOL "If ON try to build python wrappers.")
 
 if(USE_NFFT)
   find_package(NFFT)
@@ -74,6 +76,24 @@ ELSE(USE_CUDA)
   UNSET(CUDA_FOUND)
 ENDIF(USE_CUDA)
 
+if(PYTHON_WRAPPERS)
+  find_package(PythonLibs)
+  find_package(PythonInterp)
+  find_package(Numpy)
+  find_package(SWIG)
+  if(PYTHONLIBS_FOUND AND SWIG_FOUND AND PYTHONINTERP_FOUND AND PYTHON_NUMPY_FOUND)
+    # Taken from plplot. Many thanks!
+    # N.B. This is a nice way to obtain all sorts of python information
+    # using distutils.
+    execute_process(
+	 COMMAND
+  	 ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print sysconfig.get_python_lib()"
+  	 OUTPUT_VARIABLE _PYTHON_INSTDIR
+  	 OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    SET(PYTHON_INSTDIR ${_PYTHON_INSTDIR} CACHE PATH "Installation directory for python module.")
+  endif()
+endif(PYTHON_WRAPPERS)
 
 SET(MPI OFF CACHE BOOL "If ON use MPI for parallelization if possible.")
 
@@ -95,7 +115,7 @@ configure_file(${PROJECT_SOURCE_DIR}/include/cmake_config.h.in
 include_directories("${PROJECT_BINARY_DIR}")
 
 
-LIST(APPEND SPSIM_LIBRARY_LIST ${SPIMAGE_LIBRARY} ${HDF5_LIBRARIES} ${FFTW3_LIBRARIES} ${NFFT_LIBRARIES} ${GSL_LIBRARIES})
+LIST(APPEND SPSIM_LIBRARIES ${SPIMAGE_LIBRARY} ${HDF5_LIBRARIES} ${FFTW3_LIBRARIES} ${NFFT_LIBRARIES} ${GSL_LIBRARIES})
 
 INCLUDE_DIRECTORIES(${SPIMAGE_INCLUDE_DIR} ${HDF5_INCLUDE_DIR} ${FFTW3_INCLUDE_DIR} ${NFFT_INCLUDE_DIR} libconfig ${GSL_INCLUDE_DIR})
 INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/")

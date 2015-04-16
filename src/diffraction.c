@@ -220,7 +220,7 @@ static double ilumination_function(Experiment * exper,float * pos){
   /* calculate distance from the center of the beam */
   dist2 = (pos[0]-exper->beam_center_x)*(pos[0]-exper->beam_center_x)+(pos[1]-exper->beam_center_y)*(pos[1]-exper->beam_center_y);
   sigma = exper->beam_fwhm/2.355;
-  printf("here\n");
+  //printf("here\n");
   return exp(-dist2/(2*sigma*sigma));
 }
 
@@ -279,7 +279,7 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
     }
   }
   *HKL_list_size = nx*ny;
-  printf("Last HKL %e %e %e\n",HKL_list[nx*ny*3-3],HKL_list[nx*ny*3-2],HKL_list[nx*ny*3-1]);
+  //printf("Last HKL %e %e %e\n",HKL_list[nx*ny*3-3],HKL_list[nx*ny*3-2],HKL_list[nx*ny*3-1]);
   return HKL_list;
 }
 
@@ -558,10 +558,12 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
       }
     }
   }
-  printf("max_x %e %e %e\n",max_x[0],max_x[1],max_x[2]);
-  printf("max_v %e %e %e\n",max_v[0],max_v[1],max_v[2]);
-  printf("max_v*max_x %e %e %e\n",max_x[0]*max_v[0],max_x[1]*max_v[1],max_x[2]*max_v[2]);
-  
+  if (opts->verbosity_level > 0) {
+    printf("max_x %e %e %e\n",max_x[0],max_x[1],max_x[2]);
+    printf("max_v %e %e %e\n",max_v[0],max_v[1],max_v[2]);
+    printf("max_v*max_x %e %e %e\n",max_x[0]*max_v[0],max_x[1]*max_v[1],max_x[2]*max_v[2]);
+  }
+
   for(int k = 0;k<3;k++){
     N[k] = ceil(max_x[k]*max_v[k]);
     max_v[k] = N[k]/max_x[k];
@@ -816,7 +818,10 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
     res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
   }
   syncronize_patterns(res);
-  printf("%g atoms.pixel/s\n",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
+  
+  if (opts->verbosity_level > 0) {
+    printf("%g atoms.pixel/s\n",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
+  }
   return res;
 }
 
@@ -921,7 +926,9 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
     res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
   }
   syncronize_patterns(res);
-  printf("%g atoms.pixel/s\n",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
+  if (opts->verbosity_level > 0) {
+    printf("%g atoms.pixel/s\n",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
+  }
   return res;
 #else
   fprintf(stderr,"Vector computation only supported with when compiling with gcc.\n Using serial version.\n");
@@ -1235,3 +1242,13 @@ void write_hkl_grid(float * list, Molecule * mol,CCD * det){
   sp_image_write(hkl_grid,"hkl_grid.h5",sizeof(real));
   sp_image_free(hkl_grid);
 }
+
+/*
+Diffraction_Pattern_Py * get_diffraction_pattern_py(Diffraction_Pattern * pat) {
+  return pat;
+}
+
+Complex_Array_Py * get_diffraction_amplitudes_py(Diffraction_Pattern * pat, Options * opts) {
+
+}
+*/
