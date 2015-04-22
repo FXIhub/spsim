@@ -109,6 +109,8 @@
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------
 
+
+
 // For garbage collection, not quite sure if that already works
 /*
 %typemap(newfree) Image * {
@@ -151,6 +153,5 @@ $result = Py_BuildValue("{sOsOsOsOsOsO}",
 %include "../include/spsim.h"
 %include "../include/config.h"
 %include "../include/diffraction.h"
-#include "../include/molecule.h"
-
+%include "../include/molecule.h"
 

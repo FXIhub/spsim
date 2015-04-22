@@ -33,11 +33,11 @@ void gaussian_blur_real_space(Options * opts,Diffraction_Pattern * pattern){
   
   int i = 0;
   for(int x = 0;x<opts->detector->nx;x++){
-    float dx = fabs(x-((opts->detector->nx-1)/2));
+    float dx = abs(x-((opts->detector->nx-1)/2));
     for(int y = 0;y<opts->detector->ny;y++){
-      float dy = fabs(y-((opts->detector->ny-1)/2));
+      float dy = abs(y-((opts->detector->ny-1)/2));
       for(int z = 0;z<opts->detector->nz;z++){
-        float dz = fabs(z-((opts->detector->nz-1)/2));
+        float dz = abs(z-((opts->detector->nz-1)/2));
         float factor = 1/sqrt(2*M_PI*radius) * exp(-(dx*dx+dy*dy+dz*dz)/(2*radius*radius));
         sp_real(real_space->image->data[i]) *= factor;
         sp_imag(real_space->image->data[i]) *= factor;
@@ -65,11 +65,11 @@ void gaussian_blur_pattern(Options * opts,Diffraction_Pattern * pattern){
   
   int i = 0;
   for(int x = 0;x<opts->detector->nx;x++){
-    float dx = fabs(x-((opts->detector->nx-1)/2));
+    float dx = abs(x-((opts->detector->nx-1)/2));
     for(int y = 0;y<opts->detector->ny;y++){
-      float dy = fabs(y-((opts->detector->ny-1)/2));
+      float dy = abs(y-((opts->detector->ny-1)/2));
       for(int z = 0;z<opts->detector->nz;z++){
-        float dz = fabs(z-((opts->detector->nz-1)/2));
+        float dz = abs(z-((opts->detector->nz-1)/2));
         float factor = 1/sqrt(2*M_PI*radius) * exp(-(dx*dx+dy*dy+dz*dz)/(2*radius*radius));
         sp_real(pattern->F[i]) *= factor;
         sp_imag(pattern->F[i]) *= factor;
@@ -276,7 +276,6 @@ void output_files( Diffraction_Pattern * pattern, Options * opts, int index){
 Diffraction_Pattern * simulate_shot(Molecule * mol, Options * opts){  
   SpRotation * rot = NULL;
   Diffraction_Pattern * pattern = NULL;
-  int is3D = (opts->detector->nz > 1);
   float * HKL_list;
   int HKL_list_size = 0;  
   if(opts->sf_filename[0]){
@@ -332,10 +331,7 @@ void free_output_in_options(Options * opts){
 #ifndef _LIBRARY
 int main(int argc, char ** argv){
   Options * opts = set_defaults();
-  int i;
   Molecule * mol = NULL;
-  SpRotation ** rot = NULL;
-  char buffer[1024];
 
 #ifdef MPI
   MPI_Init(&argc, &argv);

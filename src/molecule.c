@@ -24,7 +24,6 @@
 #include <math.h>
 #include "config.h"
 #include "molecule.h"
-#include "spimage.h"
 #include "mpi_comm.h"
 
 static char legal_atom_names[212];
@@ -202,7 +201,7 @@ Molecule * get_Molecule_from_pdb(char * filename){
       res->natoms++;
     }			/* skip anything else */
   }
-  fprintf(stderr, "Read %d atoms with %d electrons\n",res->natoms,total_atomic_number);
+  //fprintf(stderr, "Read %d atoms with %d electrons\n",res->natoms,total_atomic_number);
   fclose(fp);
   res->atomic_number = realloc(res->atomic_number,sizeof(int)*res->natoms);
   res->pos = realloc(res->pos,3*sizeof(float)*res->natoms);  
@@ -298,7 +297,7 @@ void    write_pdb_from_mol(char *filename,Molecule * mol){
   fclose(fpout);
 }
 
-Molecule * alloc_molecule() {
+Molecule * alloc_mol() {
   Molecule * mol = malloc(sizeof(Molecule));
   mol->natoms = 0;
   mol->atomic_number = NULL;
@@ -306,7 +305,7 @@ Molecule * alloc_molecule() {
   return mol;
 }
 
-void add_atom_to_molecule(Molecule * mol, int atomic_number, float pos0, float pos1, float pos2) {
+void add_atom_to_mol(Molecule * mol, int atomic_number, float pos0, float pos1, float pos2) {
   int i = mol->natoms;
   mol->natoms++;
   mol->atomic_number = realloc(mol->atomic_number,sizeof(int)*mol->natoms);
@@ -317,8 +316,33 @@ void add_atom_to_molecule(Molecule * mol, int atomic_number, float pos0, float p
   mol->pos[i*3+2] = pos2;
 }
 
-void free_molecule(Molecule * mol) {
+void free_mol(Molecule * mol) {
   free(mol->atomic_number);
   free(mol->pos);
   free(mol);
+}
+
+Molecule * make_mol(Image * atomic_number, Image * pos) {
+  int i, N;
+  Molecule * mol;
+  if (pos->image->x != 3) {
+    fprintf(stderr,"Array of positions must have 3 times N dimensions, where N denotes the number of atoms.\n");
+    return NULL;
+  } 
+  if (atomic_number->image->x != pos->image->y) {
+    fprintf(stderr,"Array of atomic numbers and atomic positions do not have compatible shapes.\n");
+    return NULL;
+  }
+  N = atomic_number->image->x;
+  mol = alloc_mol();
+  mol->natoms = N;
+  mol->atomic_number = realloc(mol->atomic_number,sizeof(int)*N);
+  mol->pos = realloc(mol->pos,sizeof(float)*N*3);
+  for (i = 0; i < N; i++) {
+    mol->atomic_number[i] = (int) atomic_number->image->data[i].re;
+    mol->pos[i*3+0] = pos->image->data[i*3+0].re;
+    mol->pos[i*3+1] = pos->image->data[i*3+1].re;
+    mol->pos[i*3+2] = pos->image->data[i*3+2].re;
+  }
+  return mol;
 }

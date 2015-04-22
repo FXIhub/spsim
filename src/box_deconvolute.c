@@ -46,11 +46,11 @@ void gaussian_blur_pattern(Options * opts,Diffraction_Pattern * pattern){
   
   int i = 0;
   for(int x = 0;x<opts->detector->nx;x++){
-    float dx = fabs(x-((opts->detector->nx-1)/2));
+    float dx = abs(x-((opts->detector->nx-1)/2));
     for(int y = 0;y<opts->detector->ny;y++){
-    float dy = fabs(y-((opts->detector->ny-1)/2));
+    float dy = abs(y-((opts->detector->ny-1)/2));
       for(int z = 0;z<opts->detector->nz;z++){
-	float dz = fabs(z-((opts->detector->nz-1)/2));
+	float dz = abs(z-((opts->detector->nz-1)/2));
 	float factor = 1/sqrt(2*M_PI*radius) * exp(-(dx*dx+dy*dy+dz*dz)/(2*radius*radius));
 	sp_real(pattern->F[i]) *= factor;
 	sp_imag(pattern->F[i]) *= factor;
