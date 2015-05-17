@@ -82,14 +82,18 @@ Molecule * get_Molecule_from_pdb(char * filename){
 
   get_legal_atom_names();
 
+  // Loop over lines in file
   while (fgets(buffer, 1024, fp) != NULL)  {
+    // Only process atom lines
     if (((int)strlen(buffer) > 1) &&
 	((strstr(buffer, "ATOM") == buffer) ||
 	 (strstr(buffer, "HETATM") == buffer))) {
-      
+
+      // Increase arrays if needed
       if (res->natoms >= maxnatoms) {
 	/* increase array sizes */
 	maxnatoms *= 2;
+	//printf("%i\n", maxnatoms);
 	res->atomic_number = realloc(res->atomic_number,sizeof(int)*maxnatoms);
 	res->pos = realloc(res->pos,3*sizeof(float)*maxnatoms);
       }
@@ -117,7 +121,8 @@ Molecule * get_Molecule_from_pdb(char * filename){
       next_field_start+= 6;
       tmp_char = buffer[16];
       buffer[16] = 0;
-      
+
+      // Read atomic number
       /* Next copy Remoteness indicator and Branch 
 	 designator besides the Chemical symbol */
       strncpy(aid,next_field_start,5);	       
@@ -153,7 +158,7 @@ Molecule * get_Molecule_from_pdb(char * filename){
       t1 = (float)atof(next_field_start);
       buffer[38] = tmp_char;
       next_field_start += 8;
-      tmp_char = buffer[38];
+      tmp_char = buffer[46];
       buffer[46] = 0;
       t2 = (float)atof(next_field_start);
       buffer[46] = tmp_char;
@@ -202,6 +207,7 @@ Molecule * get_Molecule_from_pdb(char * filename){
     }			/* skip anything else */
   }
   //fprintf(stderr, "Read %d atoms with %d electrons\n",res->natoms,total_atomic_number);
+  //printf("Read %d atoms with %d electrons\n",res->natoms,total_atomic_number);
   fclose(fp);
   res->atomic_number = realloc(res->atomic_number,sizeof(int)*res->natoms);
   res->pos = realloc(res->pos,3*sizeof(float)*res->natoms);  
