@@ -211,6 +211,7 @@ Molecule * get_Molecule_from_pdb(char * filename){
   fclose(fp);
   res->atomic_number = realloc(res->atomic_number,sizeof(int)*res->natoms);
   res->pos = realloc(res->pos,3*sizeof(float)*res->natoms);  
+  //printf("%d atoms\n", res->natoms);
   return res;  
 }
 
