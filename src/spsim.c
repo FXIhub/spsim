@@ -269,8 +269,6 @@ void output_files( Diffraction_Pattern * pattern, Options * opts, int index){
     write_density_histogram(rs);
     sp_image_free(rs);
   }
-
-
 }
 
 Diffraction_Pattern * simulate_shot(Molecule * mol, Options * opts){  

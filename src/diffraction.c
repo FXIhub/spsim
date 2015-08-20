@@ -210,7 +210,7 @@ static float  electron_density(float d,int Z){
   }
 
 
-static double ilumination_function(Experiment * exper,float * pos){
+static double illumination_function(Experiment * exper,float * pos){
   double dist2;
   double sigma;
   /* If no fwhm is defined just return 1 everywhere */
@@ -218,7 +218,7 @@ static double ilumination_function(Experiment * exper,float * pos){
     return 1;
   }
   /* calculate distance from the center of the beam */
-  dist2 = (pos[0]-exper->beam_center_x)*(pos[0]-exper->beam_center_x)+(pos[1]-exper->beam_center_y)*(pos[1]-exper->beam_center_y);
+  dist2 = (pos[2]-exper->beam_center_x)*(pos[2]-exper->beam_center_x)+(pos[1]-exper->beam_center_y)*(pos[1]-exper->beam_center_y);
   sigma = exper->beam_fwhm/2.355;
   //printf("here\n");
   return exp(-dist2/(2*sigma*sigma));
@@ -230,12 +230,12 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
   /* pixel index */
   int x,y;
   /* physical location of pixel*/
-  double px,py;
+  double px,py,pz;
   /* reciprocal coordinates */
-  double rx,ry;
-  double real_to_reciprocal = 1.0/(det->distance*exp->wavelength);
+  double rx,ry,rz;
+  
+  double p;
   double ewald_radius = 1.0/exp->wavelength;
-  double distance_to_ewald_sphere_center;
 
   float * HKL_list;
   int index = 0;
@@ -243,6 +243,8 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
   nx = det->nx;
   ny = det->ny;
 
+  pz = det->distance;
+  
   HKL_list = malloc(sizeof(float)*nx*ny*3);
   for(x = 0;x<nx;x++){
     for(y = 0;y<ny;y++){
@@ -250,30 +252,28 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
 
       /* 
 	 Calculate the pixel coordinates in reciprocal space 	 
-	 by dividing the physical position by detector_distance*wavelength.
 	 
 	 CCD center at (nx-1)/2,(ny-1)/2
-
-	 Upper left corner of the detector with negative x and positive y
 	 
 	 Add detector center as it might not be the same as the beam
       */
-      px = ((x-(nx-1.0)/2.0)/nx)*det->width+det->center_x;
-      py = (((ny-1.0)/2.0-y)/ny)*det->height+det->center_y;
-
-      rx = px*real_to_reciprocal;
-      ry = py*real_to_reciprocal;
+      px = ((x-(nx-1.0)/2.0)/nx) * det->width  + det->center_x;
+      py = ((y-(ny-1.0)/2.0)/ny) * det->height + det->center_y;
+      p = sqrt(px*px+py*py+pz*pz);
+      
+      rx = px/p;
+      ry = py/p;
+      rz = pz/p;
       
       /* Project pixel into Ewald sphere. */
       if(!det->spherical){
-	distance_to_ewald_sphere_center = sqrt(rx*rx+ry*ry+ewald_radius*ewald_radius);
-	HKL_list[index++] = rx * ewald_radius/distance_to_ewald_sphere_center;
-	HKL_list[index++] = ry * ewald_radius/distance_to_ewald_sphere_center;
-	HKL_list[index++] = ewald_radius-(ewald_radius * ewald_radius/distance_to_ewald_sphere_center);
+	HKL_list[index++] = (1.-rz) * ewald_radius;
+	HKL_list[index++] = (0.-ry) * ewald_radius;
+	HKL_list[index++] = (0.-rx) * ewald_radius;	
       }else{
-	HKL_list[index++] = rx;
-	HKL_list[index++] = ry;
 	HKL_list[index++] = 0;
+       	HKL_list[index++] = -ry;
+	HKL_list[index++] = -rx;
       }
 	 
     }
@@ -293,6 +293,7 @@ SpRotation * apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_siz
   if(opts->random_orientation){
     rot = sp_rot_uniform();
   }else{
+    // This is an intrinsic rotation. We rotate the coordinate system not the sample.
     rot = sp_rot_euler(opts->euler_orientation[0],opts->euler_orientation[1],opts->euler_orientation[2]);
   }
   for(i = 0;i<*HKL_list_size;i++){
@@ -347,9 +348,9 @@ float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_
       rz = pz*real_to_reciprocal;
       
       /* Project pixel into Ewald sphere. */
-      HKL_list[index++] = rx;
-      HKL_list[index++] = ry;
       HKL_list[index++] = rz;      
+      HKL_list[index++] = ry;
+      HKL_list[index++] = rx;
       }
     }
   }
@@ -363,12 +364,12 @@ float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_
 void multiply_pattern_with_scattering_factor(complex double * f,int Z,int nx, int ny, int nz, double rs_pixel_x,double rs_pixel_y,double rs_pixel_z, float B){
   /* f is assumed to be C ordered*/
   int i = 0;
-  for(int xi = -nx/2;xi<nx/2;xi++){
-    float x = (float)xi/(nx)/rs_pixel_x;
+  for(int zi = -nz/2;zi<nz/2;zi++){
+    float z = (float)zi/(nz)/rs_pixel_z;
     for(int yi = -ny/2;yi<ny/2;yi++){
       float y = (float)yi/(ny)/rs_pixel_y;
-      for(int zi = -nz/2;zi<nz/2;zi++){
-	float z = (float)zi/(nz)/rs_pixel_z;
+      for(int xi = -nx/2;xi<nx/2;xi++){
+	float x = (float)xi/(nx)/rs_pixel_x;
 	double distance = sqrt(x*x+y*y+z*z);
 	float sf = scatt_factor(distance,Z,B);
 	f[i] *= sf;
@@ -455,7 +456,7 @@ Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experim
       mpi_skip_flag = 0;
       fprintf(stderr,"Calculating Z = %d\n",Z);
       /* more than 100 atoms of that kind in the molecule use nfft*/
-      nfft_init_3d(&p,nx,ny,nz,is_element_in_molecule[Z]);
+      nfft_init_3d(&p,nz,ny,nx,is_element_in_molecule[Z]);
 
       int k = 0;
       for(int j = 0 ;j< mol->natoms;j++){
@@ -468,9 +469,11 @@ Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experim
 	  /* For some unknown reason I have to take the negative of the position otherwise the patterns came out inverted.
 	     I have absolutely no idea why! It can even be a bug in the NFFT library. I should check this out better
 	  */
-	  p.x[k*3] = -mol->pos[j*3]/(rs_pixel_x)/nx; 
+
+	  p.x[k*3] = -mol->pos[j*3]/(rs_pixel_z)/nz; 
 	  p.x[k*3+1] = -mol->pos[j*3+1]/(rs_pixel_y)/ny; 
-	  p.x[k*3+2] = -mol->pos[j*3+2]/(rs_pixel_z)/nz; 
+	  p.x[k*3+2] = -mol->pos[j*3+2]/(rs_pixel_x)/nx; 
+
 	  k++;
 	}
       }
@@ -502,7 +505,7 @@ Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experim
   return res;
 }
 
-
+// THIS FUNCTION IS NEVER CALLED
 Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL_list, int HKL_list_size,CCD * det, float B,Options * opts){
   int is_element_in_molecule[ELEMENTS];
 /* in meters defines the limit up to which we compute the electron density */
@@ -514,8 +517,8 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
   /* N is the cutoff frequency */
   double max_x[3] = {0,0,0};
   double max_v[3] = {0,0,0};
-  int N[3] = {1000,1000,10};
-  int n[3] = {1000,1000,10};
+  int N[3] = {10,1000,1000};
+  int n[3] = {10,1000,1000};
   int n_el_in_mol = 0;
 
   int mpi_skip = 1;
@@ -602,7 +605,7 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
 	     I have absolutely no idea why! It can even be a bug in the NFFT library. I should check this out better.
 	     It might have to do with the order of the output!
 	  */
-	  p.x[k*3] = -mol->pos[j*3]/max_x[0];
+	  p.x[k*3]   = -mol->pos[j*3]/max_x[0];
 	  p.x[k*3+1] = -mol->pos[j*3+1]/max_x[1];
 	  p.x[k*3+2] = -mol->pos[j*3+2]/max_x[2];
 	  k++;
@@ -610,7 +613,7 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
       }
       k = 0;
       for(int k = 0 ;k<HKL_list_size;k++){
-	p.v[k*3] =  HKL_list[k*3]/max_v[0];
+	p.v[k*3]   =  HKL_list[k*3]/max_v[0];
 	p.v[k*3+1] =  HKL_list[k*3+1]/max_v[1];
 	p.v[k*3+2] =  HKL_list[k*3+2]/max_v[2];
       }
@@ -685,9 +688,9 @@ Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experime
     float home_x = sp_mod(mol->pos[j*3]/rs_pixel_x,nx);
     float home_y = sp_mod(mol->pos[j*3+1]/rs_pixel_y,ny);
     float home_z = sp_mod(mol->pos[j*3+2]/rs_pixel_z,nz);
-    for(int x = home_x-x_grid_radius;x<home_x+x_grid_radius;x++){
+    for(int z = home_z-z_grid_radius;z<home_z+z_grid_radius;z++){
       for(int y = home_y-y_grid_radius;y<home_y+y_grid_radius;y++){
-	for(int z = home_z-z_grid_radius;z<home_z+z_grid_radius;z++){
+	for(int x = home_x-x_grid_radius;x<home_x+x_grid_radius;x++){
 	  float ed = 0;
 /*	  int z2 = 0;
 	  int y2 = 0;
@@ -731,9 +734,9 @@ Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experime
   res->HKL_list = malloc(sizeof(float)*3*res->HKL_list_size);
   int i = 0;
   float norm = 1.0;
-  for(int x = 0;x<sp_image_x(sf);x++){
+  for(int z = 0;z<sp_image_z(sf);z++){
     for(int y = 0;y<sp_image_y(sf);y++){
-      for(int z = 0;z<sp_image_z(sf);z++){
+      for(int x = 0;x<sp_image_x(sf);x++){
 	res->F[i] = sp_cscale(sp_image_get(sf,x,y,z),norm);
 	res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
 	i++;
@@ -755,7 +758,7 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
   int HKL_list_start = 0;
   int HKL_list_end = 0;
   int points_per_percent;
-  float * atom_ilumination = malloc(sizeof(float)*mol->natoms);
+  float * atom_illumination = malloc(sizeof(float)*mol->natoms);
   get_my_loop_start_and_end(HKL_list_size,&HKL_list_start,&HKL_list_end);
 
   if(!atomsf_initialized){
@@ -773,7 +776,7 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
   }
   for(j = 0 ;j< mol->natoms;j++){
     is_element_in_molecule[mol->atomic_number[j]] = 1;
-    atom_ilumination[j] = ilumination_function(exp,&(mol->pos[j*3]));
+    atom_illumination[j] = illumination_function(exp,&(mol->pos[j*3]));
   }
 
   points_per_percent = 1+(HKL_list_end-HKL_list_start)/100;
@@ -803,8 +806,8 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
       if(!mol->atomic_number[j]){
 	continue;
       }
-      /* Multiply the scattering factor with the ilumination function (should it be the square root of it?)*/
-      scattering_factor = scattering_factor_cache[mol->atomic_number[j]]*sqrt(atom_ilumination[j]);
+      /* Multiply the scattering factor with the illumination function (should it be the square root of it?)*/
+      scattering_factor = scattering_factor_cache[mol->atomic_number[j]]*sqrt(atom_illumination[j]);
 /*      scattering_factor = 1;*/
       float tmp = 2*M_PI*(HKL_list[3*i]*-mol->pos[j*3]+HKL_list[3*i+1]*-mol->pos[j*3+1]+HKL_list[3*i+2]*-mol->pos[j*3+2]);
       if(!opts->delta_atoms){
@@ -838,7 +841,7 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
   int HKL_list_start = 0;
   int HKL_list_end = 0;
   int points_per_percent;
-  float * atom_ilumination = malloc(sizeof(float)*mol->natoms);
+  float * atom_illumination = malloc(sizeof(float)*mol->natoms);
   get_my_loop_start_and_end(HKL_list_size,&HKL_list_start,&HKL_list_end);
 
   if(!atomsf_initialized){
@@ -856,7 +859,7 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
   }
   for(j = 0 ;j< mol->natoms;j++){
     is_element_in_molecule[mol->atomic_number[j]] = 1;
-    atom_ilumination[j] = sqrt(ilumination_function(exp,&(mol->pos[j*3])));
+    atom_illumination[j] = sqrt(illumination_function(exp,&(mol->pos[j*3])));
   }
 
   points_per_percent = 1+(HKL_list_end-HKL_list_start)/100;
@@ -884,11 +887,11 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
     }
     for(j = 0 ;j< 4*(mol->natoms/4);j+=4){
       
-      /* Multiply the scattering factor with the ilumination function (should it be the square root of it?)*/
-      v4sf sf = {scattering_factor_cache[mol->atomic_number[j]]*sqrt(atom_ilumination[j]),
-                 scattering_factor_cache[mol->atomic_number[j+1]]*sqrt(atom_ilumination[j+1]),
-                 scattering_factor_cache[mol->atomic_number[j+2]]*sqrt(atom_ilumination[j+2]),
-                 scattering_factor_cache[mol->atomic_number[j+3]]*sqrt(atom_ilumination[j+3])};
+      /* Multiply the scattering factor with the illumination function (should it be the square root of it?)*/
+      v4sf sf = {scattering_factor_cache[mol->atomic_number[j]]*sqrt(atom_illumination[j]),
+                 scattering_factor_cache[mol->atomic_number[j+1]]*sqrt(atom_illumination[j+1]),
+                 scattering_factor_cache[mol->atomic_number[j+2]]*sqrt(atom_illumination[j+2]),
+                 scattering_factor_cache[mol->atomic_number[j+3]]*sqrt(atom_illumination[j+3])};
 
       float tmp[4] = {2*M_PI*(HKL_list[3*i]*-mol->pos[j*3]+HKL_list[3*i+1]*-mol->pos[j*3+1]+HKL_list[3*i+2]*-mol->pos[j*3+2]),
 		      2*M_PI*(HKL_list[3*i]*-mol->pos[(j+1)*3]+HKL_list[3*i+1]*-mol->pos[(j+1)*3+1]+HKL_list[3*i+2]*-mol->pos[(j+1)*3+2]),
@@ -916,8 +919,8 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
       sp_imag(res->F[i]) += sum;
     }
     for(;j< mol->natoms;j++){
-      /* Multiply the scattering factor with the ilumination function (should it be the square root of it?)*/
-      scattering_factor = scattering_factor_cache[mol->atomic_number[j]]*sqrt(atom_ilumination[j]);
+      /* Multiply the scattering factor with the illumination function (should it be the square root of it?)*/
+      scattering_factor = scattering_factor_cache[mol->atomic_number[j]]*sqrt(atom_illumination[j]);
 /*      scattering_factor = 1;*/
       float tmp = 2*M_PI*(HKL_list[3*i]*-mol->pos[j*3]+HKL_list[3*i+1]*-mol->pos[j*3+1]+HKL_list[3*i+2]*-mol->pos[j*3+2]);
       sp_real(res->F[i]) += scattering_factor*cos(tmp);
@@ -936,7 +939,7 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
 #endif
 }
 
-
+// THIS FUNCTION IS NEVER CALLED
 Diffraction_Pattern * compute_fresnel_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size,float B,Experiment * exp){
   int i,j;
   double scattering_factor;
@@ -947,7 +950,7 @@ Diffraction_Pattern * compute_fresnel_pattern_on_list(Molecule * mol, float * HK
   int HKL_list_start = 0;
   int HKL_list_end = 0;
   int points_per_percent;
-  double * atom_ilumination = malloc(sizeof(double)*mol->natoms);
+  double * atom_illumination = malloc(sizeof(double)*mol->natoms);
   double k;
   double distance = HKL_list[2]*exp->wavelength;
   get_my_loop_start_and_end(HKL_list_size,&HKL_list_start,&HKL_list_end);
@@ -967,7 +970,7 @@ Diffraction_Pattern * compute_fresnel_pattern_on_list(Molecule * mol, float * HK
   }
   for(j = 0 ;j< mol->natoms;j++){
     is_element_in_molecule[mol->atomic_number[j]] = 1;
-    atom_ilumination[j] = ilumination_function(exp,&(mol->pos[j*3]));
+    atom_illumination[j] = illumination_function(exp,&(mol->pos[j*3]));
   }
 
   points_per_percent = 1+(HKL_list_end-HKL_list_start)/100;
@@ -998,9 +1001,9 @@ Diffraction_Pattern * compute_fresnel_pattern_on_list(Molecule * mol, float * HK
       if(!mol->atomic_number[j]){
 	continue;
       }
-      /* Multiply the scattering factor with the ilumination function (should it be the square root of it?)*/
-      scattering_factor = scattering_factor_cache[mol->atomic_number[j]]*sqrt(atom_ilumination[j]);
-      /*      scattering_factor = 1;*/
+      // Multiply the scattering factor with the illumination function (should it be the square root of it?)
+      scattering_factor = scattering_factor_cache[mol->atomic_number[j]]*sqrt(atom_illumination[j]);
+      //      scattering_factor = 1;
       
 
       sp_real(res->F[i]) += scattering_factor*cos(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2])+
@@ -1008,8 +1011,9 @@ Diffraction_Pattern * compute_fresnel_pattern_on_list(Molecule * mol, float * HK
       sp_imag(res->F[i]) += scattering_factor*sin(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2])
 						  -M_PI/(exp->wavelength*distance)*(mol->pos[j*3]*mol->pos[j*3]+mol->pos[j*3+1]*mol->pos[j*3+1]));
 
+
       /*
-      sp_real(res->F[i]) += scattering_factor*cos(k/(2*distance)*((exp->wavelength*HKL_list[3*i]-mol->pos[j*3])*
+	sp_real(res->F[i]) += scattering_factor*cos(k/(2*distance)*((exp->wavelength*HKL_list[3*i]-mol->pos[j*3])*
 												     (exp->wavelength*HKL_list[3*i]-mol->pos[j*3])+
 												     (exp->wavelength*HKL_list[3*i+1]-mol->pos[j*3+1])*
 												     (exp->wavelength*HKL_list[3*i+1]-mol->pos[j*3+1])));
@@ -1024,11 +1028,11 @@ Diffraction_Pattern * compute_fresnel_pattern_on_list(Molecule * mol, float * HK
   syncronize_patterns(res);
   return res;
 }
-
+*/
 
 double box_fourier_transform(Box box, float h, float k, float l){
   if(box.alpha != 90 ||
-     box.beta != 90 ||
+     box.beta  != 90 ||
      box.gamma != 90){
     sp_error_fatal("Cannot handle non rectangular boxes\n");
   }
@@ -1083,11 +1087,11 @@ void calculate_thomson_correction(CCD * det){
   double polarization_factor = 1;
   det->thomson_correction = malloc(sizeof(float)*nx*ny*nz);
   index = 0;
-  for(x = 0;x<det->nx;x++){
+  for(z = 0;z<det->nz;z++){
     for(y = 0;y<det->ny;y++){
-      for(z = 0;z<det->nz;z++){
+      for(x = 0;x<det->nx;x++){
 	px = ((x-(nx-1.0)/2.0)/nx)*det->width/2;
-	py = (((ny-1.0)/2.0-y)/ny)*det->height/2;
+	py = ((y-(ny-1.0)/2.0)/ny)*det->height/2;
 	r = sqrt(det->distance*det->distance+px*px+py*py);
 	det->thomson_correction[index++] = (r0*r0)*polarization_factor;
       }
@@ -1115,32 +1119,32 @@ void calculate_pixel_solid_angle(CCD * det){
   /* For the moment we're considering vertical polarization */
   det->solid_angle = malloc(sizeof(float)*nx*ny*nz);
   index = 0;
-  for(x = 0;x<det->nx;x++){
+  for(z = 0;z<det->nz;z++){
     for(y = 0;y<det->ny;y++){
-      for(z = 0;z<det->nz;z++){
+      for(x = 0;x<det->nx;x++){
 	if(det->spherical){
 	  r = det->distance;
 	  det->solid_angle[index++] = det->pixel_width*det->pixel_height/(r*r);
 	}else{
 	  px = ((x-(nx-1.0)/2.0)/nx)*det->width/2;
-	  py = (((ny-1.0)/2.0-y)/ny)*det->height/2;
+	  py = ((y-(ny-1.0)/2.0)/ny)*det->height/2;
 	  r = sqrt(det->distance*det->distance+px*px+py*py);
 	  /* top left */
 	  corners[0][0] = px-det->pixel_width/2;
-	  corners[0][1] = py+det->pixel_height/2;
+	  corners[0][1] = py-det->pixel_height/2;
 	  
 	  corner_distance[0] = sqrt(det->distance*det->distance+corners[0][0]*corners[0][0]+corners[0][1]*corners[0][1]);
 	  /* top right */
 	  corners[1][0] = px+det->pixel_width/2;
-	  corners[1][1] = py+det->pixel_height/2;
+	  corners[1][1] = py-det->pixel_height/2;
 	  corner_distance[1] = sqrt(det->distance*det->distance+corners[1][0]*corners[1][0]+corners[1][1]*corners[1][1]);
 	  /* bottom right */
 	  corners[2][0] = px+det->pixel_width/2;
-	  corners[2][1] = py-det->pixel_height/2;
+	  corners[2][1] = py+det->pixel_height/2;
 	  corner_distance[2] = sqrt(det->distance*det->distance+corners[2][0]*corners[2][0]+corners[2][1]*corners[2][1]);
 	  /* bottom left */
 	  corners[3][0] = px-det->pixel_width/2;
-	  corners[3][1] = py-det->pixel_height/2;
+	  corners[3][1] = py+det->pixel_height/2;
 	  corner_distance[3] = sqrt(det->distance*det->distance+corners[3][0]*corners[3][0]+corners[3][1]*corners[3][1]);
 	  /* project on plane*/
 	  if(!det->spherical){
@@ -1177,7 +1181,7 @@ void calculate_photons_per_pixel(Diffraction_Pattern * pattern, Options * opts){
   }
 }
 
-
+// THIS FUNCTION IS NEVER CALLED
 void write_hkl_grid(float * list, Molecule * mol,CCD * det){
   Image * hkl_grid;
   int x,y,z;
@@ -1196,11 +1200,11 @@ void write_hkl_grid(float * list, Molecule * mol,CCD * det){
   }
 #endif
   for(i =0 ;i<mol->natoms;i++){
-    if(mol->pos[i*3] < min_x){
-      min_x = mol->pos[i*3];
+    if(mol->pos[i*3] < min_z){
+      min_z = mol->pos[i*3];
     }
-    if(mol->pos[i*3] > max_x){
-      max_x = mol->pos[i*3];
+    if(mol->pos[i*3] > max_z){
+      max_z = mol->pos[i*3];
     }
     if(mol->pos[i*3+1] < min_y){
       min_y = mol->pos[i*3+1];
@@ -1208,11 +1212,11 @@ void write_hkl_grid(float * list, Molecule * mol,CCD * det){
     if(mol->pos[i*3+1] > max_y){
       max_y = mol->pos[i*3+1];
     }
-    if(mol->pos[i*3+2] < min_z){
-      min_z = mol->pos[i*3+2];
+    if(mol->pos[i*3+2] < min_x){
+      min_x = mol->pos[i*3+2];
     }
-    if(mol->pos[i*3+2] > max_z){
-      max_z = mol->pos[i*3+2];
+    if(mol->pos[i*3+2] > max_x){
+      max_x = mol->pos[i*3+2];
     }
   }
   
@@ -1224,9 +1228,9 @@ void write_hkl_grid(float * list, Molecule * mol,CCD * det){
   hkl_grid->detector->image_center[2] = sp_image_z(hkl_grid)/2;
   i = 0;
   index = 0;
-  for(x = 0;x<sp_image_x(hkl_grid);x++){
+  for(z = 0;z<sp_image_z(hkl_grid);z++){
     for(y = 0;y<sp_image_y(hkl_grid);y++){
-      for(z = 0;z<sp_image_z(hkl_grid);z++){
+      for(x = 0;x<sp_image_x(hkl_grid);x++){
 	if(fabs(x-hkl_grid->detector->image_center[0]) > fabs(y-hkl_grid->detector->image_center[1])){
 	  sp_real(hkl_grid->image->data[i]) = list[index]*max_dim;
 	}else{
