@@ -90,20 +90,17 @@ void calculate_photons_per_pixel(Diffraction_Pattern * pattern, Options * opts);
 
 Diffraction_Pattern * load_pattern_from_file(CCD * det,char * filename, 
 					     float * HKL_list, int HKL_list_size);
-// THIS FUNCTION IS NEVER CALLED
 void write_hkl_grid(float * list, Molecule * mol,CCD * det);
 
 Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experiment * exp,float B);
 
 #ifdef NFFT_SUPPORT
-// THIS FUNCTION IS NEVER CALLED
 Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experiment * exp, float B,float * HKL_list,Options * opts);
 Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL_list, int HKL_list_size, CCD * det,float B,Options * opts);
 #endif
 
 SpRotation * apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_size,Options * opts);
 Diffraction_Pattern * compute_box_on_list(Box box, float * HKL_list, int HKL_list_size);
-// THIS FUNCTION IS NEVER CALLED
 Diffraction_Pattern * compute_fresnel_pattern_on_list(Molecule * mol, float * HKL_list, int HKL_list_size,float B,Experiment * exp);
 
 #ifdef __cplusplus

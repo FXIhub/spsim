@@ -17,7 +17,7 @@ __global__ void CUDA_scattering_at_k(float* real_part,float * imag_part,
 				     const float * HKL_list,const float * pos,
 				     const int k,const int natoms,
 				     float2 beam_center, float beam_fwhm);
-__device__ float cuda_illumination_function(const float * pos, float2 beam_center, float beam_fwhm);
+__device__ float cuda_ilumination_function(const float * pos, float2 beam_center, float beam_fwhm);
 
 __global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const int * Z,
 					       const float * pos,
@@ -118,7 +118,7 @@ static float  scatt_factor(float d,int Z,float B){
   return res;    
 }
 
-static float illumination_function(Experiment * exper,float * pos){
+static float ilumination_function(Experiment * exper,float * pos){
   float dist2;
   float sigma;
   /* If no fwhm is defined just return 1 everywhere */
@@ -126,7 +126,7 @@ static float illumination_function(Experiment * exper,float * pos){
     return 1;
   }
   /* calculate distance from the center of the beam */
-  dist2 = (pos[2]-exper->beam_center_x)*(pos[2]-exper->beam_center_x)+(pos[1]-exper->beam_center_y)*(pos[1]-exper->beam_center_y);
+  dist2 = (pos[0]-exper->beam_center_x)*(pos[0]-exper->beam_center_x)+(pos[1]-exper->beam_center_y)*(pos[1]-exper->beam_center_y);
   sigma = exper->beam_fwhm/2.355;
   //printf("here\n");
   return exp(-dist2/(2*sigma*sigma));
@@ -143,7 +143,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list(Molecule * mol, float * HKL_l
   int is_element_in_molecule[ELEMENTS];
   Diffraction_Pattern * res = (Diffraction_Pattern *)malloc(sizeof(Diffraction_Pattern));
   int points_per_percent;
-  float * atom_illumination = (float *)malloc(sizeof(float)*mol->natoms);
+  float * atom_ilumination = (float *)malloc(sizeof(float)*mol->natoms);
   int threads_per_block = 64;
   int number_of_blocks = (mol->natoms+threads_per_block-1)/threads_per_block;
  
@@ -178,7 +178,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list(Molecule * mol, float * HKL_l
   }
   for(j = 0 ;j< mol->natoms;j++){
     is_element_in_molecule[mol->atomic_number[j]] = 1;
-    atom_illumination[j] = illumination_function(exp,&(mol->pos[j*3]));
+    atom_ilumination[j] = ilumination_function(exp,&(mol->pos[j*3]));
   }
 
   points_per_percent = 1+(HKL_list_size)/100;
@@ -211,7 +211,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list(Molecule * mol, float * HKL_l
   cudaFree(d_atomic_pos);
   cudaFree(d_sf_cache);
   cudaFree(d_HKL_list);
-  free(atom_illumination);
+  free(atom_ilumination);
   if (opts->verbosity_level > 0) {
      printf("%g atoms.pixel/s\n",1.0e6*HKL_list_size*mol->natoms/sp_timer_stop(timer));
   } 	     
@@ -347,7 +347,7 @@ __global__ void CUDA_scattering_at_k(float* real_part,float * imag_part, int * a
   }
   if(i<natoms){
     float sf = sf_cache[atomic_number[i]] *
-      sqrt(cuda_illumination_function(&pos[i*3], beam_center, beam_fwhm));
+      sqrt(cuda_ilumination_function(&pos[i*3], beam_center, beam_fwhm));
     float tmp = 2*3.14159265F*(HKL_list[3*k]*-pos[i*3]+HKL_list[3*k+1]*-pos[i*3+1]+HKL_list[3*k+2]*-pos[i*3+2]);
     real_part[i] = sf*cos(tmp);
     imag_part[i] = sf*sin(tmp);
@@ -381,9 +381,9 @@ __global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const 
 	lastZ = Z[i];
       }
       float tmp = 2*3.14159265F*(hkl[0]*-pos[i*3]+hkl[1]*-pos[i*3+1]+hkl[2]*-pos[i*3+2]);      
-      float illum = sqrt(cuda_illumination_function(&pos[i*3], beam_center, beam_fwhm));
-      F[id].x += illum*sf*cos(tmp);
-      F[id].y += illum*sf*sin(tmp);
+      float ilum = sqrt(cuda_ilumination_function(&pos[i*3], beam_center, beam_fwhm));
+      F[id].x += ilum*sf*cos(tmp);
+      F[id].y += ilum*sf*sin(tmp);
     }
     if(end_atom == natoms){
       I[id] =  F[id].x*F[id].x + F[id].y*F[id].y;
@@ -392,7 +392,7 @@ __global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const 
 }
 
 
-__device__ float cuda_illumination_function(const float * pos, float2 beam_center, float beam_fwhm){
+__device__ float cuda_ilumination_function(const float * pos, float2 beam_center, float beam_fwhm){
   float dist2;
   float sigma;
   /* If no fwhm is defined just return 1 everywhere */
@@ -442,7 +442,7 @@ void CUDA_spectrum_scattering_from_all_atoms(cufftComplex * F,float * I, const i
 	sf += atomsf[Z[i]*9+8]*exp(-B*d*d/0.25F);
 	lastZ = Z[i];
       }
-      float illumination = sqrt(cuda_illumination_function(&pos[i*3], beam_center, beam_fwhm));
+      float ilumination = sqrt(cuda_ilumination_function(&pos[i*3], beam_center, beam_fwhm));
       float total_weight = 0;
       cufftComplex f = {0,0};
       for(int j = 0;j < wavelength_samples;j++){
@@ -455,8 +455,8 @@ void CUDA_spectrum_scattering_from_all_atoms(cufftComplex * F,float * I, const i
 	const float weight = exp(-std_deviations*std_deviations/2);
 	total_weight += weight;
 	float tmp = 2*pi*(h*-pos[i*3]+k*-pos[i*3+1]+l*-pos[i*3+2]);      
-	f.x += sf*cos(tmp)*weight*illumination;
-	f.y += sf*sin(tmp)*weight*illumination;
+	f.x += sf*cos(tmp)*weight*ilumination;
+	f.y += sf*sin(tmp)*weight*ilumination;
       }
       f.x = f.x/total_weight;
       f.y = f.y/total_weight;
