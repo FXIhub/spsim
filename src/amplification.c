@@ -87,16 +87,16 @@ void calculate_real_detector_output(CCD * det, Experiment * experiment){
   }
   det->real_output = malloc(sizeof(float)*(det->nx/det->binning_x)*(det->ny/det->binning_y)*(det->nz/det->binning_z));
   i = 0;
-  for(x = 0;x<det->nx/det->binning_x;x++){
+  for(z = 0;z<det->nz/det->binning_z;z++){
     for(y = 0;y<det->ny/det->binning_y;y++){
-      for(z = 0;z<det->nz/det->binning_z;z++){
+      for(x = 0;x<det->nx/det->binning_x;x++){
 	det->real_output[i] = 0;
-	for(xi = 0;xi<det->binning_x;xi++){
+	for(zi = 0;zi<det->binning_z;zi++){
 	  for(yi = 0;yi<det->binning_y;yi++){
-	    for(zi = 0;zi<det->binning_z;zi++){
-	      det->real_output[i] +=  (det->electrons_per_pixel[(x*det->binning_x+xi)*(det->ny)*(det->nz)+
-								(y*det->binning_y+yi)*(det->nz)+
-				                                (z*det->binning_z+zi)]+
+	    for(xi = 0;xi<det->binning_x;xi++){
+	      det->real_output[i] +=  (det->electrons_per_pixel[(z*det->binning_z+zi)*(det->ny)*(det->nx)+
+								(y*det->binning_y+yi)*(det->nx)+
+				                                (x*det->binning_x+xi)]+
 				       det->dark_current*experiment->exposure_time);
 	    }
 	  }
@@ -132,15 +132,16 @@ void calculate_noiseless_detector_output(CCD * det, Experiment * experiment){
   }
   det->noiseless_output = malloc(sizeof(float)*(det->nx/det->binning_x)*(det->ny/det->binning_y)*(det->nz/det->binning_z));
   i = 0;
-  for(x = 0;x<det->nx/det->binning_x;x++){    
+  for(z = 0;z<det->nz/det->binning_z;z++){
     for(y = 0;y<det->ny/det->binning_y;y++){
-      for(z = 0;z<det->nz/det->binning_z;z++){
+      for(x = 0;x<det->nx/det->binning_x;x++){    
 	det->noiseless_output[i] = 0;
-	for(xi = 0;xi<det->binning_x;xi++){
+	for(zi = 0;zi<det->binning_z;zi++){
 	  for(yi = 0;yi<det->binning_y;yi++){
-	    for(zi = 0;zi<det->binning_z;zi++){
-	      det->noiseless_output[i] +=  (det->photons_per_pixel[(x*det->binning_x+xi)*det->ny*det->nz+(y*det->binning_y+yi)*det->nz+
-								   (z*(det->binning_z)+zi)]
+	    for(xi = 0;xi<det->binning_x;xi++){
+	      det->noiseless_output[i] +=  (det->photons_per_pixel[(z*det->binning_z+zi)*det->ny*det->nx+
+								   (y*det->binning_y+yi)*det->nx+
+								   (x*det->binning_x+xi)]
 					    *det->quantum_efficiency*electrons_per_photon*ADC_constant);
 	    }
 	  }

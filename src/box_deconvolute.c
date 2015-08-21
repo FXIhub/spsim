@@ -128,9 +128,9 @@ int main(int argc, char ** argv){
   calculate_real_detector_output(opts->detector,opts->experiment);
   output = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,opts->detector->nz/opts->detector->binning_z);
   i = 0;
-  for(int x = 0;x<sp_image_x(output);x++){
+  for(int z = 0;z<sp_image_z(output);z++){
     for(int y = 0;y<sp_image_y(output);y++){
-      for(int z = 0;z<sp_image_z(output);z++){
+      for(int x = 0;x<sp_image_x(output);x++){
 	sp_image_set(output,x,y,z,sp_cinit(opts->detector->real_output[i++],0));
 	sp_i3matrix_set(output->mask,x,y,z,1);
       }
@@ -143,9 +143,9 @@ int main(int argc, char ** argv){
   noiseless = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,
 			     opts->detector->nz/opts->detector->binning_z);
   i = 0;
-  for(int x = 0;x<sp_image_x(noiseless);x++){
+  for(int z = 0;z<sp_image_z(noiseless);z++){
     for(int y = 0;y<sp_image_y(noiseless);y++){
-      for(int z = 0;z<sp_image_z(noiseless);z++){
+      for(int x = 0;x<sp_image_x(noiseless);x++){
 	sp_image_set(noiseless,x,y,z,sp_cinit(opts->detector->noiseless_output[i++],0));
 	sp_i3matrix_set(noiseless->mask,x,y,z,1);
       }

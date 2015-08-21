@@ -38,6 +38,7 @@ Options * set_defaults(){
   opt->detector->binning_z = 1;
   opt->detector->center_x = 0;
   opt->detector->center_y = 0;
+  opt->detector->center_z = 0;
   opt->box_type = BOX_SPHERICAL;
   opt->box_dimension = 1e-9;
   opt->use_fft_for_sf = 0;
@@ -147,6 +148,9 @@ void read_options_file(char * filename, Options * res){
   }
   if(config_lookup(&config,"detector_center_y")){
     res->detector->center_y = config_lookup_float(&config,"detector_center_y");
+  }
+  if(config_lookup(&config,"detector_center_z")){
+    res->detector->center_z = config_lookup_float(&config,"detector_center_z");
   }
   if(config_lookup(&config,"detector_width")){
     res->detector->width = config_lookup_float(&config,"detector_width");
@@ -460,6 +464,8 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_float(s,res->detector->center_x);
   s = config_setting_add(root,"detector_center_y",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->detector->center_y);
+  s = config_setting_add(root,"detector_center_z",CONFIG_TYPE_FLOAT);
+  config_setting_set_float(s,res->detector->center_z);
   s = config_setting_add(root,"detector_pixel_width",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->detector->pixel_width);
   s = config_setting_add(root,"detector_pixel_height",CONFIG_TYPE_FLOAT);

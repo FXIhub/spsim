@@ -126,7 +126,7 @@ static float illumination_function(Experiment * exper,float * pos){
     return 1;
   }
   /* calculate distance from the center of the beam */
-  dist2 = (pos[2]-exper->beam_center_x)*(pos[2]-exper->beam_center_x)+(pos[1]-exper->beam_center_y)*(pos[1]-exper->beam_center_y);
+  dist2 = (pos[0]-exper->beam_center_x)*(pos[0]-exper->beam_center_x)+(pos[1]-exper->beam_center_y)*(pos[1]-exper->beam_center_y);
   sigma = exper->beam_fwhm/2.355;
   //printf("here\n");
   return exp(-dist2/(2*sigma*sigma));
@@ -195,7 +195,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list(Molecule * mol, float * HKL_l
       }
     }
     cutilSafeCall(cudaMemcpy(d_sf_cache,scattering_factor_cache,sizeof(float)*ELEMENTS,cudaMemcpyHostToDevice));
-    float2 beam_center = {exp->beam_center_x,exp->beam_center_y};
+    float2 beam_center = {exp->beam_center_y,exp->beam_center_x};
     CUDA_scattering_at_k<<<number_of_blocks, threads_per_block>>>(d_real_part,d_imag_part,d_atomic_number,d_sf_cache,d_HKL_list,d_atomic_pos,i,mol->natoms,beam_center,exp->beam_fwhm);
     thrust::device_ptr<float> begin =  thrust::device_pointer_cast(d_real_part);
     thrust::device_ptr<float> end =  thrust::device_pointer_cast(d_real_part+mol->natoms);
@@ -307,7 +307,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
     }
     int end_atom = sp_min(i+chunk_size,mol->natoms);
     int start_atom = i;
-    float2 beam_center = {exp->beam_center_x,exp->beam_center_y};
+    float2 beam_center = {exp->beam_center_y,exp->beam_center_x};
     if(exp->bandwidth == 0 || opts->wavelength_samples == 1){
       CUDA_scattering_from_all_atoms<<<number_of_blocks, threads_per_block>>>(d_F,d_I,d_atomic_number,d_atomic_pos,d_HKL_list,HKL_list_size,start_atom,end_atom,mol->natoms,d_atomsf,B,beam_center,exp->beam_fwhm);
     }else{
@@ -401,7 +401,7 @@ __device__ float cuda_illumination_function(const float * pos, float2 beam_cente
   }
   /* calculate distance from the center of the beam */
   dist2 = (pos[0]-beam_center.x)*(pos[0]-beam_center.x)+
-    (pos[1]-beam_center.y)*(pos[1]-beam_center.y);
+          (pos[1]-beam_center.y)*(pos[1]-beam_center.y);
   sigma = beam_fwhm/2.355;
   return exp(-dist2/(2*sigma*sigma));
 }

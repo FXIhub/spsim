@@ -31,18 +31,18 @@
 int descend_complex_compare(const void * pa,const void * pb);
 
 Image * calculate_noiseless_real_space(Options * opts, Diffraction_Pattern * pattern){
-  Image * real_space = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,opts->detector->ny/opts->detector->binning_y,
-			     opts->detector->nz/opts->detector->binning_z);
+  Image * real_space = sp_image_alloc(opts->detector->nx/opts->detector->binning_x,
+				      opts->detector->ny/opts->detector->binning_y,
+				      opts->detector->nz/opts->detector->binning_z);
   real_space->phased = 1;
   real_space->shifted = 0;
   int i = 0;
-  for(int x = 0;x<sp_image_x(real_space);x++){
+  for(int z = 0;z<sp_image_z(real_space);z++){
     for(int y = 0;y<sp_image_y(real_space);y++){
-      for(int z = 0;z<sp_image_z(real_space);z++){
-
-	Complex phased = pattern->F[(x*opts->detector->binning_x)*opts->detector->ny*opts->detector->nz+
-				(y*opts->detector->binning_y)*opts->detector->nz+z*opts->detector->binning_z];
-
+      for(int x = 0;x<sp_image_x(real_space);x++){
+	Complex phased = pattern->F[(x*opts->detector->binning_x) + 
+				    (y*opts->detector->binning_y) * opts->detector->nx +
+				    (z*opts->detector->binning_z) * opts->detector->nx * opts->detector->ny];
 /*	sp_cscale(phased,1.0/sp_cabs(phased));
 	sp_cscale(phased,opts->detector->noiseless_output[i++]);*/
 	if(sp_cabs(phased)){
@@ -69,12 +69,14 @@ Image * calculate_noiseless_real_space(Options * opts, Diffraction_Pattern * pat
   sp_image_write(real_space,"real_space_uncentered.h5",0);
   sp_vector * center = sp_image_center_of_mass(real_space);
   /*FM: This is buggy the center of mass should take wrap around into account*/
-  sp_image_translate(real_space,sp_image_x(real_space)/2-center->data[0],
+  sp_image_translate(real_space,
+		     sp_image_x(real_space)/2-center->data[0],
 		     sp_image_y(real_space)/2-center->data[1],
 		     sp_image_z(real_space)/2-center->data[2],
 		     SP_TRANSLATE_WRAP_AROUND);
   center = sp_image_center_of_mass(real_space);
-  sp_image_translate(real_space,sp_image_x(real_space)/2-center->data[0],
+  sp_image_translate(real_space,
+		     sp_image_x(real_space)/2-center->data[0],
 		     sp_image_y(real_space)/2-center->data[1],
 		     sp_image_z(real_space)/2-center->data[2],
 		     SP_TRANSLATE_WRAP_AROUND);

@@ -218,7 +218,7 @@ static double illumination_function(Experiment * exper,float * pos){
     return 1;
   }
   /* calculate distance from the center of the beam */
-  dist2 = (pos[2]-exper->beam_center_x)*(pos[2]-exper->beam_center_x)+(pos[1]-exper->beam_center_y)*(pos[1]-exper->beam_center_y);
+  dist2 = (pos[0]-exper->beam_center_x)*(pos[0]-exper->beam_center_x)+(pos[1]-exper->beam_center_y)*(pos[1]-exper->beam_center_y);
   sigma = exper->beam_fwhm/2.355;
   //printf("here\n");
   return exp(-dist2/(2*sigma*sigma));
@@ -246,19 +246,16 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
   pz = det->distance;
   
   HKL_list = malloc(sizeof(float)*nx*ny*3);
-  for(x = 0;x<nx;x++){
-    for(y = 0;y<ny;y++){
-
+  for(y = 0;y<ny;y++){
+    for(x = 0;x<nx;x++){
 
       /* 
 	 Calculate the pixel coordinates in reciprocal space 	 
 	 
-	 CCD center at (nx-1)/2,(ny-1)/2
-	 
 	 Add detector center as it might not be the same as the beam
       */
-      px = ((x-(nx-1.0)/2.0)/nx) * det->width  + det->center_x;
-      py = ((y-(ny-1.0)/2.0)/ny) * det->height + det->center_y;
+      px = ((x-(nx-1.0)/2.0)/nx) * det->width  - det->center_x;
+      py = ((y-(ny-1.0)/2.0)/ny) * det->height - det->center_y;
       p = sqrt(px*px+py*py+pz*pz);
       
       rx = px/p;
@@ -267,13 +264,13 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
       
       /* Project pixel into Ewald sphere. */
       if(!det->spherical){
-	HKL_list[index++] = (1.-rz) * ewald_radius;
-	HKL_list[index++] = (0.-ry) * ewald_radius;
-	HKL_list[index++] = (0.-rx) * ewald_radius;	
+	HKL_list[index++] = rx * ewald_radius;	
+	HKL_list[index++] = ry * ewald_radius;
+	HKL_list[index++] = (rz-1.) * ewald_radius;
       }else{
+	HKL_list[index++] = rx * ewald_radius;
+       	HKL_list[index++] = ry * ewald_radius;
 	HKL_list[index++] = 0;
-       	HKL_list[index++] = -ry;
-	HKL_list[index++] = -rx;
       }
 	 
     }
@@ -315,7 +312,7 @@ float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_
   /* pixel index */
   int x,y,z;
   /* physical location of pixel*/
-  double px,py,pz;
+  double px,py,pz,p;
   /* reciprocal coordinates */
   double rx,ry,rz;
   double real_to_reciprocal = 1.0/(det->distance*exp->wavelength);
@@ -328,29 +325,29 @@ float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_
   nz = det->nz;
 
   HKL_list = malloc(sizeof(float)*nx*ny*nz*3);
-  for(x = 0;x<nx;x++){
+  for(z = 0;z<nz;z++){
     for(y = 0;y<ny;y++){
-      for(z = 0;z<nz;z++){
-      /* 
-	 Calculate the pixel coordinates in reciprocal space 	 
-	 by dividing the physical position by detector_distance*wavelength.
-	 
-	 CCD center at (nx)/2,(ny)/2
+      for(x = 0;x<nx;x++){
+	/* 
+	   Calculate the pixel coordinates in reciprocal space 	 
+	   
+	   Add detector center as it might not be the same as the beam
+	*/
 
-	 Upper left corner of the detector with negative x and positive y
-      */
-      px = ((x-(nx)/2.0)/nx)*det->width;
-      py = ((y-(ny)/2.0)/ny)*det->height;
-      pz = ((z-(nz)/2.0)/nz)*det->depth;
-
-      rx = px*real_to_reciprocal;
-      ry = py*real_to_reciprocal;
-      rz = pz*real_to_reciprocal;
-      
-      /* Project pixel into Ewald sphere. */
-      HKL_list[index++] = rz;      
-      HKL_list[index++] = ry;
-      HKL_list[index++] = rx;
+	px = ((x-(nx)/2.0)/nx)*det->width  - det->center_x;
+	py = ((y-(ny)/2.0)/ny)*det->height - det->center_y;
+	pz = ((z-(nz)/2.0)/nz)*det->depth  - det->center_z;
+	
+	p = sqrt(px*px+py*py+pz*pz);
+	
+	rx = px/p;
+	ry = py/p;
+	rz = pz/p;
+	
+	/* Project pixel into Ewald sphere. */
+	HKL_list[index++] = rx;
+	HKL_list[index++] = ry;
+	HKL_list[index++] = rz;
       }
     }
   }
@@ -470,9 +467,9 @@ Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experim
 	     I have absolutely no idea why! It can even be a bug in the NFFT library. I should check this out better
 	  */
 
-	  p.x[k*3] = -mol->pos[j*3]/(rs_pixel_z)/nz; 
+	  p.x[k*3] = -mol->pos[j*3]/(rs_pixel_x)/nx; 
 	  p.x[k*3+1] = -mol->pos[j*3+1]/(rs_pixel_y)/ny; 
-	  p.x[k*3+2] = -mol->pos[j*3+2]/(rs_pixel_x)/nx; 
+	  p.x[k*3+2] = -mol->pos[j*3+2]/(rs_pixel_z)/nz; 
 
 	  k++;
 	}
@@ -1028,7 +1025,7 @@ Diffraction_Pattern * compute_fresnel_pattern_on_list(Molecule * mol, float * HK
   syncronize_patterns(res);
   return res;
 }
-*/
+
 
 double box_fourier_transform(Box box, float h, float k, float l){
   if(box.alpha != 90 ||
@@ -1200,11 +1197,11 @@ void write_hkl_grid(float * list, Molecule * mol,CCD * det){
   }
 #endif
   for(i =0 ;i<mol->natoms;i++){
-    if(mol->pos[i*3] < min_z){
-      min_z = mol->pos[i*3];
+    if(mol->pos[i*3+2] < min_z){
+      min_z = mol->pos[i*3+2];
     }
-    if(mol->pos[i*3] > max_z){
-      max_z = mol->pos[i*3];
+    if(mol->pos[i*3+2] > max_z){
+      max_z = mol->pos[i*3+2];
     }
     if(mol->pos[i*3+1] < min_y){
       min_y = mol->pos[i*3+1];
@@ -1212,11 +1209,11 @@ void write_hkl_grid(float * list, Molecule * mol,CCD * det){
     if(mol->pos[i*3+1] > max_y){
       max_y = mol->pos[i*3+1];
     }
-    if(mol->pos[i*3+2] < min_x){
-      min_x = mol->pos[i*3+2];
+    if(mol->pos[i*3+0] < min_x){
+      min_x = mol->pos[i*3+0];
     }
-    if(mol->pos[i*3+2] > max_x){
-      max_x = mol->pos[i*3+2];
+    if(mol->pos[i*3+0] > max_x){
+      max_x = mol->pos[i*3+0];
     }
   }
   
@@ -1231,6 +1228,7 @@ void write_hkl_grid(float * list, Molecule * mol,CCD * det){
   for(z = 0;z<sp_image_z(hkl_grid);z++){
     for(y = 0;y<sp_image_y(hkl_grid);y++){
       for(x = 0;x<sp_image_x(hkl_grid);x++){
+	// What is this supposed to do?
 	if(fabs(x-hkl_grid->detector->image_center[0]) > fabs(y-hkl_grid->detector->image_center[1])){
 	  sp_real(hkl_grid->image->data[i]) = list[index]*max_dim;
 	}else{

@@ -116,6 +116,7 @@ typedef struct{
   /* Center of the detector in relation to the beam (by definition the beam follows the z axis) */
   float center_x;
   float center_y;
+  float center_z;
   /* Number of patterns */
   int n_patterns;
 }CCD;

@@ -32,12 +32,12 @@ void gaussian_blur_real_space(Options * opts,Diffraction_Pattern * pattern){
   Image * real_space = calculate_noiseless_real_space(opts,pattern);
   
   int i = 0;
-  for(int x = 0;x<opts->detector->nx;x++){
-    float dx = abs(x-((opts->detector->nx-1)/2));
+  for(int z = 0;z<opts->detector->nz;z++){
+    float dz = abs(z-((opts->detector->nz-1)/2));
     for(int y = 0;y<opts->detector->ny;y++){
       float dy = abs(y-((opts->detector->ny-1)/2));
-      for(int z = 0;z<opts->detector->nz;z++){
-        float dz = abs(z-((opts->detector->nz-1)/2));
+      for(int x = 0;x<opts->detector->nx;x++){
+	float dx = abs(x-((opts->detector->nx-1)/2));
         float factor = 1/sqrt(2*M_PI*radius) * exp(-(dx*dx+dy*dy+dz*dz)/(2*radius*radius));
         sp_real(real_space->image->data[i]) *= factor;
         sp_imag(real_space->image->data[i]) *= factor;
@@ -59,17 +59,17 @@ void gaussian_blur_pattern(Options * opts,Diffraction_Pattern * pattern){
     return;
   }
   float radius = opts->detector->gaussian_blurring;
-  float d_c = sqrt(opts->detector->nx*opts->detector->nx/4+opts->detector->ny*opts->detector->ny/4+opts->detector->nz*opts->detector->nz/4);
+  float d_c = sqrt(opts->detector->nx*opts->detector->nx/4.+opts->detector->ny*opts->detector->ny/4.+opts->detector->nz*opts->detector->nz/4.);
   radius *= d_c;
   /*  f(x,y) = 1/sqrt(2*M_PI*radius) * exp(-(x^2+y^2+dz^2)/(2*radius^2)) */
   
   int i = 0;
-  for(int x = 0;x<opts->detector->nx;x++){
-    float dx = abs(x-((opts->detector->nx-1)/2));
+  for(int z = 0;z<opts->detector->nz;z++){
+    float dz = abs(z-((opts->detector->nz-1)/2));
     for(int y = 0;y<opts->detector->ny;y++){
       float dy = abs(y-((opts->detector->ny-1)/2));
-      for(int z = 0;z<opts->detector->nz;z++){
-        float dz = abs(z-((opts->detector->nz-1)/2));
+      for(int x = 0;x<opts->detector->nx;x++){
+	float dx = abs(x-((opts->detector->nx-1)/2));
         float factor = 1/sqrt(2*M_PI*radius) * exp(-(dx*dx+dy*dy+dz*dz)/(2*radius*radius));
         sp_real(pattern->F[i]) *= factor;
         sp_imag(pattern->F[i]) *= factor;
@@ -153,9 +153,9 @@ void output_array(char * basename, int index, float * array, SpRotation * rot, O
 Image * make_image(float * array, SpRotation * rot, Options * opts){
   Image * img = sp_image_alloc(opts->detector->nx,opts->detector->ny,opts->detector->nz);    
   int i = 0;
-  for(int x = 0;x<sp_image_x(img);x++){
+  for(int z = 0;z<sp_image_z(img);z++){
     for(int y = 0;y<sp_image_y(img);y++){
-      for(int z = 0;z<sp_image_z(img);z++){
+      for(int x = 0;x<sp_image_x(img);x++){
 	sp_image_set(img,x,y,z,sp_cinit(array[i++],0));
 	sp_i3matrix_set(img->mask,x,y,z,1);
       }
@@ -181,9 +181,9 @@ void output_carray(char * basename, int index, Complex * array, SpRotation * rot
 
 void array_to_image(float * array, Image * img) {
   int i = 0;
-  for(int x = 0;x<sp_image_x(img);x++){
+  for(int z = 0;z<sp_image_z(img);z++){
     for(int y = 0;y<sp_image_y(img);y++){
-      for(int z = 0;z<sp_image_z(img);z++){
+      for(int x = 0;x<sp_image_x(img);x++){
 	sp_image_set(img,x,y,z,sp_cinit(array[i++],0));
 	sp_i3matrix_set(img->mask,x,y,z,1);
       }
@@ -193,9 +193,9 @@ void array_to_image(float * array, Image * img) {
 
 void iarray_to_image(int * array, Image * img) {
   int i = 0;
-  for(int x = 0;x<sp_image_x(img);x++){
+  for(int z = 0;z<sp_image_z(img);z++){
     for(int y = 0;y<sp_image_y(img);y++){
-      for(int z = 0;z<sp_image_z(img);z++){
+      for(int x = 0;x<sp_image_x(img);x++){
 	sp_image_set(img,x,y,z,sp_cinit((float) array[i++],0));
 	sp_i3matrix_set(img->mask,x,y,z,1);
       }
@@ -206,9 +206,9 @@ void iarray_to_image(int * array, Image * img) {
 Image * make_cimage(Complex * array, SpRotation * rot, Options * opts){
   Image * img = sp_image_alloc(opts->detector->nx,opts->detector->ny,opts->detector->nz);    
   int i = 0;
-  for(int x = 0;x<sp_image_x(img);x++){
+  for(int z = 0;z<sp_image_z(img);z++){
     for(int y = 0;y<sp_image_y(img);y++){
-      for(int z = 0;z<sp_image_z(img);z++){
+      for(int x = 0;x<sp_image_x(img);x++){
 	sp_image_set(img,x,y,z,array[i++]);
 	sp_i3matrix_set(img->mask,x,y,z,1);
       }
@@ -275,6 +275,41 @@ Diffraction_Pattern * simulate_shot(Molecule * mol, Options * opts){
   SpRotation * rot = NULL;
   Diffraction_Pattern * pattern = NULL;
   float * HKL_list;
+  //float foo_x0,foo_x1;
+  //float foo_y0,foo_y1;
+  //float foo_z0,foo_z1;
+  //long i = 0;
+
+  /*
+  foo_x0 = 10000000000.;
+  foo_x1 = -10000000000.;
+  foo_y0 = 10000000000.;
+  foo_y1 = -10000000000.;
+  foo_z0 = 10000000000.;
+  foo_z1 = -10000000000.;
+  for (i=0;i<mol->natoms*3;i+=3){
+    if (mol->pos[i+2] < foo_x0) {
+      foo_x0 = mol->pos[i+2];
+    }
+    if (mol->pos[i+1] < foo_y0) {
+      foo_y0 = mol->pos[i+1];
+    }
+    if (mol->pos[i+0] < foo_z0) {
+      foo_z0 = mol->pos[i+0];
+    }
+    if (mol->pos[i+2] > foo_x1) {
+      foo_x1 = mol->pos[i+2];
+    }
+    if (mol->pos[i+1] > foo_y1) {
+      foo_y1 = mol->pos[i+1];
+    }
+    if (mol->pos[i+0] > foo_z1) {
+      foo_z1 = mol->pos[i+0];
+    }
+  }
+  */
+  //printf("Lx=%e, Ly=%e, Lz=%e\n",foo_x1-foo_x0,foo_y1-foo_y0,foo_z1-foo_z0);
+
   int HKL_list_size = 0;  
   if(opts->sf_filename[0]){
     pattern = load_pattern_from_file(opts->detector,opts->sf_filename,HKL_list,HKL_list_size);
@@ -284,7 +319,7 @@ Diffraction_Pattern * simulate_shot(Molecule * mol, Options * opts){
     pattern = compute_sf(mol, HKL_list, HKL_list_size, opts);
     pattern->rot = rot;
   }
-    
+  
   // Blur the pattern with a gaussian, if you feel like it
   gaussian_blur_pattern(opts,pattern);    
   calculate_thomson_correction(opts->detector);

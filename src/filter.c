@@ -7,7 +7,7 @@ float * filter_detector_output(CCD * det,float obj_size){
   for(i =0 ;i<det->nx*det->ny;i++){
     in[i][0] = det->real_output[i];
   }
-  fftw_plan_dft_2d(det->nx,det->ny,in,out,FFTW_FORWARD,FFTW_ESTIMATE);
+  fftw_plan_dft_2d(det->ny,det->nx,in,out,FFTW_FORWARD,FFTW_ESTIMATE);
   fftw_execute(p);
   /* zero out high resolution */
   

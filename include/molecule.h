@@ -25,6 +25,6 @@ void write_pdb_from_mol(char *filename,Molecule * mol);
 
 Molecule * alloc_mol();
 Molecule * make_mol(Image * atomic_number, Image * pos);
-void add_atom_to_mol(Molecule * mol, int atomic_number, float pos0, float pos1, float pos2);
+void add_atom_to_mol(Molecule * mol, int atomic_number, float x, float y, float z);
 void free_mol(Molecule * mol);
 

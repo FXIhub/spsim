@@ -69,7 +69,8 @@ Molecule * get_Molecule_from_pdb(char * filename){
   char	gid[10], aid[10] ,atid[3];
   char       tmp_char;
   char       *next_field_start;
-  float t1,t2,t3,t4,t5;
+  float t4,t5;
+  float x,y,z;
   int total_atomic_number = 0;
   Molecule * res = malloc(sizeof(Molecule));
   if(!fp){
@@ -155,17 +156,17 @@ Molecule * get_Molecule_from_pdb(char * filename){
       next_field_start += 8;
       tmp_char = buffer[38];
       buffer[38] = 0;
-      t1 = (float)atof(next_field_start);
+      x = (float)atof(next_field_start);
       buffer[38] = tmp_char;
       next_field_start += 8;
       tmp_char = buffer[46];
       buffer[46] = 0;
-      t2 = (float)atof(next_field_start);
+      y = (float)atof(next_field_start);
       buffer[46] = tmp_char;
       next_field_start += 8;
       tmp_char = buffer[54];
       buffer[54] = 0;
-      t3 = (float)atof(next_field_start);
+      z = (float)atof(next_field_start);
       
       /* Now retrieve Pdb->Occupancy and B */
       buffer[54] = tmp_char;
@@ -194,9 +195,10 @@ Molecule * get_Molecule_from_pdb(char * filename){
 			 pdb->groupid[pdb->Nin][3] = 0;*/
 
       /* convert to meters */
-      res->pos[res->natoms*3] = t1*1e-10 ;
-      res->pos[res->natoms*3+1] = t2*1e-10 ;
-      res->pos[res->natoms*3+2] = t3*1e-10 ;
+      // right handed coordinate system
+      res->pos[res->natoms*3+0] = x*1e-10 ;
+      res->pos[res->natoms*3+1] = y*1e-10 ;
+      res->pos[res->natoms*3+2] = z*1e-10 ;
 
       if(!res->atomic_number[res->natoms]){
 	fprintf(stderr,"Null atom at line '%s'. Skipping\n",buffer);
@@ -297,8 +299,12 @@ void    write_pdb_from_mol(char *filename,Molecule * mol){
   }
 
   for (i = 0; i <  mol->natoms; i++) {
-    fprintf(fpout,"ATOM  %5d  %.2s      A   1    %8.3f%8.3f%8.3f\n",i%99999,&legal_atom_names[mol->atomic_number[i]-1],
-	    mol->pos[i*3]*1e10,mol->pos[i*3+1]*1e10,mol->pos[i*3+2]*1e10);
+    fprintf(fpout,"ATOM  %5d  %.2s      A   1    %8.3f%8.3f%8.3f\n",
+	    i%99999,
+	    &legal_atom_names[mol->atomic_number[i]-1],
+	    mol->pos[i*3+0]*1e10,
+	    mol->pos[i*3+1]*1e10,
+	    mol->pos[i*3+2]*1e10);
   }
   fprintf(fpout, "END\n") ;
   fclose(fpout);
@@ -312,15 +318,15 @@ Molecule * alloc_mol() {
   return mol;
 }
 
-void add_atom_to_mol(Molecule * mol, int atomic_number, float pos0, float pos1, float pos2) {
+void add_atom_to_mol(Molecule * mol, int atomic_number, float x, float y, float z) {
   int i = mol->natoms;
   mol->natoms++;
   mol->atomic_number = realloc(mol->atomic_number,sizeof(int)*mol->natoms);
   mol->pos = realloc(mol->pos,sizeof(float)*mol->natoms*3);
   mol->atomic_number[i] = atomic_number;
-  mol->pos[i*3+0] = pos0;
-  mol->pos[i*3+1] = pos1;
-  mol->pos[i*3+2] = pos2;
+  mol->pos[i*3+0] = x;
+  mol->pos[i*3+1] = y;
+  mol->pos[i*3+2] = z;
 }
 
 void free_mol(Molecule * mol) {
