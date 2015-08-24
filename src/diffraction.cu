@@ -195,7 +195,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list(Molecule * mol, float * HKL_l
       }
     }
     cutilSafeCall(cudaMemcpy(d_sf_cache,scattering_factor_cache,sizeof(float)*ELEMENTS,cudaMemcpyHostToDevice));
-    float2 beam_center = {exp->beam_center_y,exp->beam_center_x};
+    float2 beam_center = {exp->beam_center_x,exp->beam_center_y};
     CUDA_scattering_at_k<<<number_of_blocks, threads_per_block>>>(d_real_part,d_imag_part,d_atomic_number,d_sf_cache,d_HKL_list,d_atomic_pos,i,mol->natoms,beam_center,exp->beam_fwhm);
     thrust::device_ptr<float> begin =  thrust::device_pointer_cast(d_real_part);
     thrust::device_ptr<float> end =  thrust::device_pointer_cast(d_real_part+mol->natoms);
@@ -263,7 +263,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
   /* make use of the sorted keys to sort the positions also */
   for(int i = 0;i<mol->natoms;i++){
     sorted_atomic_number[i] = sorted_map[2*i];
-    sorted_pos[3*i] = mol->pos[sorted_map[2*i+1]*3];
+    sorted_pos[3*i+0] = mol->pos[sorted_map[2*i+1]*3+0];
     sorted_pos[3*i+1] = mol->pos[sorted_map[2*i+1]*3+1];
     sorted_pos[3*i+2] = mol->pos[sorted_map[2*i+1]*3+2];
   }
@@ -307,7 +307,7 @@ Diffraction_Pattern * cuda_compute_pattern_on_list2(Molecule * mol, float * HKL_
     }
     int end_atom = sp_min(i+chunk_size,mol->natoms);
     int start_atom = i;
-    float2 beam_center = {exp->beam_center_y,exp->beam_center_x};
+    float2 beam_center = {exp->beam_center_x,exp->beam_center_y};
     if(exp->bandwidth == 0 || opts->wavelength_samples == 1){
       CUDA_scattering_from_all_atoms<<<number_of_blocks, threads_per_block>>>(d_F,d_I,d_atomic_number,d_atomic_pos,d_HKL_list,HKL_list_size,start_atom,end_atom,mol->natoms,d_atomsf,B,beam_center,exp->beam_fwhm);
     }else{
@@ -348,7 +348,7 @@ __global__ void CUDA_scattering_at_k(float* real_part,float * imag_part, int * a
   if(i<natoms){
     float sf = sf_cache[atomic_number[i]] *
       sqrt(cuda_illumination_function(&pos[i*3], beam_center, beam_fwhm));
-    float tmp = 2*3.14159265F*(HKL_list[3*k]*-pos[i*3]+HKL_list[3*k+1]*-pos[i*3+1]+HKL_list[3*k+2]*-pos[i*3+2]);
+    float tmp = -2*3.14159265F*(HKL_list[3*k]*pos[i*3]+HKL_list[3*k+1]*pos[i*3+1]+HKL_list[3*k+2]*pos[i*3+2]);
     real_part[i] = sf*cos(tmp);
     imag_part[i] = sf*sin(tmp);
   }
@@ -366,21 +366,25 @@ __global__ void CUDA_scattering_from_all_atoms(cufftComplex * F,float * I,const 
     int lastZ = -1;
     float sf = 0;
     float d = sqrt(HKL_list[3*id]*HKL_list[3*id]+HKL_list[3*id+1]*HKL_list[3*id+1]+HKL_list[3*id+2]*HKL_list[3*id+2]) * 1e-10F;
-    const float hkl[3] = {HKL_list[3*id],HKL_list[3*id+1],HKL_list[3*id+2]};
+    const float hkl[3] = {HKL_list[3*id+0],
+    	  	          HKL_list[3*id+1],
+			  HKL_list[3*id+2]};
     for(int i = start_atom;i<end_atom;i++){ 
       if(!Z[i]){
 	continue;
       }
       if(lastZ != Z[i]){
 	sf = 0;
-	/* the 0.25 is there because the 's' used by the aproxumation is 'd/2' */
+	/* the 0.25 is there because the 's' used by the approximation is 'd/2' */
 	for(int j = 0;j<4;j++){
 	  sf+= atomsf[Z[i]*9+j]*exp(-(atomsf[Z[i]*9+j+4]+B)*d*d*0.25F);
 	}                
 	sf += atomsf[Z[i]*9+8]*exp(-B*d*d/0.25F);
 	lastZ = Z[i];
       }
-      float tmp = 2*3.14159265F*(hkl[0]*-pos[i*3]+hkl[1]*-pos[i*3+1]+hkl[2]*-pos[i*3+2]);      
+      float tmp = -2*3.14159265F*(hkl[0]*pos[i*3+0]+
+                                  hkl[1]*pos[i*3+1]+
+				  hkl[2]*pos[i*3+2]);      
       float illum = sqrt(cuda_illumination_function(&pos[i*3], beam_center, beam_fwhm));
       F[id].x += illum*sf*cos(tmp);
       F[id].y += illum*sf*sin(tmp);
@@ -454,7 +458,7 @@ void CUDA_spectrum_scattering_from_all_atoms(cufftComplex * F,float * I, const i
 	const float std_deviations = (new_wavelength-wavelength)/w_stddev;
 	const float weight = exp(-std_deviations*std_deviations/2);
 	total_weight += weight;
-	float tmp = 2*pi*(h*-pos[i*3]+k*-pos[i*3+1]+l*-pos[i*3+2]);      
+	float tmp = -2*pi*(h*pos[i*3]+k*pos[i*3+1]+l*pos[i*3+2]);      
 	f.x += sf*cos(tmp)*weight*illumination;
 	f.y += sf*sin(tmp)*weight*illumination;
       }

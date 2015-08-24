@@ -275,6 +275,8 @@ Diffraction_Pattern * simulate_shot(Molecule * mol, Options * opts){
   SpRotation * rot = NULL;
   Diffraction_Pattern * pattern = NULL;
   float * HKL_list;
+
+  //printf("mol->pos[13700]=%e",mol->pos[13700]);
   //float foo_x0,foo_x1;
   //float foo_y0,foo_y1;
   //float foo_z0,foo_z1;
@@ -331,7 +333,7 @@ Diffraction_Pattern * simulate_shot(Molecule * mol, Options * opts){
   calculate_electrons_per_pixel(opts->detector,opts->experiment);
   calculate_real_detector_output(opts->detector,opts->experiment);
   calculate_noiseless_detector_output(opts->detector,opts->experiment);
-
+  
   free(HKL_list);
   return pattern;
 }

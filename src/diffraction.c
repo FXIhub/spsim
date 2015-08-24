@@ -257,26 +257,26 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
       px = ((x-(nx-1.0)/2.0)/nx) * det->width  - det->center_x;
       py = ((y-(ny-1.0)/2.0)/ny) * det->height - det->center_y;
       p = sqrt(px*px+py*py+pz*pz);
-      
+
+     
       rx = px/p;
       ry = py/p;
-      rz = pz/p;
+      rz = pz/p-1.;
       
       /* Project pixel into Ewald sphere. */
       if(!det->spherical){
 	HKL_list[index++] = rx * ewald_radius;	
 	HKL_list[index++] = ry * ewald_radius;
-	HKL_list[index++] = (rz-1.) * ewald_radius;
+	HKL_list[index++] = rz * ewald_radius;
       }else{
 	HKL_list[index++] = rx * ewald_radius;
        	HKL_list[index++] = ry * ewald_radius;
 	HKL_list[index++] = 0;
-      }
+      } 
 	 
     }
   }
   *HKL_list_size = nx*ny;
-  //printf("Last HKL %e %e %e\n",HKL_list[nx*ny*3-3],HKL_list[nx*ny*3-2],HKL_list[nx*ny*3-1]);
   return HKL_list;
 }
 
@@ -806,7 +806,7 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
       /* Multiply the scattering factor with the illumination function (should it be the square root of it?)*/
       scattering_factor = scattering_factor_cache[mol->atomic_number[j]]*sqrt(atom_illumination[j]);
 /*      scattering_factor = 1;*/
-      float tmp = 2*M_PI*(HKL_list[3*i]*-mol->pos[j*3]+HKL_list[3*i+1]*-mol->pos[j*3+1]+HKL_list[3*i+2]*-mol->pos[j*3+2]);
+      float tmp = -2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]);
       if(!opts->delta_atoms){
 	sp_real(res->F[i]) += scattering_factor*cos(tmp);
 	sp_imag(res->F[i]) += scattering_factor*sin(tmp);
