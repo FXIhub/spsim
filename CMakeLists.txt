@@ -27,7 +27,7 @@ find_package(SpImage REQUIRED)
 find_package(HDF5 REQUIRED)
 find_package(FFTW3 REQUIRED)
 
-SET(USE_NFFT ON CACHE BOOL "If ON use NFFT.")
+SET(USE_NFFT OFF CACHE BOOL "If ON use NFFT.")
 SET(BUILD_LIBRARY ON CACHE BOOL "If ON also build as shared library.")
 SET(PYTHON_WRAPPERS ON CACHE BOOL "If ON try to build python wrappers.")
 
