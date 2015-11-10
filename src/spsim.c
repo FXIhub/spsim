@@ -367,7 +367,7 @@ void free_output_in_options(Options * opts){
 int main(int argc, char ** argv){
   Options * opts = set_defaults();
   Molecule * mol = NULL;
-
+  
 #ifdef MPI
   MPI_Init(&argc, &argv);
 #endif

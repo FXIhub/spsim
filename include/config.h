@@ -142,6 +142,7 @@ typedef struct {
   int use_fft_for_sf;
   int use_nfft_for_sf;
   float b_factor;
+  int origin_to_com;
   float euler_orientation[3];
   int random_orientation;
   int n_patterns;
