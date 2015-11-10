@@ -45,6 +45,7 @@ Options * set_defaults(){
   opt->use_nfft_for_sf = 0;
   opt->b_factor = 0;
   opt->n_patterns = 1;
+  opt->origin_to_com = 0;
   opt->euler_orientation[0]= 0;
   opt->euler_orientation[1]= 0;
   opt->euler_orientation[2]= 0;
@@ -264,6 +265,9 @@ void read_options_file(char * filename, Options * res){
   }
   if(config_lookup(&config,"b_factor")){
     res->b_factor = config_lookup_float(&config,"b_factor");
+  }
+  if(config_lookup(&config,"origin_to_com")){
+    res->origin_to_com = config_lookup_int(&config,"origin_to_com");
   }
   if(config_lookup(&config,"phi")){
     res->euler_orientation[0] = config_lookup_float(&config,"phi");
@@ -537,7 +541,9 @@ void write_options_file(char * filename, Options * res){
   s = config_setting_add(root,"b_factor",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->b_factor);
 
-
+  s = config_setting_add(root,"origin_to_com",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->origin_to_com);
+  
   s = config_setting_add(root,"phi",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->euler_orientation[0]);
   s = config_setting_add(root,"theta",CONFIG_TYPE_FLOAT);

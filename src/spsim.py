@@ -5,6 +5,10 @@ from spsim_pybackend import *
 
 import numpy
 
+import urllib2
+import StringIO
+import gzip
+
 # Convenience functions
 def get_molecule_from_opts(opts):
     mol = get_molecule(opts)
@@ -30,3 +34,16 @@ def get_atoms_from_molecule(mol):
     sp_image_free(anum_img)
     return anum, pos
 
+def fetch_pdb(pdb_id):
+    url = "http://www.rcsb.org/pdb/files/%s.pdb.gz" % str(pdb_id)
+    filename = "./%s.pdb" % str(pdb_id)
+    response = urllib2.urlopen(url)
+    compressedFile = StringIO.StringIO()
+    compressedFile.write(response.read())
+    compressedFile.seek(0)
+    decompressedFile = gzip.GzipFile(fileobj=compressedFile, mode='rb')
+    with open(filename, 'w') as outfile:
+        outfile.write(decompressedFile.read())
+    return filename
+
+    

@@ -359,3 +359,25 @@ Molecule * make_mol(Image * atomic_number, Image * pos) {
   }
   return mol;
 }
+
+void origin_to_center_of_mass(Molecule * mol) {
+  int i;
+  float com[3] = {0., 0., 0.};
+  int N = 0;
+  // Calculate center of mass (of electron density, not real mass)
+  for (i=0; i<mol->natoms; i++) {
+    N += mol->atomic_number[i];
+    com[0] += mol->pos[i*3+0] * mol->atomic_number[i];
+    com[1] += mol->pos[i*3+1] * mol->atomic_number[i];
+    com[2] += mol->pos[i*3+2] * mol->atomic_number[i];
+  }
+  com[0] /= N;
+  com[1] /= N;
+  com[2] /= N;
+  // Now move origin to center of mass
+  for (i=0; i<mol->natoms; i++){ 
+    mol->pos[i*3+0] -= com[0];
+    mol->pos[i*3+1] -= com[1];
+    mol->pos[i*3+2] -= com[2];
+  }
+}
