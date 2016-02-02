@@ -1087,9 +1087,9 @@ void calculate_thomson_correction(CCD * det){
   for(z = 0;z<det->nz;z++){
     for(y = 0;y<det->ny;y++){
       for(x = 0;x<det->nx;x++){
-	px = ((x-(nx-1.0)/2.0)/nx)*det->width/2;
-	py = ((y-(ny-1.0)/2.0)/ny)*det->height/2;
-	r = sqrt(det->distance*det->distance+px*px+py*py);
+	//px = ((x-(nx-1.0)/2.0)/nx)*det->width/2;
+	//py = ((y-(ny-1.0)/2.0)/ny)*det->height/2;
+	//r = sqrt(det->distance*det->distance+px*px+py*py);
 	det->thomson_correction[index++] = (r0*r0)*polarization_factor;
       }
     }    
