@@ -714,7 +714,7 @@ Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experime
 	}
       }
     }
-    fprintf(stderr,"%d done\n",j);
+    //fprintf(stderr,"%d done\n",j);
   }
   fprintf(stderr,"Total electrons - %d\n",total_el);
   sp_image_write(rs,"ed.vtk",0);  
@@ -781,12 +781,16 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
 #ifdef MPI    
     if(is_mpi_master()){
       if(i % points_per_percent == 0){
-	fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+	if (opts->verbosity_level > 0) {
+	  fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+	}
       }
     }
 #else
       if(i % points_per_percent == 0){
-	fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+	if (opts->verbosity_level > 0) {
+	  fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+	}
       }
 
 #endif
@@ -864,12 +868,16 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
 #ifdef MPI    
     if(is_mpi_master()){
       if(i % points_per_percent == 0){
-	fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+	if (opts->verbosity_level > 0) {
+	  fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+	}
       }
     }
 #else
       if(i % points_per_percent == 0){
-	fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+	if (opts->verbosity_level > 0) {
+	  fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+	}
       }
 
 #endif
@@ -975,12 +983,16 @@ Diffraction_Pattern * compute_fresnel_pattern_on_list(Molecule * mol, float * HK
 #ifdef MPI    
     if(is_mpi_master()){
       if(i % points_per_percent == 0){
-	fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+	//if (opts->verbosity_level > 0) {
+	//  fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+	//}
       }
     }
 #else
-      if(i % points_per_percent == 0){
-	fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+      if(i % points_per_percent == 0) {
+	//if (opts->verbosity_level > 0) {
+	//  fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+	//}
       }
 
 #endif

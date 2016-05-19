@@ -91,7 +91,7 @@
   PyTuple_SetItem($result, 2, PyFloat_FromDouble($1[2]));*/
   npy_intp dims[1] = {3};
   $result = PyArray_SimpleNewFromData(1, dims, PyArray_FLOAT, $1);
-}
+ }
 
    // I need to comment this out without knowing why this has been added originally...
    /*

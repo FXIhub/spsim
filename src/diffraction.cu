@@ -184,7 +184,9 @@ Diffraction_Pattern * cuda_compute_pattern_on_list(Molecule * mol, float * HKL_l
   points_per_percent = 1+(HKL_list_size)/100;
   for(i = 0;i<HKL_list_size;i++){
     if(i % points_per_percent == 0){
-      fprintf(stderr,"%f percent done\n",(100.0*i)/(HKL_list_size));
+        if (opts->verbosity_level > 0) {
+    		 fprintf(stderr,"%f percent done\n",(100.0*i)/(HKL_list_size));
+	}		  
     }
     sp_real(res->F[i]) = 0;
     sp_imag(res->F[i]) = 0;
