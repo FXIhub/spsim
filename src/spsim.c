@@ -164,6 +164,7 @@ Image * make_image(float * array, SpRotation * rot, Options * opts){
   img->detector->wavelength = opts->experiment->wavelength;
   img->detector->pixel_size[0] = opts->detector->pixel_width*opts->detector->binning_x;
   img->detector->pixel_size[1] = opts->detector->pixel_height*opts->detector->binning_y;
+  img->detector->pixel_size[2] = opts->detector->pixel_depth*opts->detector->binning_z;
   img->detector->detector_distance = opts->detector->distance;
   if(rot){
     img->detector->orientation = rot;
@@ -217,6 +218,7 @@ Image * make_cimage(Complex * array, SpRotation * rot, Options * opts){
   img->detector->wavelength = opts->experiment->wavelength;
   img->detector->pixel_size[0] = opts->detector->pixel_width*opts->detector->binning_x;
   img->detector->pixel_size[1] = opts->detector->pixel_height*opts->detector->binning_y;
+  img->detector->pixel_size[2] = opts->detector->pixel_depth*opts->detector->binning_z;
   img->detector->detector_distance = opts->detector->distance;
   if(rot){
     img->detector->orientation = rot;
