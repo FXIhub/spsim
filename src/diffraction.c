@@ -308,7 +308,7 @@ SpRotation * apply_orientation_to_HKL_list(float ** HKL_list, int * HKL_list_siz
 
 float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_size){
   /* number of pixels */
-  int nx, ny,nz;
+  int nx,ny,nz;
   /* pixel index */
   int x,y,z;
   /* physical location of pixel*/
@@ -334,17 +334,14 @@ float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_
 	   Add detector center as it might not be the same as the beam
 	*/
 
-	px = ((x-(nx)/2.0)/nx)*det->width  - det->center_x;
-	py = ((y-(ny)/2.0)/ny)*det->height - det->center_y;
-	pz = ((z-(nz)/2.0)/nz)*det->depth  - det->center_z;
+	px = ((x-(nx-1.0)/2.0)/nx) * det->width  - det->center_x;
+	py = ((y-(ny-1.0)/2.0)/ny) * det->height - det->center_y;
+	pz = ((z-(nz-1.0)/2.0)/nz) * det->depth  - det->center_z;
+
+	rx = px * real_to_reciprocal;
+	ry = py * real_to_reciprocal;
+	rz = pz * real_to_reciprocal;
 	
-	p = sqrt(px*px+py*py+pz*pz);
-	
-	rx = px/p;
-	ry = py/p;
-	rz = pz/p;
-	
-	/* Project pixel into Ewald sphere. */
 	HKL_list[index++] = rx;
 	HKL_list[index++] = ry;
 	HKL_list[index++] = rz;
