@@ -301,7 +301,7 @@ void    write_pdb_from_mol(char *filename,Molecule * mol){
   for (i = 0; i <  mol->natoms; i++) {
     fprintf(fpout,"ATOM  %5d  %.2s      A   1    %8.3f%8.3f%8.3f\n",
 	    i%99999,
-	    &legal_atom_names[mol->atomic_number[i]-1],
+	    &legal_atom_names[2*(mol->atomic_number[i]-1)],
 	    mol->pos[i*3+0]*1e10,
 	    mol->pos[i*3+1]*1e10,
 	    mol->pos[i*3+2]*1e10);
