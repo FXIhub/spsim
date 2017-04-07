@@ -326,7 +326,7 @@ Diffraction_Pattern * simulate_shot(Molecule * mol, Options * opts){
   
   // Blur the pattern with a gaussian, if you feel like it
   gaussian_blur_pattern(opts,pattern);    
-  calculate_thomson_correction(opts->detector);
+  calculate_thomson_correction(opts->detector, opts->experiment);
   calculate_pixel_solid_angle(opts->detector);
   calculate_photons_per_pixel(pattern,opts);
     

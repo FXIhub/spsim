@@ -84,7 +84,7 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
 
 void calculate_pixel_solid_angle(CCD * det);
 
-void calculate_thomson_correction(CCD * det);
+void calculate_thomson_correction(CCD * det, Experiment * exp);
 
 void calculate_photons_per_pixel(Diffraction_Pattern * pattern, Options * opts);
 

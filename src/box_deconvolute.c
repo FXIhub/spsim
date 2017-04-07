@@ -111,7 +111,7 @@ int main(int argc, char ** argv){
   write_3D_array_to_vtk(pattern->ints,opts->detector->nx,opts->detector->ny,opts->detector->nz,
 			"box_scattering_factor.vtk");  
   write_3D_array_as_structured_grid_to_vtk(pattern->ints,opts->detector,HKL_list,HKL_list_size,opts->n_patterns,"ewald.vtk");  
-  calculate_thomson_correction(opts->detector);
+  calculate_thomson_correction(opts->detector, opts->experiment);
   calculate_pixel_solid_angle(opts->detector);
   write_3D_array_to_vtk(opts->detector->thomson_correction,opts->detector->nx,opts->detector->ny,
 			opts->detector->nz,"box_thomson_correction.vtk");

@@ -1101,13 +1101,13 @@ void calculate_thomson_correction(CCD * det, Experiment * exp){
 	  py = ((y-(ny-1.0)/2.0)/ny) * det->height - det->center_y;
 	  r = sqrt(px*px+py*py+DD);
 	  if(polarization == POLARIZATION_VERTICAL){
-	    chi = arcsin(py/r);
+	    chi = asin(py/r);
 	    polarization_factor = cos(chi)*cos(chi);	    
 	  }else if(polarization == POLARIZATION_HORIZONTAL){
-	    chi = arcsin(px/r);
+	    chi = asin(px/r);
 	    polarization_factor = cos(chi)*cos(chi);	    
-	  }else if(polarization == POLARIZATION_NONE){
-	    chi = arcsin(sqrt(px*px+py*py)/r);
+	  }else if(polarization == POLARIZATION_UNPOLARIZED){
+	    chi = asin(sqrt(px*px+py*py)/r);
 	    polarization_factor = (1. + cos(chi)*cos(chi)) / 2.;
 	  }
 	}
@@ -1186,7 +1186,7 @@ void calculate_photons_per_pixel(Diffraction_Pattern * pattern, Options * opts){
   Experiment * experiment = opts->experiment;
   int i;
   if(!det->thomson_correction){
-    calculate_thomson_correction(det);
+    calculate_thomson_correction(det, experiment);
   }
   if(!det->solid_angle){
     calculate_pixel_solid_angle(det);
