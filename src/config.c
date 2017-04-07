@@ -32,6 +32,7 @@ Options * set_defaults(){
   Options * opt = calloc(1,sizeof(Options));
   opt->chem_formula = calloc(1,sizeof(Chem_Formula));
   opt->experiment = calloc(1,sizeof(Experiment));
+  opt->experiment->polarization = POLARIZATION_IGNORE;
   opt->detector = calloc(1,sizeof(CCD));
   opt->detector->binning_x = 1;
   opt->detector->binning_y = 1;
@@ -101,9 +102,6 @@ void read_options_file(char * filename, Options * res){
     exit(1);
   }
 
-  if(config_lookup(&config,"number_of_dimensions")){
-    res->n_dims = config_lookup_int(&config,"number_of_dimensions");
-  }
   if((tmp = config_lookup_string(&config,"box_type"))){
     if(strcmp(tmp,"spherical") == 0){
       res->box_type = BOX_SPHERICAL;
@@ -204,8 +202,6 @@ void read_options_file(char * filename, Options * res){
     res->detector->maximum_value = config_lookup_float(&config,"detector_maximum_value");
   }
 
-
-
   if(config_lookup(&config,"experiment_wavelength")){
     res->experiment->wavelength = config_lookup_float(&config,"experiment_wavelength");
   }
@@ -237,6 +233,20 @@ void read_options_file(char * filename, Options * res){
     res->experiment->focal_diameter = config_lookup_float(&config,"experiment_focal_diameter");
   }
 
+  if((tmp = config_lookup_string(&config,"experiment_polarization"))){
+    if(strcmp(tmp,"ignore") == 0){
+      res->experiment->polarization = POLARIZATION_IGNORE;
+    }else if(strcmp(tmp,"horizontal") == 0){
+      res->experiment->polarization = POLARIZATION_HORIZONTAL;
+    }else if(strcmp(tmp,"vertical") == 0){
+      res->experiment->polarization = POLARIZATION_VERTICAL;
+    }else if(strcmp(tmp,"unpolarized") == 0){
+      res->experiment->polarization = POLARIZATION_UNPOLARIZED;
+    }else{
+      fprintf(stderr,"Warning: polarization is set to an undefined option!\n");
+    }
+  }
+  
   if(config_lookup_string(&config,"precalculated_sf")){
     strcpy(res->sf_filename,config_lookup_string(&config,"precalculated_sf"));
   }
@@ -320,6 +330,7 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"crystal_cell_gamma")){
     res->crystal_cell[5] = config_lookup_float(&config,"crystal_cell_gamma");
   }
+
   if(config_lookup(&config,"use_cuda")){
     res->use_cuda = config_lookup_int(&config,"use_cuda");
   }
@@ -377,7 +388,10 @@ void read_options_file(char * filename, Options * res){
     res->detector->nz = 1;
     res->detector->binning_z = 1;
   }
-     
+  if((res->detector->nz > 1) && (res->experiment->polarization != POLARIZATION_IGNORE)){
+    fprintf(stderr,"Warning: For a 3D detector polarization effects (Thomson correction) have to be neglected (polarization = \"ignore\")!\n");
+    res->experiment->polarization = POLARIZATION_IGNORE;
+  }
 
   if(res->experiment->photon_energy){
     float lambda = 1.240e-6/res->experiment->photon_energy;
@@ -427,8 +441,6 @@ void write_options_file(char * filename, Options * res){
 #endif  
   config_init(&config);
   root = config_root_setting(&config);
-  s = config_setting_add(root,"number_of_dimensions",CONFIG_TYPE_INT);
-  config_setting_set_int(s,res->n_dims);
   if(res->input_type == CHEM_FORMULA){
     s = config_setting_add(root,"input_type",CONFIG_TYPE_STRING);
     config_setting_set_string(s,"chemical_formula");
@@ -455,7 +467,7 @@ void write_options_file(char * filename, Options * res){
     s = config_setting_add(root,"box_type",CONFIG_TYPE_STRING);
     config_setting_set_string(s,"parallelepipedic");
   }
-
+  
   s = config_setting_add(root,"detector_distance",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->detector->distance);
   s = config_setting_add(root,"detector_width",CONFIG_TYPE_FLOAT);
@@ -582,6 +594,20 @@ void write_options_file(char * filename, Options * res){
   s = config_setting_add(root,"crystal_cell_gamma",CONFIG_TYPE_FLOAT);
   config_setting_set_float(s,res->crystal_cell[5]);
 
+  if(res->experiment->polarization == POLARIZATION_IGNORE){
+    s = config_setting_add(root,"experiment_polarization",CONFIG_TYPE_STRING);
+    config_setting_set_string(s,"ignore");
+  }else if(res->experiment->polarization == POLARIZATION_VERTICAL){
+    s = config_setting_add(root,"experiment_polarization",CONFIG_TYPE_STRING);
+    config_setting_set_string(s,"vertical");
+  }else if(res->experiment->polarization == POLARIZATION_HORIZONTAL){
+    s = config_setting_add(root,"experiment_polarization",CONFIG_TYPE_STRING);
+    config_setting_set_string(s,"horizontal");
+  }else if(res->experiment->polarization == POLARIZATION_UNPOLARIZED){
+    s = config_setting_add(root,"experiment_polarization",CONFIG_TYPE_STRING);
+    config_setting_set_string(s,"unpolarized");
+  }
+  
   s = config_setting_add(root,"use_cuda",CONFIG_TYPE_INT);
   config_setting_set_int(s,res->use_cuda);
   s = config_setting_add(root,"wavelength_samples",CONFIG_TYPE_INT);

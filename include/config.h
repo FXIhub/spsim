@@ -34,6 +34,11 @@ energy: joules
 #define BOX_SPHERICAL 1
 #define BOX_PARALLEL 2
 
+#define POLARIZATION_IGNORE = 0
+#define POLARIZATION_VERTICAL = 1
+#define POLARIZATION_HORIZONTAL = 2
+#define POLARIZATION_UNPOLARIZED = 3
+
 #define VERSION "2.0"
 
 typedef struct{
@@ -67,6 +72,7 @@ typedef struct{
   float beam_energy; /* in joules. Total pulse energy */
   float photon_energy; /* in eV. Alternative way to specify wavelength */
   float focal_diameter; /* in m. Focal spot diameter */
+  int polarization;
 }Experiment;
 
 typedef struct{
@@ -123,8 +129,6 @@ typedef struct{
 
 
 typedef struct {
-  /* number of dimensions (only 2 supported at the moment) */
-  int n_dims;
   /* Can only be CHEM_FORMULA for the moment, meaning chemical formula. */
   int input_type;
   /*
@@ -137,8 +141,10 @@ typedef struct {
   char pdb_filename[1024];
   char sf_filename[1024];
   char hkl_grid_filename[1024];
+  // Still needed?
   int box_type; /* spherical or parallelepipedic */
   float box_dimension; /* diameter in case of spherical or side in case of parallelepipedic */
+  //
   int use_fft_for_sf;
   int use_nfft_for_sf;
   float b_factor;
@@ -158,7 +164,6 @@ typedef struct {
   int wavelength_samples; /* number of wavelengths to sample during
 			      the bandwidth effect calculation*/
   int random_seed;
-
   int output_sf_vtk;
   int output_scatt_int;
   int output_ewald_vtk;

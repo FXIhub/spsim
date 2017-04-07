@@ -1080,25 +1080,37 @@ Diffraction_Pattern * load_pattern_from_file(CCD * det,char * filename,
   return res;
 }
 
-void calculate_thomson_correction(CCD * det){
+void calculate_thomson_correction(CCD * det, Experiment * exp){
   int x,y,z;
-  double px,py;
+  double px,py,chi;
   int nx = det->nx;
   int ny = det->ny;
   int nz = det->nz;
-  double r; /* distance to scatterer */
-  int index;
+  int polarization = exp->polarization;
+  double DD = det->distance*det->distance; /* detector distance squared */
+  double r;/* distance to scatterer */
+  int index = 0;
   double r0 = 2.81794e-15; /* classical electron radius = e^2/(m*c^2)*/
-  /* For the moment we're considering vertical polarization */
-  double polarization_factor = 1;
+  double polarization_factor = 1.;
   det->thomson_correction = malloc(sizeof(float)*nx*ny*nz);
-  index = 0;
   for(z = 0;z<det->nz;z++){
     for(y = 0;y<det->ny;y++){
       for(x = 0;x<det->nx;x++){
-	//px = ((x-(nx-1.0)/2.0)/nx)*det->width/2;
-	//py = ((y-(ny-1.0)/2.0)/ny)*det->height/2;
-	//r = sqrt(det->distance*det->distance+px*px+py*py);
+	if(polarization != POLARIZATION_IGNORE){
+	  px = ((x-(nx-1.0)/2.0)/nx) * det->width  - det->center_x;
+	  py = ((y-(ny-1.0)/2.0)/ny) * det->height - det->center_y;
+	  r = sqrt(px*px+py*py+DD);
+	  if(polarization == POLARIZATION_VERTICAL){
+	    chi = arcsin(py/r);
+	    polarization_factor = cos(chi)*cos(chi);	    
+	  }else if(polarization == POLARIZATION_HORIZONTAL){
+	    chi = arcsin(px/r);
+	    polarization_factor = cos(chi)*cos(chi);	    
+	  }else if(polarization == POLARIZATION_NONE){
+	    chi = arcsin(sqrt(px*px+py*py)/r);
+	    polarization_factor = (1. + cos(chi)*cos(chi)) / 2.;
+	  }
+	}
 	det->thomson_correction[index++] = (r0*r0)*polarization_factor;
       }
     }    
@@ -1120,15 +1132,15 @@ void calculate_pixel_solid_angle(CCD * det){
   int nx = det->nx;
   int ny = det->ny;
   int nz = det->nz;
+  int is3D = (nz > 1);
   double r; /* distance to scatterer */
   int index;
-  /* For the moment we're considering vertical polarization */
   det->solid_angle = malloc(sizeof(float)*nx*ny*nz);
   index = 0;
   for(z = 0;z<det->nz;z++){
     for(y = 0;y<det->ny;y++){
       for(x = 0;x<det->nx;x++){
-	if(det->spherical){
+	if(is3D || det->spherical){
 	  r = det->distance;
 	  det->solid_angle[index++] = det->pixel_width*det->pixel_height/(r*r);
 	}else{
@@ -1153,11 +1165,9 @@ void calculate_pixel_solid_angle(CCD * det){
 	  corners[3][1] = py+det->pixel_height/2;
 	  corner_distance[3] = sqrt(det->distance*det->distance+corners[3][0]*corners[3][0]+corners[3][1]*corners[3][1]);
 	  /* project on plane*/
-	  if(!det->spherical){
-	    for(i = 0;i<4;i++){
-	      corners[i][0] *= r/corner_distance[i];
-	      corners[i][1] *= r/corner_distance[i];	
-	    }
+	  for(i = 0;i<4;i++){
+	    corners[i][0] *= r/corner_distance[i];
+	    corners[i][1] *= r/corner_distance[i];	
 	  }
 	  /* top */
 	  projected_pixel_sides[0] = sqrt((corners[0][0]-corners[1][0])*(corners[0][0]-corners[1][0])+(corners[0][1]-corners[1][1])*(corners[0][1]-corners[1][1]));
