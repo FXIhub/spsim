@@ -1,5 +1,7 @@
 # SPSIM PYTHON MODULE
 
+__version__ = "0.1.0"
+
 # Wrapped C funcitons
 from spsim_pybackend import *
 
