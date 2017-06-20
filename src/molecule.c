@@ -67,6 +67,7 @@ Molecule * get_Molecule_from_pdb(char * filename){
   char buffer[1024];
   int maxnatoms = 1024;
   char	gid[10], aid[10] ,atid[3];
+  char  element_buffer[2];
   char       tmp_char;
   char       *next_field_start;
   float t4,t5;
@@ -123,21 +124,6 @@ Molecule * get_Molecule_from_pdb(char * filename){
       tmp_char = buffer[16];
       buffer[16] = 0;
 
-      // Read atomic number
-      /* Next copy Remoteness indicator and Branch 
-	 designator besides the Chemical symbol */
-      strncpy(aid,next_field_start,5);	       
-      aid[4] = 0;
-      buffer[16] = tmp_char;
-      
-      strncpy(atid, aid, 2) ; 
-      if(isspace(atid[0]) || isdigit(atid[0])){
-	atid[0] = atid[1];		/* left justify */
-	atid[1] = ' ';
-      }
-      total_atomic_number += getZfromSymbol(atid);
-      res->atomic_number[res->natoms] = getZfromSymbol(atid);
-      
       /* Next: skip over alternate location indicator */
       next_field_start+= 5;
       tmp_char = buffer[20];
@@ -200,6 +186,16 @@ Molecule * get_Molecule_from_pdb(char * filename){
       res->pos[res->natoms*3+1] = y*1e-10 ;
       res->pos[res->natoms*3+2] = z*1e-10 ;
 
+      /* Retrieve element entry */
+      next_field_start = &(buffer[77]);
+      strncpy(element_buffer, next_field_start, sizeof(element_buffer));
+      if(isspace(element_buffer[0])){
+	element_buffer[0] = element_buffer[1];		/* left justify */
+	element_buffer[1] = ' ';
+      }
+      total_atomic_number += getZfromSymbol(element_buffer);
+      res->atomic_number[res->natoms] = getZfromSymbol(element_buffer);
+      
       if(!res->atomic_number[res->natoms]){
 	fprintf(stderr,"Null atom at line '%s'. Skipping\n",buffer);
 	res->natoms--;
