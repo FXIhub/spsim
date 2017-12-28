@@ -87,7 +87,7 @@ if(PYTHON_WRAPPERS)
     # using distutils.
     execute_process(
 	 COMMAND
-  	 ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print sysconfig.get_python_lib()"
+  	 ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print(sysconfig.get_python_lib())"
   	 OUTPUT_VARIABLE _PYTHON_INSTDIR
   	 OUTPUT_STRIP_TRAILING_WHITESPACE
     )
