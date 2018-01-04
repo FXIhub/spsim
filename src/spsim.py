@@ -12,6 +12,7 @@ try:
 except ImportError:
     from urllib2 import urlopen
 from io import StringIO
+from io import BytesIO
 import gzip
 
 # Convenience functions
@@ -43,7 +44,7 @@ def fetch_pdb(pdb_id):
     url = "http://www.rcsb.org/pdb/files/%s.pdb.gz" % str(pdb_id)
     filename = "./%s.pdb" % str(pdb_id)
     response = urlopen(url)
-    compressedFile = StringIO.StringIO()
+    compressedFile = BytesIO()
     compressedFile.write(response.read())
     compressedFile.seek(0)
     decompressedFile = gzip.GzipFile(fileobj=compressedFile, mode='rb')
