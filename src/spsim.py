@@ -49,7 +49,7 @@ def fetch_pdb(pdb_id):
     compressedFile.seek(0)
     decompressedFile = gzip.GzipFile(fileobj=compressedFile, mode='rb')
     with open(filename, 'w') as outfile:
-        outfile.write(decompressedFile.read())
+        outfile.write(str(decompressedFile.read()))
     return filename
 
     
