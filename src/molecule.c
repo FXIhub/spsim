@@ -188,7 +188,7 @@ Molecule * get_Molecule_from_pdb(char * filename){
       res->pos[res->natoms*3+2] = z*1e-10 ;
 
       /* Retrieve element entry */
-      next_field_start = &(buffer[77]);
+      next_field_start = &(buffer[77-1]);
       strncpy(element_buffer, next_field_start, sizeof(element_buffer));
       if(isspace(element_buffer[0])){
 	element_buffer[0] = element_buffer[1];		/* left justify */
