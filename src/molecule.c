@@ -72,6 +72,7 @@ Molecule * get_Molecule_from_pdb(char * filename){
   char       *next_field_start;
   float t4,t5;
   float x,y,z;
+  int Z;
   int total_atomic_number = 0;
   Molecule * res = malloc(sizeof(Molecule));
   if(!fp){
@@ -193,14 +194,13 @@ Molecule * get_Molecule_from_pdb(char * filename){
 	element_buffer[0] = element_buffer[1];		/* left justify */
 	element_buffer[1] = ' ';
       }
-      total_atomic_number += getZfromSymbol(element_buffer);
-      res->atomic_number[res->natoms] = getZfromSymbol(element_buffer);
-      
-      if(!res->atomic_number[res->natoms]){
-	fprintf(stderr,"Null atom at line '%s'. Skipping\n",buffer);
+      Z = getZfromSymbol(element_buffer);
+      if(!Z){
+	fprintf(stderr,"WARNING: Null atom at line '%s'. Skipping\n",buffer);
 	res->natoms--;
       }
-
+      total_atomic_number += Z;
+      res->atomic_number[res->natoms] = Z
       res->natoms++;
     }			/* skip anything else */
   }
@@ -252,7 +252,7 @@ static int getZfromSymbol(char * symbol)
     }
   }
   /* if we're here print the error */
-  fprintf(stderr,"Could not find out atom named %c%c\n",symbol[0],symbol[1]);
+  fprintf(stderr, "Could not find element for atom named '%c%c'\n", symbol[0], symbol[1]);
   return 0;
 }
 
