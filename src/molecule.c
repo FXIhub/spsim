@@ -200,7 +200,7 @@ Molecule * get_Molecule_from_pdb(char * filename){
 	res->natoms--;
       }
       total_atomic_number += Z;
-      res->atomic_number[res->natoms] = Z
+      res->atomic_number[res->natoms] = Z;
       res->natoms++;
     }			/* skip anything else */
   }
