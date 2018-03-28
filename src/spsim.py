@@ -7,8 +7,12 @@ from spsim_pybackend import *
 
 import numpy
 
-import urllib2
-import StringIO
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib2 import urlopen
+from io import StringIO
+from io import BytesIO
 import gzip
 
 # Convenience functions
@@ -39,13 +43,13 @@ def get_atoms_from_molecule(mol):
 def fetch_pdb(pdb_id):
     url = "http://www.rcsb.org/pdb/files/%s.pdb.gz" % str(pdb_id)
     filename = "./%s.pdb" % str(pdb_id)
-    response = urllib2.urlopen(url)
-    compressedFile = StringIO.StringIO()
+    response = urlopen(url)
+    compressedFile = BytesIO()
     compressedFile.write(response.read())
     compressedFile.seek(0)
     decompressedFile = gzip.GzipFile(fileobj=compressedFile, mode='rb')
     with open(filename, 'w') as outfile:
-        outfile.write(decompressedFile.read())
+        outfile.write(str(decompressedFile.read()))
     return filename
 
     

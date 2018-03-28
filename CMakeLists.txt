@@ -77,8 +77,8 @@ ELSE(USE_CUDA)
 ENDIF(USE_CUDA)
 
 if(PYTHON_WRAPPERS)
-  find_package(PythonLibs)
   find_package(PythonInterp)
+  find_package(PythonLibs)
   find_package(Numpy)
   find_package(SWIG)
   if(PYTHONLIBS_FOUND AND SWIG_FOUND AND PYTHONINTERP_FOUND AND PYTHON_NUMPY_FOUND)
@@ -87,7 +87,7 @@ if(PYTHON_WRAPPERS)
     # using distutils.
     execute_process(
 	 COMMAND
-  	 ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print sysconfig.get_python_lib()"
+  	 ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print(sysconfig.get_python_lib())"
   	 OUTPUT_VARIABLE _PYTHON_INSTDIR
   	 OUTPUT_STRIP_TRAILING_WHITESPACE
     )
