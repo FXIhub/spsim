@@ -76,7 +76,11 @@ IF(CUDA_FOUND)
 ELSE(CUDA_FOUND)
  ADD_LIBRARY(_spsim_pybackend SHARED spsim.c ${OBJECTS} ${CMAKE_CURRENT_BINARY_DIR}/spsim_wrap.c)
 ENDIF(CUDA_FOUND)
+if(APPLE)
+ TARGET_LINK_LIBRARIES(_spsim_pybackend ${SPSIM_LIBRARIES} "-undefined dynamic_lookup")
+else(APPLE)
  TARGET_LINK_LIBRARIES(_spsim_pybackend ${SPSIM_LIBRARIES} ${PYTHON_LIBRARIES})
+endif()
   set_target_properties(
     _spsim_pybackend
     PROPERTIES SOVERSION 1
