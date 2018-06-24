@@ -27,6 +27,16 @@
 
 #ifdef NFFT_SUPPORT
 #include <nfft3.h>
+
+/* Taken from condor
+ *  NFFT_DEFINE_MALLOC_API is a new macro that was introduced in nfft version 3.3
+ */
+#if defined(NFFT_DEFINE_MALLOC_API)
+#define NFFT_VERSION_ABOVE_3_3 1
+#else
+#define NFFT_VERSION_ABOVE_3_3 0
+#endif
+
 #endif
 
 #include "config.h"
@@ -472,9 +482,16 @@ Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experim
 	}
       }
       
+
+#if NFFT_VERSION_ABOVE_3_3
+      if(p.flags & PRE_ONE_PSI){
+	nfft_precompute_one_psi(&p);
+      }
+#else
       if(p.nfft_flags & PRE_ONE_PSI){
 	nfft_precompute_one_psi(&p);
       }
+#endif  
       if(is_element_in_molecule[Z] < 100){
 	nfft_adjoint(&p);  
       }else{
