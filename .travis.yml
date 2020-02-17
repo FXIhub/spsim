@@ -1,0 +1,65 @@
+language: python
+sudo: false
+os: linux
+dist: bionic
+
+virtualenv:
+  system_site_packages: false
+  
+cache:
+  directories:
+    - $HOME/virtualenv
+
+matrix:
+  include:
+    - python: "2.7"
+    - python: "3.6"
+
+addons:
+  apt:
+    packages:
+      - libpng-dev
+      - libtiff4-dev
+      - libfftw3-dev
+      - libhdf5-serial-dev
+      - cmake
+      - gsl-bin
+      - libgsl0-dev
+      - swig
+
+before_install:
+  - export PY_SITE=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
+# Python packages
+  - pip install numpy
+  - pip install scipy
+  - pip install h5py
+# Install libspimage
+  - cd $HOME
+  - if [ ! -d "$HOME/libspimage/.git" ]; then git clone https://github.com/FilipeMaia/libspimage; else echo 'Using libspimage from cached directory'; fi
+  - mkdir -p libspimage/build && cd libspimage/build
+  - git pull
+  - cmake -DCMAKE_VERBOSE_MAKEFILE=ON -DUSE_CUDA=OFF -DPYTHON_WRAPPERS=ON -DCMAKE_INSTALL_PREFIX=${HOME}/virtualenv/python${TRAVIS_PYTHON_VERSION}/ -DPYTHON_INSTDIR=${PY_SITE} ..
+  - make VERBOSE=1
+  - make install
+# Install NFFT
+  - cd $HOME
+  - if [ ! -d "$HOME/nfft-3.2.3/include" ]; then wget https://www-user.tu-chemnitz.de/~potts/nfft/download/nfft-3.2.3.tar.gz && tar xvzf nfft-3.2.3.tar.gz; cd nfft-3.2.3 && ./configure --prefix=${HOME}/local && make && make install; else echo 'Using NFFT from cached directory'; fi  
+  - cd $HOME/build/FXIhub/spsim
+  - mkdir build
+  - cd build
+  - cmake -DCMAKE_VERBOSE_MAKEFILE=ON -DUSE_CUDA=OFF  -DPYTHON_WRAPPERS=ON -DCMAKE_INSTALL_PREFIX=${HOME}/virtualenv/python${TRAVIS_PYTHON_VERSION}/ -DPYTHON_INSTDIR=${PY_SITE} ..
+
+
+install:
+  - make VERBOSE=1
+  - make install
+
+
+script:
+  - echo $LD_LIBRARY_PATH
+  - echo $PYTHONPATH
+# Testing imports
+  - python -c "import numpy; print(numpy.__file__)"
+  - python -c "import scipy; print(scipy.__file__)"
+  - python -c "import h5py; print(h5py.__file__)"
+  - python -c "import spsim; print(spsim.__file__)"
