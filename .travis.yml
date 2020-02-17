@@ -19,7 +19,7 @@ addons:
   apt:
     packages:
       - libpng-dev
-      - libtiff4-dev
+      - libtiff-dev
       - libfftw3-dev
       - libhdf5-serial-dev
       - cmake
