@@ -127,6 +127,7 @@ ENDIF("${isSystemDir}" STREQUAL "-1")
 IF(WIN32)
 SET (GETOPT utils/getopt.c)
 ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE)
+ADD_DEFINITIONS(-DGSL_DLL)
 ENDIF(WIN32)
 
 configure_file(${PROJECT_SOURCE_DIR}/include/cmake_config.h.in 
