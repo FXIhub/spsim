@@ -23,7 +23,6 @@
 #include <math.h>
 #include <string.h>
 #include <float.h>
-#include <complex.h>
 #include <spimage.h>
 
 #ifdef NFFT_SUPPORT
@@ -62,8 +61,6 @@ static float atomed[ELEMENTS][11];
 
 static int atomsf_initialized = 0;
 static int atomed_initialized = 0;
-
-void multiply_pattern_on_list_with_scattering_factor(complex double * f,int Z,float * HKL_list, int HKL_list_size,float B);
 
 
 static float sp_mod(float a, float b){
@@ -366,7 +363,8 @@ float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_
 
 
 
-void multiply_pattern_with_scattering_factor(complex double * f,int Z,int nx, int ny, int nz, double rs_pixel_x,double rs_pixel_y,double rs_pixel_z, float B){
+#ifdef NFFT_SUPPORT
+void multiply_pattern_with_scattering_factor(fftw_complex * f,int Z,int nx, int ny, int nz, double rs_pixel_x,double rs_pixel_y,double rs_pixel_z, float B){
   /* f is assumed to be C ordered*/
   int i = 0;
   for(int zi = -nz/2;zi<nz/2;zi++){
@@ -377,25 +375,25 @@ void multiply_pattern_with_scattering_factor(complex double * f,int Z,int nx, in
 	float x = (float)xi/(nx)/rs_pixel_x;
 	double distance = sqrt(x*x+y*y+z*z);
 	float sf = scatt_factor(distance,Z,B);
-	f[i] *= sf;
+	f[i][0] *= sf;
+	f[i][1] *= sf;
 	i++;
       }
     }
   }
 }
 
-
-void multiply_pattern_on_list_with_scattering_factor(complex double * f,int Z,float * HKL_list, int HKL_list_size, float B){
+void multiply_pattern_on_list_with_scattering_factor(fftw_complex * f,int Z,float * HKL_list, int HKL_list_size, float B){
   /* f is assumed to be C ordered*/
   int i = 0;
   for(i = 0;i<HKL_list_size;i++){
     double distance = sqrt(HKL_list[i*3]*HKL_list[i*3]+HKL_list[i*3+1]*HKL_list[i*3+1]+HKL_list[i*3+2]*HKL_list[i*3+2]);
     float sf = scatt_factor(distance,Z,B);
-    f[i] *= sf;
+    f[i][0] *= sf;
+    f[i][1] *= sf;
   }
 }
 
-#ifdef NFFT_SUPPORT
 Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experiment * exp, float B,float * HKL_list,Options * opts){
   double alpha_x = atan(det->width/(2.0 * det->distance));
   double alpha_y = atan(det->height/(2.0 * det->distance));
@@ -467,7 +465,8 @@ Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experim
       for(int j = 0 ;j< mol->natoms;j++){
 	if(mol->atomic_number[j] == Z){
 
-	  p.f[k] = 1;
+	  p.f[k][0] = 1;
+	  p.f[k][1] = 0;
 	  /* We have to multiply the position with the dimension of the box because the
 	     fourier sample are taken between 0..1 (equivalent to 0..0.5,-0.5..0) */
 
@@ -504,8 +503,8 @@ Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experim
 						rs_pixel_x,rs_pixel_y,rs_pixel_z,B);
       }
       for(int k = 0;k<nx*ny*nz;k++){
-	sp_real(res->F[k]) += creal(p.f_hat[k]);
-	sp_imag(res->F[k]) += cimag(p.f_hat[k]);
+	sp_real(res->F[k]) += p.f_hat[k][0];
+	sp_imag(res->F[k]) += p.f_hat[k][1];
       }   
       nfft_finalize(&p);
     }
@@ -610,7 +609,8 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
       for(int j = 0 ;j< mol->natoms;j++){
 	if(mol->atomic_number[j] == Z){
 
-	  p.f[k] = 1;    
+	  p.f[k][0] = 1;
+	  p.f[k][1] = 0;
 	  /* We have to multiply the position with the dimension of the box because the
 	     fourier sample are taken between 0..1 (equivalent to 0..0.5,-0.5..0) */
 	  /* For some unknown reason I have to take the negative of the position otherwise the patterns came out inverted.
@@ -653,8 +653,8 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
 	multiply_pattern_on_list_with_scattering_factor(p.f_hat,Z,HKL_list,HKL_list_size,B);
       }
       for(int k = 0;k<HKL_list_size;k++){
-	sp_real(res->F[k]) += creal(p.f_hat[k]);
-	sp_imag(res->F[k]) += cimag(p.f_hat[k]);
+	sp_real(res->F[k]) += p.f_hat[k][0];
+	sp_imag(res->F[k]) += p.f_hat[k][1];
       }   
       nnfft_finalize(&p);
     }
