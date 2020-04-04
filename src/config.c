@@ -21,7 +21,6 @@
 #include <string.h>
 #include <libconfig.h>
 #include <stdlib.h>
-#include <getopt.h>
 #include <math.h>
 
 #include "config.h"
