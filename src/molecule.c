@@ -204,7 +204,7 @@ Molecule * get_Molecule_from_pdb(char * filename){
       res->natoms++;
     }			/* skip anything else */
   }
-  //fprintf(stderr, "Read %d atoms with %d electrons\n",res->natoms,total_atomic_number);
+  fprintf(stderr, "Read %d atoms with %d electrons\n",res->natoms,total_atomic_number);
   //printf("Read %d atoms with %d electrons\n",res->natoms,total_atomic_number);
   fclose(fp);
   res->atomic_number = realloc(res->atomic_number,sizeof(int)*res->natoms);
