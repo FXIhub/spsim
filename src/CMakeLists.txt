@@ -86,9 +86,21 @@ endif()
     PROPERTIES SOVERSION 1
     VERSION 1
     PREFIX ""
-    SUFFIX ".so"
     INSTALL_NAME_DIR ${PYTHON_INSTDIR}
     )
+  if(WIN32)
+    set_target_properties(
+      _spsim_pybackend
+      PROPERTIES
+      SUFFIX ".pyd"
+      )
+  else(WIN32)
+    set_target_properties(
+      _spsim_pybackend
+      PROPERTIES
+      SUFFIX ".so"
+      )
+  endif()
   INSTALL(TARGETS _spsim_pybackend
     RUNTIME DESTINATION ${PYTHON_INSTDIR}
     LIBRARY DESTINATION ${PYTHON_INSTDIR}
