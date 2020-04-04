@@ -17,6 +17,7 @@
  *
  */
 
+#include "config.h"
 
 void write_2D_array_to_vtk(float * f,int nx, int ny, char * filename);
 void write_3D_array_to_vtk(float * f,int nx, int ny,int nz, char * filename);
