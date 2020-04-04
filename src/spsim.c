@@ -19,7 +19,7 @@
 
 #include <stdlib.h>
 #include <sys/types.h>
-#include <unistd.h>
+#include <time.h>
 
 #include "spsim.h"
 #include "config.h"
@@ -375,7 +375,7 @@ int main(int argc, char ** argv){
 #endif
   read_options_file("spsim.conf",opts);
   if(opts->random_seed < 0){
-    opts->random_seed = getpid();
+    opts->random_seed = time(NULL);
   }
   sp_srand(opts->random_seed);
   write_options_file("spsim.confout", opts);
