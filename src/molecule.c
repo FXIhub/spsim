@@ -44,18 +44,18 @@ Molecule * get_Molecule_from_formula(Chem_Formula * form, Options * opts){
     for(j = res->natoms-form->quantity[i];j<res->natoms;j++){
       res->atomic_number[j] = form->atomic_number[i];
       if(opts->box_type == BOX_SPHERICAL){
-	do{
-	  distance = 0;
-	  for(d = 0;d<3;d++){
-	    res->pos[3*j+d] = (p_drand48()-0.5)*opts->box_dimension;
-	    distance += res->pos[3*j+d]*res->pos[3*j+d];
-	  }
-	  distance = sqrt(distance);
-	}while(distance > opts->box_dimension/2.0);
+      do{
+        distance = 0;
+        for(d = 0;d<3;d++){
+          res->pos[3*j+d] = (p_drand48()-0.5)*opts->box_dimension;
+          distance += res->pos[3*j+d]*res->pos[3*j+d];
+        }
+        distance = sqrt(distance);
+      }while(distance > opts->box_dimension/2.0);
       }else if(opts->box_type == BOX_PARALLEL){
-	for(d = 0;d<3;d++){
-	  res->pos[3*j+d] = p_drand48()*opts->box_dimension;
-	}	
+      for(d = 0;d<3;d++){
+        res->pos[3*j+d] = p_drand48()*opts->box_dimension;
+      }      
       }
     }
   }
@@ -66,7 +66,7 @@ Molecule * get_Molecule_from_pdb(char * filename){
   FILE * fp = fopen(filename,"r");
   char buffer[1024];
   int maxnatoms = 1024;
-  char	gid[10], aid[10] ,atid[3];
+  char      gid[10], aid[10] ,atid[3];
   char  element_buffer[2];
   char       tmp_char;
   char       *next_field_start;
@@ -74,6 +74,9 @@ Molecule * get_Molecule_from_pdb(char * filename){
   float x,y,z;
   int Z;
   int total_atomic_number = 0;
+  float *rot_mats, *trans_vecs;
+  int elem_num, dim_num;
+  int num_symm = 0, max_num_symm = 1;
   Molecule * res = malloc(sizeof(Molecule));
   if(!fp){
     perror("Error reading PDB\n");
@@ -82,45 +85,47 @@ Molecule * get_Molecule_from_pdb(char * filename){
   res->atomic_number = malloc(sizeof(int)*maxnatoms);
   res->pos = malloc(3*sizeof(float)*maxnatoms);
   res->natoms = 0;
+  rot_mats = malloc(9*max_num_symm*sizeof(float));
+  trans_vecs = malloc(3*max_num_symm*sizeof(float));
 
   get_legal_atom_names();
 
   // Loop over lines in file
   while (fgets(buffer, 1024, fp) != NULL)  {
-    // Only process atom lines
-    if (((int)strlen(buffer) > 1) &&
-	((strstr(buffer, "ATOM") == buffer) ||
-	 (strstr(buffer, "HETATM") == buffer))) {
-
+    // Only process atom, hetatm and biomt lines
+    if ((int)strlen(buffer) <= 1) {
+      continue ;
+    }
+    else if ((strstr(buffer, "ATOM") == buffer) || (strstr(buffer, "HETATM") == buffer)) {
       // Increase arrays if needed
       if (res->natoms >= maxnatoms) {
-	/* increase array sizes */
-	maxnatoms *= 2;
-	//printf("%i\n", maxnatoms);
-	res->atomic_number = realloc(res->atomic_number,sizeof(int)*maxnatoms);
-	res->pos = realloc(res->pos,3*sizeof(float)*maxnatoms);
+      /* increase array sizes */
+      maxnatoms *= 2;
+      //printf("%i\n", maxnatoms);
+      res->atomic_number = realloc(res->atomic_number,sizeof(int)*maxnatoms);
+      res->pos = realloc(res->pos,3*sizeof(float)*maxnatoms);
       }
       
       /**************************************************
-     		Original code had:
-     		sscanf(buffer, "%*s %d %s %s %d %g %g %g %g %g", 
-            		&atno[Nin], aid, gid, 
-            		&groupno[Nin], &ud->t1, &ud->t2, &ud->t3, &ud->t4, &ud->t5) ;
+                 Original code had:
+                 sscanf(buffer, "%*s %d %s %s %d %g %g %g %g %g", 
+                        &atno[Nin], aid, gid, 
+                        &groupno[Nin], &ud->t1, &ud->t2, &ud->t3, &ud->t4, &ud->t5) ;
 
-     		Filipe Maia: Extract the fixed width fields from 
-	     	the pdb, according to 
-     		http://www.ccp4.ac.uk/dist/html/pdbformat.html
-     		(which he believes is exactly the same as the formal 
-     		format description).  
-     		The atof/atoi should be changed to strtof/strtol to 
-     		detect input errors.
+                 Filipe Maia: Extract the fixed width fields from 
+                 the pdb, according to 
+                 http://www.ccp4.ac.uk/dist/html/pdbformat.html
+                 (which he believes is exactly the same as the formal 
+                 format description).  
+                 The atof/atoi should be changed to strtof/strtol to 
+                 detect input errors.
       **************************************************/
 
-      tmp_char = buffer[11];		/* limit the field*/
+      tmp_char = buffer[11];            /* limit the field*/
       buffer[11] = 0;
       next_field_start = &(buffer[6]);
-      /*	       res->pdb_atom_number[res->natoms] = atoi(next_field_start);*/
-      buffer[11] = tmp_char;		/* advance field pointer */
+      /*             res->pdb_atom_number[res->natoms] = atoi(next_field_start);*/
+      buffer[11] = tmp_char;            /* advance field pointer */
       next_field_start+= 6;
       tmp_char = buffer[16];
       buffer[16] = 0;
@@ -136,7 +141,7 @@ Molecule * get_Molecule_from_pdb(char * filename){
       next_field_start+= 5;
       tmp_char = buffer[26];
       buffer[26] = 0;
-      /*	       res->pdb_groupno[res->natoms] = atoi(next_field_start);*/
+      /*             res->pdb_groupno[res->natoms] = atoi(next_field_start);*/
       buffer[26] = tmp_char;
       
       /* Start retrieving coordinates*/
@@ -169,17 +174,17 @@ Molecule * get_Molecule_from_pdb(char * filename){
       buffer[66] = tmp_char;
       
       /*               strncpy(pdb->atid[pdb->Nin], aid, 2) ; 
-		       strncpy(pdb->fullatid[pdb->Nin], aid, 5) ; 
-		       pdb->fullatid[pdb->Nin][4] = 0;
-		       pdb->atid[pdb->Nin][2] = 0;*/
-      /*	       if(isspace(pdb->atid[pdb->Nin][0]) ||
-		       isdigit(pdb->atid[pdb->Nin][0])){*/
+                   strncpy(pdb->fullatid[pdb->Nin], aid, 5) ; 
+                   pdb->fullatid[pdb->Nin][4] = 0;
+                   pdb->atid[pdb->Nin][2] = 0;*/
+      /*             if(isspace(pdb->atid[pdb->Nin][0]) ||
+                   isdigit(pdb->atid[pdb->Nin][0])){*/
       /* left justify */
-      /*		 pdb->atid[pdb->Nin][0] = pdb->atid[pdb->Nin][1];	
-			 pdb->atid[pdb->Nin][1] = ' ';
-			 }
-			 strncpy(pdb->groupid[pdb->Nin], gid, 3) ; 
-			 pdb->groupid[pdb->Nin][3] = 0;*/
+      /*             pdb->atid[pdb->Nin][0] = pdb->atid[pdb->Nin][1];      
+                   pdb->atid[pdb->Nin][1] = ' ';
+                   }
+                   strncpy(pdb->groupid[pdb->Nin], gid, 3) ; 
+                   pdb->groupid[pdb->Nin][3] = 0;*/
 
       /* convert to meters */
       // right handed coordinate system
@@ -191,29 +196,77 @@ Molecule * get_Molecule_from_pdb(char * filename){
       next_field_start = &(buffer[77-1]);
       strncpy(element_buffer, next_field_start, sizeof(element_buffer));
       if(isspace(element_buffer[0])){
-	element_buffer[0] = element_buffer[1];		/* left justify */
-	element_buffer[1] = ' ';
+      element_buffer[0] = element_buffer[1];            /* left justify */
+      element_buffer[1] = ' ';
       }
       Z = getZfromSymbol(element_buffer);
       if(!Z){
-	fprintf(stderr,"WARNING: Null atom at line '%s'. Skipping\n",buffer);
-	res->natoms--;
+      fprintf(stderr,"WARNING: Null atom at line '%s'. Skipping\n",buffer);
+      res->natoms--;
       }
       total_atomic_number += Z;
       res->atomic_number[res->natoms] = Z;
       res->natoms++;
-    }			/* skip anything else */
+    }
+    else if (strstr(buffer, "REMARK 350   BIOMT") == buffer) {
+      tmp_char = buffer[19];
+      buffer[19] = 0;
+      dim_num = atoi(&buffer[18]) - 1;
+      buffer[19] = tmp_char;
+
+      tmp_char = buffer[24];
+      buffer[24] = 0;
+      elem_num = atoi(&buffer[20]) - 2;
+      buffer[24] = tmp_char;
+      if (elem_num == -1) // Identity operation
+        continue ;
+
+      if (elem_num >= max_num_symm) { // Expand array if needed
+        /* increase array sizes */
+        max_num_symm *= 2;
+        //printf("%i\n", maxnatoms);
+        rot_mats = realloc(rot_mats, 9*max_num_symm*sizeof(float));
+        trans_vecs = realloc(trans_vecs ,3*max_num_symm*sizeof(float));
+      }
+      if (elem_num >= num_symm)
+        num_symm = elem_num + 1;
+
+      /* Read transformation elements */
+      tmp_char = buffer[33];
+      buffer[33] = 0;
+      rot_mats[elem_num*9 + dim_num*3 + 0] = atof(&buffer[24]);
+      buffer[33] = tmp_char;
+      
+      tmp_char = buffer[43];
+      buffer[43] = 0;
+      rot_mats[elem_num*9 + dim_num*3 + 1] = atof(&buffer[34]);
+      buffer[43] = tmp_char;
+      
+      tmp_char = buffer[53];
+      buffer[53] = 0;
+      rot_mats[elem_num*9 + dim_num*3 + 2] = atof(&buffer[44]);
+      buffer[53] = tmp_char;
+      
+      tmp_char = buffer[68];
+      buffer[68] = 0;
+      trans_vecs[elem_num*3 + dim_num] = atof(&buffer[59]);
+      buffer[68] = tmp_char;
+    }                  /* skip anything else */
   }
   fprintf(stderr, "Read %d atoms with %d electrons\n",res->natoms,total_atomic_number);
+  fprintf(stderr, "Read %d symmetry transformations\n", num_symm);
   //printf("Read %d atoms with %d electrons\n",res->natoms,total_atomic_number);
   fclose(fp);
   res->atomic_number = realloc(res->atomic_number,sizeof(int)*res->natoms);
   res->pos = realloc(res->pos,3*sizeof(float)*res->natoms);  
   //printf("%d atoms\n", res->natoms);
+  free(rot_mats);
+  free(trans_vecs);
   return res;  
 }
 
-
+static void add_symmetry_equivalents(Molecule *mol, float *rot_mats, float *trans_vecs, int num_symm) {
+}
 
 /* Return the atomic number of a 2 char symbol or 0 on error */
 
@@ -239,7 +292,7 @@ static int getZfromSymbol(char * symbol)
   symbol[2] = 0;
   for (z = 0; z < 106; z++){
     if ((symbol[0] == legal_atom_names[z*2+0]) &&
-	(symbol[1] == legal_atom_names[z*2+1])) {
+      (symbol[1] == legal_atom_names[z*2+1])) {
       return z+1;     
     }
   }
@@ -247,7 +300,7 @@ static int getZfromSymbol(char * symbol)
   symbol[1] = ' ';
   for (z = 0; z < 106; z++){
     if ((symbol[0] == legal_atom_names[z*2+0]) &&
-	(symbol[1] == legal_atom_names[z*2+1])) {
+      (symbol[1] == legal_atom_names[z*2+1])) {
       return z+1;     
     }
   }
@@ -296,11 +349,11 @@ void    write_pdb_from_mol(char *filename,Molecule * mol){
 
   for (i = 0; i <  mol->natoms; i++) {
     fprintf(fpout,"ATOM  %5d  %.2s      A   1    %8.3f%8.3f%8.3f\n",
-	    i%99999,
-	    &legal_atom_names[2*(mol->atomic_number[i]-1)],
-	    mol->pos[i*3+0]*1e10,
-	    mol->pos[i*3+1]*1e10,
-	    mol->pos[i*3+2]*1e10);
+          i%99999,
+          &legal_atom_names[2*(mol->atomic_number[i]-1)],
+          mol->pos[i*3+0]*1e10,
+          mol->pos[i*3+1]*1e10,
+          mol->pos[i*3+2]*1e10);
   }
   fprintf(fpout, "END\n") ;
   fclose(fpout);
