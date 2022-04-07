@@ -66,17 +66,16 @@ Molecule * get_Molecule_from_pdb(char * filename){
   FILE * fp = fopen(filename,"r");
   char buffer[1024];
   int maxnatoms = 1024;
-  char      gid[10], aid[10] ,atid[3];
-  char  element_buffer[2];
-  char       tmp_char;
-  char       *next_field_start;
-  float t4,t5;
+  char gid[10];
+  char element_buffer[2];
+  char tmp_char;
+  char *next_field_start;
   float x,y,z;
   int Z;
   int total_atomic_number = 0;
   float *rot_mats, *trans_vecs;
   int elem_num, dim_num;
-  int num_symm = 0, max_num_symm = 1;
+  int i, num_symm = 0, max_num_symm = 1;
   Molecule * res = malloc(sizeof(Molecule));
   if(!fp){
     perror("Error reading PDB\n");
@@ -99,11 +98,10 @@ Molecule * get_Molecule_from_pdb(char * filename){
     else if ((strstr(buffer, "ATOM") == buffer) || (strstr(buffer, "HETATM") == buffer)) {
       // Increase arrays if needed
       if (res->natoms >= maxnatoms) {
-      /* increase array sizes */
-      maxnatoms *= 2;
-      //printf("%i\n", maxnatoms);
-      res->atomic_number = realloc(res->atomic_number,sizeof(int)*maxnatoms);
-      res->pos = realloc(res->pos,3*sizeof(float)*maxnatoms);
+        /* increase array sizes */
+        maxnatoms *= 2;
+        res->atomic_number = realloc(res->atomic_number,sizeof(int)*maxnatoms);
+        res->pos = realloc(res->pos,3*sizeof(float)*maxnatoms);
       }
       
       /**************************************************
@@ -161,6 +159,7 @@ Molecule * get_Molecule_from_pdb(char * filename){
       z = (float)atof(next_field_start);
       
       /* Now retrieve Pdb->Occupancy and B */
+    /*
       buffer[54] = tmp_char;
       next_field_start += 8;
       tmp_char = buffer[60];
@@ -173,7 +172,7 @@ Molecule * get_Molecule_from_pdb(char * filename){
       t5 = (float)atof(next_field_start);
       buffer[66] = tmp_char;
       
-      /*               strncpy(pdb->atid[pdb->Nin], aid, 2) ; 
+                   strncpy(pdb->atid[pdb->Nin], aid, 2) ; 
                    strncpy(pdb->fullatid[pdb->Nin], aid, 5) ; 
                    pdb->fullatid[pdb->Nin][4] = 0;
                    pdb->atid[pdb->Nin][2] = 0;*/
@@ -216,15 +215,12 @@ Molecule * get_Molecule_from_pdb(char * filename){
 
       tmp_char = buffer[24];
       buffer[24] = 0;
-      elem_num = atoi(&buffer[20]) - 2;
+      elem_num = atoi(&buffer[20]) - 1;
       buffer[24] = tmp_char;
-      if (elem_num == -1) // Identity operation
-        continue ;
 
       if (elem_num >= max_num_symm) { // Expand array if needed
         /* increase array sizes */
         max_num_symm *= 2;
-        //printf("%i\n", maxnatoms);
         rot_mats = realloc(rot_mats, 9*max_num_symm*sizeof(float));
         trans_vecs = realloc(trans_vecs ,3*max_num_symm*sizeof(float));
       }
@@ -249,19 +245,55 @@ Molecule * get_Molecule_from_pdb(char * filename){
       
       tmp_char = buffer[68];
       buffer[68] = 0;
-      trans_vecs[elem_num*3 + dim_num] = atof(&buffer[59]);
+      trans_vecs[elem_num*3 + dim_num] = atof(&buffer[59]) * 1e-10;
       buffer[68] = tmp_char;
     }                  /* skip anything else */
   }
   fprintf(stderr, "Read %d atoms with %d electrons\n",res->natoms,total_atomic_number);
   fprintf(stderr, "Read %d symmetry transformations\n", num_symm);
-  //printf("Read %d atoms with %d electrons\n",res->natoms,total_atomic_number);
   fclose(fp);
-  res->atomic_number = realloc(res->atomic_number,sizeof(int)*res->natoms);
-  res->pos = realloc(res->pos,3*sizeof(float)*res->natoms);  
-  //printf("%d atoms\n", res->natoms);
+
+  if (num_symm == 0)
+    maxnatoms = res->natoms;
+  else
+    maxnatoms = res->natoms * num_symm;
+
+  res->atomic_number = realloc(res->atomic_number,sizeof(int)*maxnatoms);
+  res->pos = realloc(res->pos,3*sizeof(float)*maxnatoms);
+
+  // Assuming first symm element is always the identity
+  for (elem_num = 0 ; elem_num < num_symm ; ++elem_num)
+  for (i = 0 ; i < res->natoms ; ++i) {
+    res->atomic_number[elem_num*res->natoms + i] = res->atomic_number[i];
+
+    res->pos[elem_num*res->natoms*3 + 3*i + 0] = 
+      res->pos[3*i + 0] * rot_mats[elem_num*9 + 0] +
+      res->pos[3*i + 1] * rot_mats[elem_num*9 + 1] +
+      res->pos[3*i + 2] * rot_mats[elem_num*9 + 2] +
+      trans_vecs[elem_num*3 + 0];
+    res->pos[elem_num*res->natoms*3 + 3*i + 1] =
+      res->pos[3*i + 0] * rot_mats[elem_num*9 + 3] +
+      res->pos[3*i + 1] * rot_mats[elem_num*9 + 4] +
+      res->pos[3*i + 2] * rot_mats[elem_num*9 + 5] +
+      trans_vecs[elem_num*3 + 1];
+    res->pos[elem_num*res->natoms*3 + 3*i + 2] =
+      res->pos[3*i + 0] * rot_mats[elem_num*9 + 6] +
+      res->pos[3*i + 1] * rot_mats[elem_num*9 + 7] +
+      res->pos[3*i + 2] * rot_mats[elem_num*9 + 8] +
+      trans_vecs[elem_num*3 + 2];
+
+    x = res->pos[elem_num*res->natoms + 3*i];
+  }
+
+  if (num_symm > 0) {
+    res->natoms *= num_symm;
+    total_atomic_number *= num_symm;
+    fprintf(stderr, "%d atoms with %d electrons after symmetrization\n",res->natoms,total_atomic_number);
+  }
+
   free(rot_mats);
   free(trans_vecs);
+
   return res;  
 }
 
