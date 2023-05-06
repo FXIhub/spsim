@@ -1155,6 +1155,8 @@ void calculate_pixel_solid_angle(CCD * det){
   int is3D = (nz > 1);
   double r; /* distance to scatterer */
   int index;
+  double d2 = det->distance*det->distance;
+  double incidence;
   det->solid_angle = malloc(sizeof(float)*nx*ny*nz);
   index = 0;
   for(z = 0;z<det->nz;z++){
@@ -1164,36 +1166,14 @@ void calculate_pixel_solid_angle(CCD * det){
 	  r = det->distance;
 	  det->solid_angle[index++] = det->pixel_width*det->pixel_height/(r*r);
 	}else{
-	  px = ((x-(nx-1.0)/2.0)/nx)*det->width/2;
-	  py = ((y-(ny-1.0)/2.0)/ny)*det->height/2;
+	  px = ((x-(nx-1.0)/2.0)/nx) * det->width  - det->center_x;
+	  py = ((y-(ny-1.0)/2.0)/ny) * det->height - det->center_y;
 	  r = sqrt(det->distance*det->distance+px*px+py*py);
-	  /* top left */
-	  corners[0][0] = px-det->pixel_width/2;
-	  corners[0][1] = py-det->pixel_height/2;
-	  
-	  corner_distance[0] = sqrt(det->distance*det->distance+corners[0][0]*corners[0][0]+corners[0][1]*corners[0][1]);
-	  /* top right */
-	  corners[1][0] = px+det->pixel_width/2;
-	  corners[1][1] = py-det->pixel_height/2;
-	  corner_distance[1] = sqrt(det->distance*det->distance+corners[1][0]*corners[1][0]+corners[1][1]*corners[1][1]);
-	  /* bottom right */
-	  corners[2][0] = px+det->pixel_width/2;
-	  corners[2][1] = py+det->pixel_height/2;
-	  corner_distance[2] = sqrt(det->distance*det->distance+corners[2][0]*corners[2][0]+corners[2][1]*corners[2][1]);
-	  /* bottom left */
-	  corners[3][0] = px-det->pixel_width/2;
-	  corners[3][1] = py+det->pixel_height/2;
-	  corner_distance[3] = sqrt(det->distance*det->distance+corners[3][0]*corners[3][0]+corners[3][1]*corners[3][1]);
-	  /* project on plane*/
-	  for(i = 0;i<4;i++){
-	    corners[i][0] *= r/corner_distance[i];
-	    corners[i][1] *= r/corner_distance[i];	
-	  }
-	  /* top */
-	  projected_pixel_sides[0] = sqrt((corners[0][0]-corners[1][0])*(corners[0][0]-corners[1][0])+(corners[0][1]-corners[1][1])*(corners[0][1]-corners[1][1]));
-	  /* left */
-	  projected_pixel_sides[1] = sqrt((corners[0][0]-corners[3][0])*(corners[0][0]-corners[3][0])+(corners[0][1]-corners[3][1])*(corners[0][1]-corners[3][1]));
-	  det->solid_angle[index++] = projected_pixel_sides[0]*projected_pixel_sides[1]/(r*r);
+
+	  incidence = atan(sqrt(px*px+py*py)/det->distance);
+	  incidence = cos(incidence);
+	  incidence = incidence*incidence*incidence; /* cos(incidence)**3 */
+	  det->solid_angle[index++] = det->pixel_width*det->pixel_height/d2 * incidence;
 	}
       }
     }
