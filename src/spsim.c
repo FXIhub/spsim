@@ -245,6 +245,10 @@ void output_files( Diffraction_Pattern * pattern, Options * opts, int index){
     output_carray("scattering_factors", index, pattern->F, pattern->rot, opts);
   }
 
+  if(opts->output_solid_angles){
+    output_array("solid_angles", index, opts->detector->solid_angle, pattern->rot, opts);
+  }
+
   if(opts->output_real_space){ 
     Image * real_space = calculate_noiseless_real_space(opts,pattern);
     char buffer[1024];     
