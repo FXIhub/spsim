@@ -175,6 +175,7 @@ typedef struct {
   int output_count;
   int output_realspace_histogram;
   int output_scattering_factors;
+  int output_solid_angles;
   int output_real_space;
   int verbosity_level;
 }Options;

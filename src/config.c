@@ -80,6 +80,7 @@ Options * set_defaults(){
   opt->output_count = 0;
   opt->output_realspace_histogram = 0;
   opt->output_scattering_factors = 0;
+  opt->output_solid_angles = 0;
   opt->output_real_space = 0;
   opt->verbosity_level = 1;
   return opt;
@@ -376,6 +377,9 @@ void read_options_file(char * filename, Options * res){
   if(config_lookup(&config,"output_scattering_factors")){
     res->output_scattering_factors = config_lookup_int(&config,"output_scattering_factors");
   }
+  if(config_lookup(&config,"output_solid_angles")){
+    res->output_solid_angles = config_lookup_int(&config,"output_solid_angles");
+  }
   if(config_lookup(&config,"output_real_space")){
     res->output_real_space = config_lookup_int(&config,"output_real_space");
   }
@@ -621,6 +625,8 @@ void write_options_file(char * filename, Options * res){
   config_setting_set_int(s,res->output_count);
   s = config_setting_add(root,"output_noiseless_count",CONFIG_TYPE_INT);
   config_setting_set_int(s,res->output_noiseless_count);
+  s = config_setting_add(root,"output_solid_angles",CONFIG_TYPE_INT);
+  config_setting_set_int(s,res->output_solid_angles);
   s = config_setting_add(root,"output_scattering_factors",CONFIG_TYPE_INT);
   config_setting_set_int(s,res->output_scattering_factors);
   s = config_setting_add(root,"output_real_space",CONFIG_TYPE_INT);
