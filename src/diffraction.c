@@ -254,7 +254,12 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
   ny = det->ny;
 
   pz = det->distance;
-  
+
+  double px_size = det->width/nx;
+  double py_size = det->height/ny;  
+  double fourier_px = 2*sin(atan(px_size/pz)/2)/exp->wavelength;
+  double fourier_py = 2*sin(atan(py_size/pz)/2)/exp->wavelength;  
+
   HKL_list = malloc(sizeof(float)*nx*ny*3);
   for(y = 0;y<ny;y++){
     for(x = 0;x<nx;x++){
@@ -275,13 +280,14 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
       
       /* Project pixel into Ewald sphere. */
       if(!det->spherical){
-	HKL_list[index++] = rx * ewald_radius;	
-	HKL_list[index++] = ry * ewald_radius;
-	HKL_list[index++] = rz * ewald_radius;
+          HKL_list[index++] = rx * ewald_radius;
+          HKL_list[index++] = ry * ewald_radius;
+          HKL_list[index++] = rz * ewald_radius;
       }else{
-	HKL_list[index++] = rx * ewald_radius;
-       	HKL_list[index++] = ry * ewald_radius;
-	HKL_list[index++] = 0;
+          /* Take a flat uniform grid in Fourier space */
+          HKL_list[index++] = fourier_px * px / px_size;
+          HKL_list[index++] = fourier_py * py / py_size;
+          HKL_list[index++] = 0;
       } 
 	 
     }
