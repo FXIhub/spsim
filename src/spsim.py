@@ -2,9 +2,6 @@
 
 __version__ = "0.1.0"
 
-# Wrapped C funcitons
-#from spsim_pybackend import *
-
 import numpy
 
 try:
@@ -18,10 +15,16 @@ import Bio.PDB.PDBParser
 import configparser
 import matplotlib.pyplot as plt
 import h5py
+try:
+    import jax.numpy as jnp
+    import jax
+except ImportError:
+    print('JAX not available.')
 
-#import tensorflow as tf
-#import tensorflow.experimental.numpy as tnp
-#tnp.experimental_enable_numpy_behavior()
+try:
+    import cupy
+except ImportError:
+    print('CuPy not available.')
 
 atomsf = numpy.array([
 [-1.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00]
@@ -127,7 +130,7 @@ atomsf = numpy.array([
 ])
 
 
-element_to_Z = {'H': 1, 'He': 2, 'C': 6, 'N': 7, 'O': 8, 'P': 15, 'S': 16}
+element_to_Z = {'H': 1, 'He': 2, 'C': 6, 'N': 7, 'O': 8, 'NA': 11, 'MG': 12, 'P': 15, 'S': 16,  'CL': 17}
 
 
 class Detector:
@@ -193,6 +196,7 @@ class Options:
         self.use_fft_for_sf = int(config['use_fft_for_sf'])
         self.use_nfft_for_sf = int(config['use_nfft_for_sf'])
         self.use_cuda = int(config['use_cuda'])
+        self.use_jax = int(config['use_jax'])
         self.euler_orientation = numpy.zeros((3))
         self.euler_orientation[0] = float(config['phi'])
         self.euler_orientation[1] = float(config['theta'])
@@ -206,9 +210,10 @@ class Options:
 
     
 class Sample:
-    def __init__(self, pos, Z):
+    def __init__(self, pos, Z, B=None):
         self.pos = pos
         self.Z = Z
+        self.B = B
         if len(pos) != len(Z):
             raise ValueError
         self.natoms = len(pos)
@@ -225,16 +230,18 @@ def get_Sample_from_pdb(filename):
     atoms = list(structure.get_atoms())
     pos = numpy.zeros((len(atoms),3),dtype=numpy.float32)
     Z = numpy.zeros((len(atoms)),dtype=int)
+    B = numpy.zeros((len(atoms)))
     for i,atom in enumerate(atoms):
         pos[i] = atom.get_coord()
         element = atom.element
+        B[i] = atom.bfactor
         if element in element_to_Z:            
             Z[i] = element_to_Z[element]
         else:
             raise KeyError('%s not in element_to_Z dictionary' % element)
     # Convert to meters
     print('Read %d atoms with %d electrons' % (len(atoms), Z.sum()))
-    return Sample(pos*1e-10, Z)
+    return Sample(pos*1e-10, Z, B)
 
 
 def load_pattern_from_file(det, filename):
@@ -282,14 +289,12 @@ def compute_sf(sample, HKL_list, opts):
     elif(opts.use_nfft_for_sf):
         raise NotImplementedError
     else:
-        if(opts.use_cuda and cupy_available):
+        if(jax and opts.use_jax):
+            pattern = jax_compute_pattern_on_list(sample, HKL_list, opts)
+        elif(opts.use_cuda and cupy_available):
             pattern = cuda_compute_pattern_on_list(sample, HKL_list, opts)
         else:
-            if(1):
-                pattern = compute_pattern_on_list(sample, HKL_list, opts)
-            else:
-                pattern = compute_pattern_on_list2(sample, HKL_list, opts)
-
+            pattern = compute_pattern_on_list(sample, HKL_list, opts)
     pattern.rot = None
     return pattern    
 
@@ -313,7 +318,8 @@ def compute_pattern_on_list(sample, HKL_list, opts):
     for i in range(sample.natoms):
         if(i % points_per_percent == 0):
             print('%3.1f percent done' % (i/sample.natoms*100))
-        sf = scatt_factor(scattering_vector_length, sample.Z[i], opts.b_factor)
+        #sf = scatt_factor(scattering_vector_length, sample.Z[i], opts.b_factor)
+        sf = scatt_factor(scattering_vector_length, sample.Z[i], sample.B[i])
         phase = -2 * numpy.pi * numpy.dot(HKL_list,sample.pos[i])
         F += sf*(numpy.cos(phase)+1.0j*numpy.sin(phase))
 
@@ -321,23 +327,66 @@ def compute_pattern_on_list(sample, HKL_list, opts):
     pat.ints = numpy.abs(F)**2   
     return pat
 
-def compute_pattern_on_list2(sample, HKL_list, opts):
-    F = tnp.zeros(HKL_list.shape[0],dtype=numpy.complex64)
-    scattering_vector_length = tnp.sqrt(tnp.sum(HKL_list**2, axis=1))
-    points_per_percent = tnp.ceil(sample.natoms/100)
-    for i in range(sample.natoms):
-        if(i % points_per_percent == 0):
-            print('%3.1f percent done' % (i/sample.natoms*100))
-        sf = scatt_factor(scattering_vector_length, sample.Z[i], opts.b_factor)
-        phase = -2 * tnp.pi * tnp.dot(HKL_list,sample.pos[i])
-        F += sf*(tnp.cos(phase)+1.0j*tnp.sin(phase))
+def jax_compute_pattern_on_batch(pos, Z, B, HKL, Z_cache, Z_map, d2):
+    # Caching B was not worth it
+    phase = -2 * jnp.pi * jnp.inner(pos, HKL)
+    sf = Z_cache[Z_map[Z]]*jnp.exp(-B[:,None]*d2)
+    return jnp.sum(sf*(jnp.cos(phase)), axis=0), jnp.sum(sf*(jnp.sin(phase)), axis=0)
 
+def jax_compute_pattern_on_list(sample, HKL_list, opts):
+    print('Using jax')
+    print('npixels: %d' % (HKL_list.shape[0]))
+    batch_size = int(min(1e8//HKL_list.shape[0], sample.natoms))
+    print('batch_size: %d' % (batch_size))
+    # JAX on macos has no support for complex64 so we'll use two float32
+    F_r = jnp.zeros(HKL_list.shape[0],dtype=jnp.float32)
+    F_i = jnp.zeros(HKL_list.shape[0],dtype=jnp.float32)
+
+    scattering_vector_length = jnp.array(numpy.sqrt(numpy.sum(HKL_list**2, axis=1)))
+    # Convert to Angstrom^-1 and square
+    d2 = (scattering_vector_length*1e-10)**2
+    # the 0.25 is there because the 's' used by the aproximation is 'd/2'
+    d2 = (d2*0.25)
+
+    pos = jnp.array(sample.pos)
+    B = jnp.array(sample.B)
+    Z = jnp.array(sample.Z)
+    HKL = jnp.array(HKL_list)
+    atomsf_jax = jnp.array(atomsf)
+    Z_cache, Z_map = compute_sf_cache(sample, d2, atomsf_jax)
+    jax_compute_pattern_on_batch_jit = jax.jit(jax_compute_pattern_on_batch)
+
+    for i in numpy.arange(0,sample.natoms, batch_size):        
+        inc_r, inc_i = jax_compute_pattern_on_batch(pos[i:i+batch_size], Z[i:i+batch_size], B[i:i+batch_size], HKL, Z_cache, Z_map, d2)
+        F_r += inc_r
+        F_i += inc_i
+        print('%3.1f percent done' % (i/sample.natoms*100))
+        
+    F = numpy.zeros(HKL_list.shape[0],dtype=numpy.complex64)
+    F.real = numpy.array(F_r)
+    F.imag = numpy.array(F_i)
     pat = Pattern(F, HKL_list)
-    pat.ints = tnp.abs(F)**2   
+    pat.ints = numpy.abs(F)**2
     return pat
 
+def compute_sf_cache(sample, d2, atomsf_jax):
+    unique_Z = numpy.unique(sample.Z)
+    Z_cache = []
+    Z_map = numpy.zeros(int(numpy.max(unique_Z)+1), dtype=int)
+    print('Computing Z cache size ',len(unique_Z))
+    for Z in unique_Z:
+        Z_map[Z] = len(Z_cache)
+        Z_cache.append(atomsf_jax[Z,0]*jnp.exp(-atomsf_jax[Z,0+4]*d2) + 
+        atomsf_jax[Z,1]*jnp.exp(-atomsf_jax[Z,1+4]*d2) + 
+        atomsf_jax[Z,2]*jnp.exp(-atomsf_jax[Z,2+4]*d2) + 
+        atomsf_jax[Z,3]*jnp.exp(-atomsf_jax[Z,3+4]*d2) +
+        atomsf_jax[Z,8])        
+    Z_cache = jnp.array(numpy.array(Z_cache))
+    Z_map = jnp.array(Z_map)
+    return Z_cache, Z_map
 
 scatt_factor_hash = {}
+B_factor_hash = {}
 def scatt_factor(d, Z, B):
     key = '%d-%f' % (Z,B)
     global scatt_factor_hash
@@ -447,7 +496,7 @@ config = configparser.ConfigParser(defaults={'detector_center_x': '0',
     'random_seed': '-1', 'output_noiseless_photons': 1, 'output_count': 1, 
     'output_scattering_factors': '0',
     'output_real_space': '0', 'verbosity_level': '1', 'experiment_polarization': 'ignore',
-    'random_orientation': '0', 'phi': '0', 'theta': '0', 'psi': '0'})
+    'random_orientation': '0', 'phi': '0', 'theta': '0', 'psi': '0','use_jax': '1'})
 
 
 # det = Detector({'detector_center_x':0, 'detector_center_y':0, 'detector_center_z':0,
@@ -462,12 +511,18 @@ config = configparser.ConfigParser(defaults={'detector_center_x': '0',
 
 
 # We need to add a dummy section as required by configparser
-with open('/Users/filipe/src/spsim/examples/spsim.conf') as stream:
+#with open('/Users/filipe/src/spsim/examples/spsim.conf') as stream:
+with open('/Users/filipe/src/spsim/examples/spsim_fast.conf') as stream:
+#with open('/Users/filipe/src/spsim/examples/3wun.conf') as stream:
+#with open('/Users/filipe/src/spsim/examples/1aon.conf') as stream:
     config.read_string("[top]\n" + stream.read()) 
 print(list(config['top'].keys()))
 
+
 opts = Options(config['top'])
-sample = get_Sample_from_pdb('/Users/filipe/src/spsim/examples/DNA.pdb')
+#sample = get_Sample_from_pdb('/Users/filipe/src/spsim/examples/DNA.pdb')
+#sample = get_Sample_from_pdb('/Users/filipe/src/spsim/examples/3wun.pdb')
+sample = get_Sample_from_pdb('/Users/filipe/src/spsim/examples/1aon.pdb')
 #sample = get_Sample_from_pdb('/Users/filipe/src/spsim/examples/carbon.pdb')
 calculate_thomson_correction(opts.detector, opts.experiment)
 calculate_pixel_solid_angle(opts.detector)
