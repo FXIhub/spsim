@@ -290,7 +290,9 @@ def compute_sf(sample, HKL_list, opts):
         raise NotImplementedError
     else:
         if(jax and opts.use_jax):
+            # If this fails you can use the slow version
             pattern = jax_compute_pattern_on_list(sample, HKL_list, opts)
+            #pattern = jax_compute_pattern_on_list_slow(sample, HKL_list, opts)
         elif(opts.use_cuda and cupy_available):
             pattern = cuda_compute_pattern_on_list(sample, HKL_list, opts)
         else:
@@ -333,7 +335,7 @@ def jax_compute_pattern_on_batch(pos, Z, B, HKL, Z_cache, Z_map, d2):
     sf = Z_cache[Z_map[Z]]*jnp.exp(-B[:,None]*d2)
     return jnp.sum(sf*(jnp.cos(phase)), axis=0), jnp.sum(sf*(jnp.sin(phase)), axis=0)
 
-def jax_compute_pattern_on_list(sample, HKL_list, opts):
+def jax_compute_pattern_on_list_slow(sample, HKL_list, opts):
     print('Using jax')
     print('npixels: %d' % (HKL_list.shape[0]))
     batch_size = int(min(1e8//HKL_list.shape[0], sample.natoms))
@@ -355,13 +357,63 @@ def jax_compute_pattern_on_list(sample, HKL_list, opts):
     atomsf_jax = jnp.array(atomsf)
     Z_cache, Z_map = compute_sf_cache(sample, d2, atomsf_jax)
     jax_compute_pattern_on_batch_jit = jax.jit(jax_compute_pattern_on_batch)
-
     for i in numpy.arange(0,sample.natoms, batch_size):        
-        inc_r, inc_i = jax_compute_pattern_on_batch(pos[i:i+batch_size], Z[i:i+batch_size], B[i:i+batch_size], HKL, Z_cache, Z_map, d2)
+        inc_r, inc_i = jax_compute_pattern_on_batch_jit(pos[i:i+batch_size], Z[i:i+batch_size], B[i:i+batch_size], HKL, Z_cache, Z_map, d2)
         F_r += inc_r
         F_i += inc_i
         print('%3.1f percent done' % (i/sample.natoms*100))
-        
+
+    F = numpy.zeros(HKL_list.shape[0],dtype=numpy.complex64)
+    F.real = numpy.array(F_r)
+    F.imag = numpy.array(F_i)
+    pat = Pattern(F, HKL_list)
+    pat.ints = numpy.abs(F)**2
+    return pat
+
+def jax_compute_pattern_on_atom(pos, HKL, B, d2):
+    b = jnp.exp(-B*d2)
+    phase = -2*jnp.pi*(HKL[:,0]*pos[0]+HKL[:,1]*pos[1]+HKL[:,2]*pos[2])
+    return jnp.cos(phase)*b, jnp.sin(phase)*b
+
+def jax_vmap(pos, HKL, B, d2):
+    a = jax.vmap(jax_compute_pattern_on_atom, in_axes=(0, None, 0, None))(pos, HKL, B, d2)
+    return jnp.sum(a[0], axis=0), jnp.sum(a[1], axis=0)
+
+def jax_compute_pattern_on_list(sample, HKL_list, opts):
+    print('Using jax')
+    print('npixels: %d' % (HKL_list.shape[0]))
+    batch_size = int(min(1e8//HKL_list.shape[0], sample.natoms))
+    print('batch_size: %d' % (batch_size))
+    # JAX on macos has no support for complex64 so we'll use two float32
+    F_r = jnp.zeros(HKL_list.shape[0],dtype=jnp.float32)
+    F_i = jnp.zeros(HKL_list.shape[0],dtype=jnp.float32)
+
+    scattering_vector_length = jnp.array(numpy.sqrt(numpy.sum(HKL_list**2, axis=1)))
+    # Convert to Angstrom^-1 and square
+    d2 = (scattering_vector_length*1e-10)**2
+    # the 0.25 is there because the 's' used by the aproximation is 'd/2'
+    d2 = (d2*0.25)
+    
+    idx = numpy.argsort(sample.Z)
+    unique, unique_counts = numpy.unique(sample.Z[idx], return_counts=True)
+    print(unique)
+
+    pos = jnp.array(sample.pos[idx])
+    B = jnp.array(sample.B[idx])
+    
+    HKL = jnp.array(HKL_list)
+    atomsf_jax = jnp.array(atomsf)
+    jit_f = jax.jit(jax_vmap)
+    idx = 0
+    for z,z_count in zip(unique, unique_counts):
+        print('Calculating %d atoms with Z = %d' % (z_count, z))
+        sf = atomsf_jax[z,0]*jnp.exp(-atomsf_jax[z,0+4]*d2)+atomsf_jax[z,1]*jnp.exp(-atomsf_jax[z,1+4]*d2)+ \
+        atomsf_jax[z,2]*jnp.exp(-atomsf_jax[z,2+4]*d2)+atomsf_jax[z,3]*jnp.exp(-atomsf_jax[z,3+4]*d2) + \
+        atomsf_jax[z,8]    
+        inc_r, inc_i = jit_f(pos[idx:idx+z_count], HKL, B[idx:idx+z_count], d2)
+        F_r += inc_r*sf
+        F_i += inc_i*sf
+        idx += z_count
     F = numpy.zeros(HKL_list.shape[0],dtype=numpy.complex64)
     F.real = numpy.array(F_r)
     F.imag = numpy.array(F_i)
@@ -511,8 +563,8 @@ config = configparser.ConfigParser(defaults={'detector_center_x': '0',
 
 
 # We need to add a dummy section as required by configparser
-#with open('/Users/filipe/src/spsim/examples/spsim.conf') as stream:
-with open('/Users/filipe/src/spsim/examples/spsim_fast.conf') as stream:
+with open('/Users/filipe/src/spsim/examples/spsim.conf') as stream:
+#with open('/Users/filipe/src/spsim/examples/spsim_fast.conf') as stream:
 #with open('/Users/filipe/src/spsim/examples/3wun.conf') as stream:
 #with open('/Users/filipe/src/spsim/examples/1aon.conf') as stream:
     config.read_string("[top]\n" + stream.read()) 
@@ -534,6 +586,7 @@ f['/entry_1/data_1/data'] = opts.detector.photons_per_pixel
 f['/entry_1/data_1/F'] = pattern.F
 f['/entry_1/data_1/solid_angle'] = opts.detector.solid_angle
 f.close()
-#plt.imshow(opts.detector.noiseless_output[0]**(1/4))
-#plt.colorbar()
-#plt.show()
+if(0):
+    plt.imshow(opts.detector.noiseless_output[0]**(1/4))
+    plt.colorbar()
+    plt.show()
