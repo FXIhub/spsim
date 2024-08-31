@@ -36,10 +36,10 @@
     /* Swap the order of the dimensions so we can plot things easily in imshow.
        This is bound to create confusion at some point in the future. */
     npy_intp dims[2] = {$1->y,$1->x};
-    $result = PyArray_SimpleNewFromData(2, dims, PyArray_INT, $1->data);
+    $result = PyArray_SimpleNewFromData(2, dims, NPY_INT, $1->data);
   }else{
     npy_intp dims[3] = {$1->z,$1->y,$1->x};
-    $result = PyArray_SimpleNewFromData(3, dims, PyArray_INT, $1->data);
+    $result = PyArray_SimpleNewFromData(3, dims, NPY_INT, $1->data);
   }
 }
 
@@ -51,7 +51,7 @@
     return NULL;
   } 
   arr = (PyArrayObject *)($input);
-  //  if ((arr = (PyArrayObject *) PyArray_ContiguousFromObject($input,PyArray_INT, 0, 0)) == NULL) return NULL;
+  //  if ((arr = (PyArrayObject *) PyArray_ContiguousFromObject($input,NPY_INT, 0, 0)) == NULL) return NULL;
   npy_intp * dim = PyArray_DIMS(arr);
   $1->x = dim[0];
   $1->y = dim[1];
@@ -65,10 +65,10 @@
     /* Swap the order of the dimensions so we can plot things easily in imshow.
        This is bound to create confusion at some point in the future. */
     npy_intp dims[2] = {$1->y,$1->x};
-    $result = PyArray_SimpleNewFromData(2, dims, PyArray_CFLOAT, $1->data);
+    $result = PyArray_SimpleNewFromData(2, dims, NPY_CFLOAT, $1->data);
   }else{
     npy_intp dims[3] = {$1->z,$1->y,$1->x};
-    $result = PyArray_SimpleNewFromData(3, dims, PyArray_CFLOAT, $1->data);
+    $result = PyArray_SimpleNewFromData(3, dims, NPY_CFLOAT, $1->data);
   }
 }
 
@@ -77,10 +77,10 @@
     /* Swap the order of the dimensions so we can plot things easily in imshow.
        This is bound to create confusion at some point in the future. */
     npy_intp dims[2] = {$1->y,$1->x};
-    $result = PyArray_SimpleNewFromData(2, dims, PyArray_FLOAT, $1->data);
+    $result = PyArray_SimpleNewFromData(2, dims, NPY_FLOAT, $1->data);
   }else{
     npy_intp dims[3] = {$1->z,$1->y,$1->x};
-    $result = PyArray_SimpleNewFromData(3, dims, PyArray_FLOAT, $1->data);
+    $result = PyArray_SimpleNewFromData(3, dims, NPY_FLOAT, $1->data);
   }
 }
 
@@ -90,7 +90,7 @@
   PyTuple_SetItem($result, 1, PyFloat_FromDouble($1[1]));
   PyTuple_SetItem($result, 2, PyFloat_FromDouble($1[2]));*/
   npy_intp dims[1] = {3};
-  $result = PyArray_SimpleNewFromData(1, dims, PyArray_FLOAT, $1);
+  $result = PyArray_SimpleNewFromData(1, dims, NPY_FLOAT, $1);
  }
 
    // I need to comment this out without knowing why this has been added originally...
@@ -128,21 +128,21 @@ npy_intp dims_hkl[2] = {$1->HKL_list_size,3};
 npy_intp dims_rot[2] = {0,0}; 
 if (!$1->rot) { 
 $result = Py_BuildValue("{sOsOsOsOsO}",
-			  "ints", PyArray_SimpleNewFromData(1, dims_pattern, PyArray_FLOAT, $1->ints),
-			  "F", PyArray_SimpleNewFromData(1, dims_pattern, PyArray_CFLOAT, $1->F),
-			  "max_s", PyArray_SimpleNewFromData(1, dims_vec, PyArray_FLOAT, $1->max_s),
-			  "d_s", PyArray_SimpleNewFromData(1, dims_vec, PyArray_FLOAT, $1->d_s),
-			  "HKL_list", PyArray_SimpleNewFromData(1, dims_hkl, PyArray_FLOAT, $1->HKL_list));
+			  "ints", PyArray_SimpleNewFromData(1, dims_pattern, NPY_FLOAT, $1->ints),
+			  "F", PyArray_SimpleNewFromData(1, dims_pattern, NPY_CFLOAT, $1->F),
+			  "max_s", PyArray_SimpleNewFromData(1, dims_vec, NPY_FLOAT, $1->max_s),
+			  "d_s", PyArray_SimpleNewFromData(1, dims_vec, NPY_FLOAT, $1->d_s),
+			  "HKL_list", PyArray_SimpleNewFromData(1, dims_hkl, NPY_FLOAT, $1->HKL_list));
 } else {
 dims_rot[0] = $1->rot->cols;
 dims_rot[1] = $1->rot->rows;
 $result = Py_BuildValue("{sOsOsOsOsOsO}",
-			  "ints", PyArray_SimpleNewFromData(1, dims_pattern, PyArray_FLOAT, $1->ints),
-			  "F", PyArray_SimpleNewFromData(1, dims_pattern, PyArray_CFLOAT, $1->F),
-			  "max_s", PyArray_SimpleNewFromData(1, dims_vec, PyArray_FLOAT, $1->max_s),
-			  "d_s", PyArray_SimpleNewFromData(1, dims_vec, PyArray_FLOAT, $1->d_s),
-			  "HKL_list", PyArray_SimpleNewFromData(1, dims_hkl, PyArray_FLOAT, $1->HKL_list),
-			  "rot", PyArray_SimpleNewFromData(2, dims_rot, PyArray_FLOAT, $1->rot->data));
+			  "ints", PyArray_SimpleNewFromData(1, dims_pattern, NPY_FLOAT, $1->ints),
+			  "F", PyArray_SimpleNewFromData(1, dims_pattern, NPY_CFLOAT, $1->F),
+			  "max_s", PyArray_SimpleNewFromData(1, dims_vec, NPY_FLOAT, $1->max_s),
+			  "d_s", PyArray_SimpleNewFromData(1, dims_vec, NPY_FLOAT, $1->d_s),
+			  "HKL_list", PyArray_SimpleNewFromData(1, dims_hkl, NPY_FLOAT, $1->HKL_list),
+			  "rot", PyArray_SimpleNewFromData(2, dims_rot, NPY_FLOAT, $1->rot->data));
 }
 %}
 */
