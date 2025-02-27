@@ -86,14 +86,14 @@ static void write_ff_tables(){
   fprintf(fp," {\n");
   i = 0;
   fprintf(fp,"{%e,%e,%e,%e,%e,%e,%e,%e,%e}\n",atomsf[i][0],
-	  atomsf[i][1],atomsf[i][2],atomsf[i][3],
-	  atomsf[i][4],atomsf[i][5],atomsf[i][6],
-	  atomsf[i][7],atomsf[i][8]);
+          atomsf[i][1],atomsf[i][2],atomsf[i][3],
+          atomsf[i][4],atomsf[i][5],atomsf[i][6],
+          atomsf[i][7],atomsf[i][8]);
   for(i =1;i<ELEMENTS;i++){
     fprintf(fp,",{%e,%e,%e,%e,%e,%e,%e,%e,%e}\n",atomsf[i][0],
-	    atomsf[i][1],atomsf[i][2],atomsf[i][3],
-	    atomsf[i][4],atomsf[i][5],atomsf[i][6],
-	    atomsf[i][7],atomsf[i][8]);
+            atomsf[i][1],atomsf[i][2],atomsf[i][3],
+            atomsf[i][4],atomsf[i][5],atomsf[i][6],
+            atomsf[i][7],atomsf[i][8]);
   };
   fprintf(fp,"};\n");   
   fclose(fp);
@@ -265,9 +265,9 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
     for(x = 0;x<nx;x++){
 
       /* 
-	 Calculate the pixel coordinates in reciprocal space 	 
-	 
-	 Add detector center as it might not be the same as the beam
+         Calculate the pixel coordinates in reciprocal space 	 
+         
+         Add detector center as it might not be the same as the beam
       */
       px = ((x-(nx-1.0)/2.0)/nx) * det->width  - det->center_x;
       py = ((y-(ny-1.0)/2.0)/ny) * det->height - det->center_y;
@@ -289,7 +289,7 @@ float * get_HKL_list_for_detector(CCD * det, Experiment * exp,int * HKL_list_siz
           HKL_list[index++] = fourier_py * py / py_size;
           HKL_list[index++] = 0;
       } 
-	 
+         
     }
   }
   *HKL_list_size = nx*ny;
@@ -344,23 +344,23 @@ float * get_HKL_list_for_3d_detector(CCD * det, Experiment * exp,int * HKL_list_
   for(z = 0;z<nz;z++){
     for(y = 0;y<ny;y++){
       for(x = 0;x<nx;x++){
-	/* 
-	   Calculate the pixel coordinates in reciprocal space 	 
-	   
-	   Add detector center as it might not be the same as the beam
-	*/
+        /* 
+           Calculate the pixel coordinates in reciprocal space 	 
+           
+           Add detector center as it might not be the same as the beam
+        */
 
-	px = ((x-(nx-1.0)/2.0)/nx) * det->width  - det->center_x;
-	py = ((y-(ny-1.0)/2.0)/ny) * det->height - det->center_y;
-	pz = ((z-(nz-1.0)/2.0)/nz) * det->depth  - det->center_z;
+        px = ((x-(nx-1.0)/2.0)/nx) * det->width  - det->center_x;
+        py = ((y-(ny-1.0)/2.0)/ny) * det->height - det->center_y;
+        pz = ((z-(nz-1.0)/2.0)/nz) * det->depth  - det->center_z;
 
-	rx = px * real_to_reciprocal;
-	ry = py * real_to_reciprocal;
-	rz = pz * real_to_reciprocal;
-	
-	HKL_list[index++] = rx;
-	HKL_list[index++] = ry;
-	HKL_list[index++] = rz;
+        rx = px * real_to_reciprocal;
+        ry = py * real_to_reciprocal;
+        rz = pz * real_to_reciprocal;
+        
+        HKL_list[index++] = rx;
+        HKL_list[index++] = ry;
+        HKL_list[index++] = rz;
       }
     }
   }
@@ -380,12 +380,12 @@ void multiply_pattern_with_scattering_factor(fftw_complex * f,int Z,int nx, int 
     for(int yi = -ny/2;yi<ny/2;yi++){
       float y = (float)yi/(ny)/rs_pixel_y;
       for(int xi = -nx/2;xi<nx/2;xi++){
-	float x = (float)xi/(nx)/rs_pixel_x;
-	double distance = sqrt(x*x+y*y+z*z);
-	float sf = scatt_factor(distance,Z,B);
-	f[i][0] *= sf;
-	f[i][1] *= sf;
-	i++;
+        float x = (float)xi/(nx)/rs_pixel_x;
+        double distance = sqrt(x*x+y*y+z*z);
+        float sf = scatt_factor(distance,Z,B);
+        f[i][0] *= sf;
+        f[i][1] *= sf;
+        i++;
       }
     }
   }
@@ -462,7 +462,7 @@ Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experim
     }else if(is_element_in_molecule[Z]){
       mpi_skip_flag++;
       if(mpi_skip_flag < mpi_skip){
-	continue;
+        continue;
       }
       mpi_skip_flag = 0;
       fprintf(stderr,"Calculating Z = %d\n",Z);
@@ -471,48 +471,48 @@ Diffraction_Pattern * compute_pattern_by_nfft(Molecule * mol, CCD * det, Experim
 
       int k = 0;
       for(int j = 0 ;j< mol->natoms;j++){
-	if(mol->atomic_number[j] == Z){
+        if(mol->atomic_number[j] == Z){
 
-	  p.f[k][0] = 1;
-	  p.f[k][1] = 0;
-	  /* We have to multiply the position with the dimension of the box because the
-	     fourier sample are taken between 0..1 (equivalent to 0..0.5,-0.5..0) */
+          p.f[k][0] = 1;
+          p.f[k][1] = 0;
+          /* We have to multiply the position with the dimension of the box because the
+             fourier sample are taken between 0..1 (equivalent to 0..0.5,-0.5..0) */
 
-	  /* For some unknown reason I have to take the negative of the position otherwise the patterns came out inverted.
-	     I have absolutely no idea why! It can even be a bug in the NFFT library. I should check this out better
-	  */
+          /* For some unknown reason I have to take the negative of the position otherwise the patterns came out inverted.
+             I have absolutely no idea why! It can even be a bug in the NFFT library. I should check this out better
+          */
 
-	  p.x[k*3] = -mol->pos[j*3]/(rs_pixel_x)/nx; 
-	  p.x[k*3+1] = -mol->pos[j*3+1]/(rs_pixel_y)/ny; 
-	  p.x[k*3+2] = -mol->pos[j*3+2]/(rs_pixel_z)/nz; 
+          p.x[k*3] = -mol->pos[j*3]/(rs_pixel_x)/nx; 
+          p.x[k*3+1] = -mol->pos[j*3+1]/(rs_pixel_y)/ny; 
+          p.x[k*3+2] = -mol->pos[j*3+2]/(rs_pixel_z)/nz; 
 
-	  k++;
-	}
+          k++;
+        }
       }
       
 
 #if NFFT_VERSION_ABOVE_3_3
       if(p.flags & PRE_ONE_PSI){
-	nfft_precompute_one_psi(&p);
+        nfft_precompute_one_psi(&p);
       }
 #else
       if(p.nfft_flags & PRE_ONE_PSI){
-	nfft_precompute_one_psi(&p);
+        nfft_precompute_one_psi(&p);
       }
 #endif  
       if(is_element_in_molecule[Z] < 100){
-	nfft_adjoint(&p);  
+        nfft_adjoint(&p);  
       }else{
-	nfft_adjoint(&p);  
+        nfft_adjoint(&p);  
       }
       
       if(!opts->delta_atoms){
-	multiply_pattern_with_scattering_factor(p.f_hat,Z,nx,ny,nz,
-						rs_pixel_x,rs_pixel_y,rs_pixel_z,B);
+        multiply_pattern_with_scattering_factor(p.f_hat,Z,nx,ny,nz,
+                                                rs_pixel_x,rs_pixel_y,rs_pixel_z,B);
       }
       for(int k = 0;k<nx*ny*nz;k++){
-	sp_real(res->F[k]) += p.f_hat[k][0];
-	sp_imag(res->F[k]) += p.f_hat[k][1];
+        sp_real(res->F[k]) += p.f_hat[k][0];
+        sp_imag(res->F[k]) += p.f_hat[k][1];
       }   
       nfft_finalize(&p);
     }
@@ -560,7 +560,7 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
   for(int j = 0 ;j< mol->natoms;j++){
     for(int k = 0;k<3;k++){
       if(2*fabs(mol->pos[j*3+k]) > max_x[k]){
-	max_x[k] = 2*fabs(mol->pos[j*3+k]);
+        max_x[k] = 2*fabs(mol->pos[j*3+k]);
       }
     }
     if(is_element_in_molecule[mol->atomic_number[j]] == 0){
@@ -576,7 +576,7 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
     sp_imag(res->F[j]) = 0;
     for(int k = 0;k<3;k++){
       if(2*fabs(HKL_list[j*3+k]) > max_v[k]){
-	max_v[k] = 2*fabs(HKL_list[j*3+k]);
+        max_v[k] = 2*fabs(HKL_list[j*3+k]);
       }
     }
   }
@@ -603,7 +603,7 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
     }else if(is_element_in_molecule[Z]){
       mpi_skip_flag++;
       if(mpi_skip_flag < mpi_skip){
-	continue;
+        continue;
       }
       mpi_skip_flag = 0;
       fprintf(stderr,"Calculating Z = %d\n",Z);
@@ -615,54 +615,54 @@ Diffraction_Pattern * compute_pattern_on_list_by_nfft(Molecule * mol,float * HKL
 
       int k = 0;
       for(int j = 0 ;j< mol->natoms;j++){
-	if(mol->atomic_number[j] == Z){
+        if(mol->atomic_number[j] == Z){
 
-	  p.f[k][0] = 1;
-	  p.f[k][1] = 0;
-	  /* We have to multiply the position with the dimension of the box because the
-	     fourier sample are taken between 0..1 (equivalent to 0..0.5,-0.5..0) */
-	  /* For some unknown reason I have to take the negative of the position otherwise the patterns came out inverted.
-	     I have absolutely no idea why! It can even be a bug in the NFFT library. I should check this out better.
-	     It might have to do with the order of the output!
-	  */
-	  p.x[k*3]   = -mol->pos[j*3]/max_x[0];
-	  p.x[k*3+1] = -mol->pos[j*3+1]/max_x[1];
-	  p.x[k*3+2] = -mol->pos[j*3+2]/max_x[2];
-	  k++;
-	}
+          p.f[k][0] = 1;
+          p.f[k][1] = 0;
+          /* We have to multiply the position with the dimension of the box because the
+             fourier sample are taken between 0..1 (equivalent to 0..0.5,-0.5..0) */
+          /* For some unknown reason I have to take the negative of the position otherwise the patterns came out inverted.
+             I have absolutely no idea why! It can even be a bug in the NFFT library. I should check this out better.
+             It might have to do with the order of the output!
+          */
+          p.x[k*3]   = -mol->pos[j*3]/max_x[0];
+          p.x[k*3+1] = -mol->pos[j*3+1]/max_x[1];
+          p.x[k*3+2] = -mol->pos[j*3+2]/max_x[2];
+          k++;
+        }
       }
       k = 0;
       for(int k = 0 ;k<HKL_list_size;k++){
-	p.v[k*3]   =  HKL_list[k*3]/max_v[0];
-	p.v[k*3+1] =  HKL_list[k*3+1]/max_v[1];
-	p.v[k*3+2] =  HKL_list[k*3+2]/max_v[2];
+        p.v[k*3]   =  HKL_list[k*3]/max_v[0];
+        p.v[k*3+1] =  HKL_list[k*3+1]/max_v[1];
+        p.v[k*3+2] =  HKL_list[k*3+2]/max_v[2];
       }
       
       /** precompute psi, the entries of the matrix B */
       if(p.nnfft_flags & PRE_PSI)
-	nnfft_precompute_psi(&p);
+        nnfft_precompute_psi(&p);
       
       if(p.nnfft_flags & PRE_FULL_PSI)
-	nnfft_precompute_full_psi(&p);
+        nnfft_precompute_full_psi(&p);
       
       if(p.nnfft_flags & PRE_LIN_PSI)
-	nnfft_precompute_lin_psi(&p);
+        nnfft_precompute_lin_psi(&p);
       
       /** precompute phi_hut, the entries of the matrix D */
       if(p.nnfft_flags & PRE_PHI_HUT)
-	nnfft_precompute_phi_hut(&p);
+        nnfft_precompute_phi_hut(&p);
     
       if(is_element_in_molecule[Z] < 10){
-	nnfft_adjoint(&p);  
+        nnfft_adjoint(&p);  
       }else{
-	nnfft_adjoint(&p);  
+        nnfft_adjoint(&p);  
       }
       if(!opts->delta_atoms){
-	multiply_pattern_on_list_with_scattering_factor(p.f_hat,Z,HKL_list,HKL_list_size,B);
+        multiply_pattern_on_list_with_scattering_factor(p.f_hat,Z,HKL_list,HKL_list_size,B);
       }
       for(int k = 0;k<HKL_list_size;k++){
-	sp_real(res->F[k]) += p.f_hat[k][0];
-	sp_imag(res->F[k]) += p.f_hat[k][1];
+        sp_real(res->F[k]) += p.f_hat[k][0];
+        sp_imag(res->F[k]) += p.f_hat[k][1];
       }   
       nnfft_finalize(&p);
     }
@@ -710,31 +710,31 @@ Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experime
     float home_z = sp_mod(mol->pos[j*3+2]/rs_pixel_z,nz);
     for(int z = home_z-z_grid_radius;z<home_z+z_grid_radius;z++){
       for(int y = home_y-y_grid_radius;y<home_y+y_grid_radius;y++){
-	for(int x = home_x-x_grid_radius;x<home_x+x_grid_radius;x++){
-	  float ed = 0;
+        for(int x = home_x-x_grid_radius;x<home_x+x_grid_radius;x++){
+          float ed = 0;
 /*	  int z2 = 0;
-	  int y2 = 0;
-	  int x2 = 0;*/
-	  for(int z2 = -1;z2<2;z2+=2){
-	    for(int y2 = -1;y2<2;y2+=2){
-	      for(int x2 = -1;x2<2;x2+=2){
-		float dz = (home_z-(z+z2/2.0))*rs_pixel_z;
-		float dy = (home_y-(y+y2/2.0))*rs_pixel_y;
-		float dx = (home_x-(x+x2/2.0))*rs_pixel_x;
-		float distance = sqrt(dz*dz+dy*dy+dx*dx);
-		ed += electron_density(distance,mol->atomic_number[j])*rs_pixel_x*1e10*rs_pixel_y*1e10*rs_pixel_z*1e10;   
-	      }
-	    }
-	  }
-	  /* ed is the average of 27 points around the grid point */
-	  ed *= rs_pixel_x*1e10*rs_pixel_y*1e10*rs_pixel_z*1e10/8;
-	  /* Multiply by the voxel volume so that we have the number in electrons instead of electrons/a^3*/
+          int y2 = 0;
+          int x2 = 0;*/
+          for(int z2 = -1;z2<2;z2+=2){
+            for(int y2 = -1;y2<2;y2+=2){
+              for(int x2 = -1;x2<2;x2+=2){
+                float dz = (home_z-(z+z2/2.0))*rs_pixel_z;
+                float dy = (home_y-(y+y2/2.0))*rs_pixel_y;
+                float dx = (home_x-(x+x2/2.0))*rs_pixel_x;
+                float distance = sqrt(dz*dz+dy*dy+dx*dx);
+                ed += electron_density(distance,mol->atomic_number[j])*rs_pixel_x*1e10*rs_pixel_y*1e10*rs_pixel_z*1e10;   
+              }
+            }
+          }
+          /* ed is the average of 27 points around the grid point */
+          ed *= rs_pixel_x*1e10*rs_pixel_y*1e10*rs_pixel_z*1e10/8;
+          /* Multiply by the voxel volume so that we have the number in electrons instead of electrons/a^3*/
 /*	  if(!isnormal(ed)){
-	    abort();
-	  }*/
-	  ed += sp_cabs(sp_image_get(rs,sp_mod(x,nx),sp_mod(y,ny),sp_mod(z,nz)));
-	  sp_image_set(rs,sp_mod(x,nx),sp_mod(y,ny),sp_mod(z,nz),sp_cinit(ed,0));
-	}
+            abort();
+          }*/
+          ed += sp_cabs(sp_image_get(rs,sp_mod(x,nx),sp_mod(y,ny),sp_mod(z,nz)));
+          sp_image_set(rs,sp_mod(x,nx),sp_mod(y,ny),sp_mod(z,nz),sp_cinit(ed,0));
+        }
       }
     }
     //fprintf(stderr,"%d done\n",j);
@@ -757,9 +757,9 @@ Diffraction_Pattern * compute_pattern_by_fft(Molecule * mol, CCD * det, Experime
   for(int z = 0;z<sp_image_z(sf);z++){
     for(int y = 0;y<sp_image_y(sf);y++){
       for(int x = 0;x<sp_image_x(sf);x++){
-	res->F[i] = sp_cscale(sp_image_get(sf,x,y,z),norm);
-	res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
-	i++;
+        res->F[i] = sp_cscale(sp_image_get(sf,x,y,z),norm);
+        res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
+        i++;
       }
     }
   }
@@ -804,16 +804,16 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
 #ifdef MPI    
     if(is_mpi_master()){
       if(i % points_per_percent == 0){
-	if (opts->verbosity_level > 0) {
-	  fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
-	}
+        if (opts->verbosity_level > 0) {
+          fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+        }
       }
     }
 #else
       if(i % points_per_percent == 0){
-	if (opts->verbosity_level > 0) {
-	  fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
-	}
+        if (opts->verbosity_level > 0) {
+          fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+        }
       }
 
 #endif
@@ -823,23 +823,23 @@ Diffraction_Pattern * compute_pattern_on_list(Molecule * mol, float * HKL_list, 
     scattering_vector_length = sqrt(HKL_list[3*i]*HKL_list[3*i]+HKL_list[3*i+1]*HKL_list[3*i+1]+HKL_list[3*i+2]*HKL_list[3*i+2]);
     for(j = 0;j<ELEMENTS;j++){
       if(is_element_in_molecule[j]){
-	scattering_factor_cache[j] = scatt_factor(scattering_vector_length,j,B);
+        scattering_factor_cache[j] = scatt_factor(scattering_vector_length,j,B);
       }
     }
     for(j = 0 ;j< mol->natoms;j++){
       if(!mol->atomic_number[j]){
-	continue;
+        continue;
       }
       /* Multiply the scattering factor with the illumination function (should it be the square root of it?)*/
       scattering_factor = scattering_factor_cache[mol->atomic_number[j]]*sqrt(atom_illumination[j]);
 /*      scattering_factor = 1;*/
       float tmp = -2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2]);
       if(!opts->delta_atoms){
-	sp_real(res->F[i]) += scattering_factor*cos(tmp);
-	sp_imag(res->F[i]) += scattering_factor*sin(tmp);
+        sp_real(res->F[i]) += scattering_factor*cos(tmp);
+        sp_imag(res->F[i]) += scattering_factor*sin(tmp);
       }else{
-	sp_real(res->F[i]) += cos(tmp);
-	sp_imag(res->F[i]) += sin(tmp);
+        sp_real(res->F[i]) += cos(tmp);
+        sp_imag(res->F[i]) += sin(tmp);
       }
     }
     res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
@@ -891,16 +891,16 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
 #ifdef MPI    
     if(is_mpi_master()){
       if(i % points_per_percent == 0){
-	if (opts->verbosity_level > 0) {
-	  fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
-	}
+        if (opts->verbosity_level > 0) {
+          fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+        }
       }
     }
 #else
       if(i % points_per_percent == 0){
-	if (opts->verbosity_level > 0) {
-	  fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
-	}
+        if (opts->verbosity_level > 0) {
+          fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+        }
       }
 
 #endif
@@ -910,7 +910,7 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
     scattering_vector_length = sqrt(HKL_list[3*i]*HKL_list[3*i]+HKL_list[3*i+1]*HKL_list[3*i+1]+HKL_list[3*i+2]*HKL_list[3*i+2]);
     for(j = 0;j<ELEMENTS;j++){
       if(is_element_in_molecule[j]){
-	scattering_factor_cache[j] = scatt_factor(scattering_vector_length,j,B);
+        scattering_factor_cache[j] = scatt_factor(scattering_vector_length,j,B);
       }
     }
     for(j = 0 ;j< 4*(mol->natoms/4);j+=4){
@@ -922,27 +922,27 @@ Diffraction_Pattern * vector_compute_pattern_on_list(Molecule * mol, float * HKL
                  scattering_factor_cache[mol->atomic_number[j+3]]*sqrt(atom_illumination[j+3])};
 
       float tmp[4] = {2*M_PI*(HKL_list[3*i]*-mol->pos[j*3]+HKL_list[3*i+1]*-mol->pos[j*3+1]+HKL_list[3*i+2]*-mol->pos[j*3+2]),
-		      2*M_PI*(HKL_list[3*i]*-mol->pos[(j+1)*3]+HKL_list[3*i+1]*-mol->pos[(j+1)*3+1]+HKL_list[3*i+2]*-mol->pos[(j+1)*3+2]),
-		      2*M_PI*(HKL_list[3*i]*-mol->pos[(j+2)*3]+HKL_list[3*i+1]*-mol->pos[(j+2)*3+1]+HKL_list[3*i+2]*-mol->pos[(j+2)*3+2]),
-		      2*M_PI*(HKL_list[3*i]*-mol->pos[(j+3)*3]+HKL_list[3*i+1]*-mol->pos[(j+3)*3+1]+HKL_list[3*i+2]*-mol->pos[(j+3)*3+2])};
+                      2*M_PI*(HKL_list[3*i]*-mol->pos[(j+1)*3]+HKL_list[3*i+1]*-mol->pos[(j+1)*3+1]+HKL_list[3*i+2]*-mol->pos[(j+1)*3+2]),
+                      2*M_PI*(HKL_list[3*i]*-mol->pos[(j+2)*3]+HKL_list[3*i+1]*-mol->pos[(j+2)*3+1]+HKL_list[3*i+2]*-mol->pos[(j+2)*3+2]),
+                      2*M_PI*(HKL_list[3*i]*-mol->pos[(j+3)*3]+HKL_list[3*i+1]*-mol->pos[(j+3)*3+1]+HKL_list[3*i+2]*-mol->pos[(j+3)*3+2])};
       v4sf phase = __builtin_ia32_loadups(tmp);
       v4sf sin_phase;
       v4sf cos_phase;
       sincos_ps(phase,&sin_phase,&cos_phase);
       if(!opts->delta_atoms){
-	sin_phase = __builtin_ia32_mulps(sin_phase,sf);
-	cos_phase = __builtin_ia32_mulps(cos_phase,sf);
+        sin_phase = __builtin_ia32_mulps(sin_phase,sf);
+        cos_phase = __builtin_ia32_mulps(cos_phase,sf);
       }
       __builtin_ia32_storeups(tmp,cos_phase);
       float sum = 0;
       for(int ii = 0;ii<4;ii++){
-	sum += tmp[ii];
+        sum += tmp[ii];
       }
       sp_real(res->F[i]) += sum;
       __builtin_ia32_storeups(tmp,sin_phase);
       sum = 0;
       for(int ii = 0;ii<4;ii++){
-	sum += tmp[ii];
+        sum += tmp[ii];
       }
       sp_imag(res->F[i]) += sum;
     }
@@ -1006,16 +1006,16 @@ Diffraction_Pattern * compute_fresnel_pattern_on_list(Molecule * mol, float * HK
 #ifdef MPI    
     if(is_mpi_master()){
       if(i % points_per_percent == 0){
-	//if (opts->verbosity_level > 0) {
-	//  fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
-	//}
+        //if (opts->verbosity_level > 0) {
+        //  fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+        //}
       }
     }
 #else
       if(i % points_per_percent == 0) {
-	//if (opts->verbosity_level > 0) {
-	//  fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
-	//}
+        //if (opts->verbosity_level > 0) {
+        //  fprintf(stderr,"%f percent done\n",(100.0*(i-HKL_list_start))/(HKL_list_end-HKL_list_start));
+        //}
       }
 
 #endif
@@ -1025,13 +1025,13 @@ Diffraction_Pattern * compute_fresnel_pattern_on_list(Molecule * mol, float * HK
     scattering_vector_length = sqrt(HKL_list[3*i]*HKL_list[3*i]+HKL_list[3*i+1]*HKL_list[3*i+1]+HKL_list[3*i+2]*HKL_list[3*i+2]);
     for(j = 0;j<ELEMENTS;j++){
       if(is_element_in_molecule[j]){
-	scattering_factor_cache[j] = scatt_factor(scattering_vector_length,j,B);
+        scattering_factor_cache[j] = scatt_factor(scattering_vector_length,j,B);
       }
     }
     k = 2*M_PI/exp->wavelength;
     for(j = 0 ;j< mol->natoms;j++){
       if(!mol->atomic_number[j]){
-	continue;
+        continue;
       }
       // Multiply the scattering factor with the illumination function (should it be the square root of it?)
       scattering_factor = scattering_factor_cache[mol->atomic_number[j]]*sqrt(atom_illumination[j]);
@@ -1039,20 +1039,20 @@ Diffraction_Pattern * compute_fresnel_pattern_on_list(Molecule * mol, float * HK
       
 
       sp_real(res->F[i]) += scattering_factor*cos(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2])+
-	M_PI/(exp->wavelength*distance)*(mol->pos[j*3]*mol->pos[j*3]+mol->pos[j*3+1]*mol->pos[j*3+1]));
+        M_PI/(exp->wavelength*distance)*(mol->pos[j*3]*mol->pos[j*3]+mol->pos[j*3+1]*mol->pos[j*3+1]));
       sp_imag(res->F[i]) += scattering_factor*sin(2*M_PI*(HKL_list[3*i]*mol->pos[j*3]+HKL_list[3*i+1]*mol->pos[j*3+1]+HKL_list[3*i+2]*mol->pos[j*3+2])
-						  -M_PI/(exp->wavelength*distance)*(mol->pos[j*3]*mol->pos[j*3]+mol->pos[j*3+1]*mol->pos[j*3+1]));
+                                                  -M_PI/(exp->wavelength*distance)*(mol->pos[j*3]*mol->pos[j*3]+mol->pos[j*3+1]*mol->pos[j*3+1]));
 
 
       /*
-	sp_real(res->F[i]) += scattering_factor*cos(k/(2*distance)*((exp->wavelength*HKL_list[3*i]-mol->pos[j*3])*
-												     (exp->wavelength*HKL_list[3*i]-mol->pos[j*3])+
-												     (exp->wavelength*HKL_list[3*i+1]-mol->pos[j*3+1])*
-												     (exp->wavelength*HKL_list[3*i+1]-mol->pos[j*3+1])));
+        sp_real(res->F[i]) += scattering_factor*cos(k/(2*distance)*((exp->wavelength*HKL_list[3*i]-mol->pos[j*3])*
+                                                                                                     (exp->wavelength*HKL_list[3*i]-mol->pos[j*3])+
+                                                                                                     (exp->wavelength*HKL_list[3*i+1]-mol->pos[j*3+1])*
+                                                                                                     (exp->wavelength*HKL_list[3*i+1]-mol->pos[j*3+1])));
       sp_real(res->F[i]) += scattering_factor*sin(k/(2*distance)*((exp->wavelength*HKL_list[3*i]-mol->pos[j*3])*
-												     (exp->wavelength*HKL_list[3*i]-mol->pos[j*3])+
-												     (exp->wavelength*HKL_list[3*i+1]-mol->pos[j*3+1])*
-												     (exp->wavelength*HKL_list[3*i+1]-mol->pos[j*3+1])));
+                                                                                                     (exp->wavelength*HKL_list[3*i]-mol->pos[j*3])+
+                                                                                                     (exp->wavelength*HKL_list[3*i+1]-mol->pos[j*3+1])*
+                                                                                                     (exp->wavelength*HKL_list[3*i+1]-mol->pos[j*3+1])));
       */
     }
     res->ints[i] = sp_cabs(res->F[i])*sp_cabs(res->F[i]);
@@ -1094,7 +1094,7 @@ Diffraction_Pattern * compute_box_on_list(Box box, float * HKL_list, int HKL_lis
 
 
 Diffraction_Pattern * load_pattern_from_file(CCD * det,char * filename, 
-					     float * HKL_list, int HKL_list_size){
+                                             float * HKL_list, int HKL_list_size){
   Diffraction_Pattern * res = malloc(sizeof(Diffraction_Pattern));
 
   res->HKL_list = malloc(sizeof(float)*3*HKL_list_size);
@@ -1122,22 +1122,22 @@ void calculate_thomson_correction(CCD * det, Experiment * exp){
   for(z = 0;z<det->nz;z++){
     for(y = 0;y<det->ny;y++){
       for(x = 0;x<det->nx;x++){
-	if(polarization != POLARIZATION_IGNORE){
-	  px = ((x-(nx-1.0)/2.0)/nx) * det->width  - det->center_x;
-	  py = ((y-(ny-1.0)/2.0)/ny) * det->height - det->center_y;
-	  r = sqrt(px*px+py*py+DD);
-	  if(polarization == POLARIZATION_VERTICAL){
-	    chi = asin(py/r);
-	    polarization_factor = cos(chi)*cos(chi);	    
-	  }else if(polarization == POLARIZATION_HORIZONTAL){
-	    chi = asin(px/r);
-	    polarization_factor = cos(chi)*cos(chi);	    
-	  }else if(polarization == POLARIZATION_UNPOLARIZED){
-	    chi = asin(sqrt(px*px+py*py)/r);
-	    polarization_factor = (1. + cos(chi)*cos(chi)) / 2.;
-	  }
-	}
-	det->thomson_correction[index++] = (r0*r0)*polarization_factor;
+        if(polarization != POLARIZATION_IGNORE){
+          px = ((x-(nx-1.0)/2.0)/nx) * det->width  - det->center_x;
+          py = ((y-(ny-1.0)/2.0)/ny) * det->height - det->center_y;
+          r = sqrt(px*px+py*py+DD);
+          if(polarization == POLARIZATION_VERTICAL){
+            chi = asin(py/r);
+            polarization_factor = cos(chi)*cos(chi);	    
+          }else if(polarization == POLARIZATION_HORIZONTAL){
+            chi = asin(px/r);
+            polarization_factor = cos(chi)*cos(chi);	    
+          }else if(polarization == POLARIZATION_UNPOLARIZED){
+            chi = asin(sqrt(px*px+py*py)/r);
+            polarization_factor = (1. + cos(chi)*cos(chi)) / 2.;
+          }
+        }
+        det->thomson_correction[index++] = (r0*r0)*polarization_factor;
       }
     }    
   }              
@@ -1168,19 +1168,19 @@ void calculate_pixel_solid_angle(CCD * det){
   for(z = 0;z<det->nz;z++){
     for(y = 0;y<det->ny;y++){
       for(x = 0;x<det->nx;x++){
-	if(is3D || det->spherical){
-	  r = det->distance;
-	  det->solid_angle[index++] = det->pixel_width*det->pixel_height/(r*r);
-	}else{
-	  px = ((x-(nx-1.0)/2.0)/nx) * det->width  - det->center_x;
-	  py = ((y-(ny-1.0)/2.0)/ny) * det->height - det->center_y;
-	  r = sqrt(det->distance*det->distance+px*px+py*py);
+        if(is3D || det->spherical){
+          r = det->distance;
+          det->solid_angle[index++] = det->pixel_width*det->pixel_height/(r*r);
+        }else{
+          px = ((x-(nx-1.0)/2.0)/nx) * det->width  - det->center_x;
+          py = ((y-(ny-1.0)/2.0)/ny) * det->height - det->center_y;
+          r = sqrt(det->distance*det->distance+px*px+py*py);
 
-	  incidence = atan(sqrt(px*px+py*py)/det->distance);
-	  incidence = cos(incidence);
-	  incidence = incidence*incidence*incidence; /* cos(incidence)**3 */
-	  det->solid_angle[index++] = det->pixel_width*det->pixel_height/d2 * incidence;
-	}
+          incidence = atan(sqrt(px*px+py*py)/det->distance);
+          incidence = cos(incidence);
+          incidence = incidence*incidence*incidence; /* cos(incidence)**3 */
+          det->solid_angle[index++] = det->pixel_width*det->pixel_height/d2 * incidence;
+        }
       }
     }
   }
@@ -1253,15 +1253,15 @@ void write_hkl_grid(float * list, Molecule * mol,CCD * det){
   for(z = 0;z<sp_image_z(hkl_grid);z++){
     for(y = 0;y<sp_image_y(hkl_grid);y++){
       for(x = 0;x<sp_image_x(hkl_grid);x++){
-	// What is this supposed to do?
-	if(fabs(x-hkl_grid->detector->image_center[0]) > fabs(y-hkl_grid->detector->image_center[1])){
-	  sp_real(hkl_grid->image->data[i]) = list[index]*max_dim;
-	}else{
-	  sp_real(hkl_grid->image->data[i]) = list[index+1]*max_dim;
-	}
-	hkl_grid->mask->data[i] = 1;
-	index += 3*det->binning_x;
-	i++;
+        // What is this supposed to do?
+        if(fabs(x-hkl_grid->detector->image_center[0]) > fabs(y-hkl_grid->detector->image_center[1])){
+          sp_real(hkl_grid->image->data[i]) = list[index]*max_dim;
+        }else{
+          sp_real(hkl_grid->image->data[i]) = list[index+1]*max_dim;
+        }
+        hkl_grid->mask->data[i] = 1;
+        index += 3*det->binning_x;
+        i++;
       }
     }
     index += 3*(det->binning_x-1)*(det->ny);

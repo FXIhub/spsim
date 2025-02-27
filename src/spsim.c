@@ -118,7 +118,8 @@ Diffraction_Pattern * compute_sf(Molecule * mol, float * HKL_list, int HKL_list_
     pattern = compute_pattern_by_fft(mol,opts->detector,opts->experiment,opts->b_factor);
   }else if(opts->use_nfft_for_sf){
 #ifdef NFFT_SUPPORT    
-    pattern = compute_pattern_by_nfft(mol,opts->detector,opts->experiment,opts->b_factor,HKL_list,opts);
+    //pattern = compute_pattern_by_nfft(mol,opts->detector,opts->experiment,opts->b_factor,HKL_list,opts);
+    pattern = compute_pattern_on_list_by_nfft(mol,HKL_list, HKL_list_size,opts->detector, opts->b_factor, opts);
 #else
     fprintf(stderr,"spsim built without NFFT support!\n");
 #endif
