@@ -27,10 +27,13 @@ jobs:
         pip install pytest
 
     - name: Configure CMake
-      run: cmake -B build
+      run: |
+        mkdir build
+        cd build
+        cmake ..
 
     - name: Build
-      run: make -C build
+      run: make
 
     - name: Run pytest
-      run: pytest
+      run: cd .. && pytest
