@@ -24,8 +24,8 @@ jobs:
         # depending on your project's requirements.
         # For example, if you need build-essential and cmake:
         sudo apt-get update
-        sudo apt-get install -y cmake build-essential libhdf5-dev libgsl-dev libfftw3-dev swig libnfft3-dev python3-setuptools
-        pip install pytest
+        sudo apt-get install -y cmake build-essential libhdf5-dev libgsl-dev libfftw3-dev swig libnfft3-dev
+        pip install pytest setuptools
 
     - name: Configure CMake
       run: |
