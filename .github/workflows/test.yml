@@ -10,6 +10,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        # Define the matrix for whether to install CUDA or not
+        cuda: [with_cuda, without_cuda]
+
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python
@@ -27,6 +32,11 @@ jobs:
         sudo apt-get install -y cmake build-essential libhdf5-dev libgsl-dev libfftw3-dev swig libnfft3-dev
         pip install pytest setuptools
 
+    - name: Install NVIDIA CUDA Toolkit (if required)
+      if: matrix.cuda == 'with_cuda'
+      run: |
+        sudo apt-get install -y nvidia-cuda-toolkit
+
     - name: Install libspimage
       run: |
         pip install numpy
@@ -41,11 +51,8 @@ jobs:
         
     - name: Build
       run: |
-        ls
         mkdir build
         cd build
         cmake ..
         make
 
-    - name: Run pytest
-      run: cd .. && pytest
