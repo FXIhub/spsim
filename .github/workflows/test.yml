@@ -27,6 +27,16 @@ jobs:
         sudo apt-get install -y cmake build-essential libhdf5-dev libgsl-dev libfftw3-dev swig libnfft3-dev
         pip install pytest setuptools
 
+    - name: Install libspimage
+      run: |
+        git clone git@github.com:FXIhub/libspimage.git
+        cd libspimage
+        mkdir build
+        cd build
+        cmake ..
+        make
+        sudo make install
+        
     - name: Configure CMake
       run: |
         ls
