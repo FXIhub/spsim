@@ -49,10 +49,11 @@ jobs:
         make
         sudo make install
         
-    - name: Build
+    - name: Build and Install
       run: |
         mkdir build
         cd build
         cmake ..
         make
+        make install
 
