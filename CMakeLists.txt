@@ -139,7 +139,7 @@ set(top_level_DOCFILES
   AUTHORS
   COPYING
   COPYRIGHT
-  README
+  README.md
   )
 install(FILES ${top_level_DOCFILES} DESTINATION share/doc/spsim)
 install(FILES doc/UserManual.pdf DESTINATION share/doc/spsim)
