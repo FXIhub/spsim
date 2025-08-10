@@ -29,6 +29,8 @@ jobs:
 
     - name: Install libspimage
       run: |
+        pip install numpy
+        sudo apt-get install libtiff-dev
         git clone https://github.com/FXIhub/libspimage.git
         cd libspimage
         mkdir build
