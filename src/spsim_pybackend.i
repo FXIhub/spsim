@@ -97,55 +97,6 @@
 }
 
 
-%typemap(in) int * {
-  PyArrayObject *arr;
-  if(PyArray_Check($input) == 0 || PyArray_ISINTEGER((PyArrayObject *)$input) == 0 
-     || PyArray_TYPE((PyArrayObject *)$input) != NPY_INT){
-    PyErr_SetString( PyExc_TypeError, "int * argument not an int32 numpy array" );
-    return NULL;
-  } 
-  arr = (PyArrayObject *)($input);
-  //  $1 = (int *)arr->data;
-  $1 = (int *) PyArray_DATA (arr);
-}
-
-%typemap(in) float * {
-  PyArrayObject *arr;
-  if($input == Py_None){
-    $1 = (float *)NULL;
-  }else{ 
-    if(PyArray_Check($input) == 0 || PyArray_ISFLOAT((PyArrayObject *)$input) == 0 
-     || PyArray_TYPE((PyArrayObject *)$input) != NPY_FLOAT32){
-    PyErr_SetString( PyExc_TypeError, "float * argument not an float32 numpy array" );
-      return NULL;
-    } 
-    arr = (PyArrayObject *)($input);
-    //  $1 = (int *)arr->data;
-    $1 = (float *) PyArray_DATA (arr);
-  }
-}
-
-%typemap(in) Image ** {
-  $1 = NULL;
-  if (PyList_Check($input)) {
-    const size_t size = PyList_Size($input);
-    $1 = (Image**)malloc((size+1) * sizeof(Image*));
-    for (int i = 0; i < size; ++i) {
-      void *argp = 0 ;
-      const int res = SWIG_ConvertPtr(PyList_GetItem($input, i), &argp, $*1_descriptor, 0);
-      if (!SWIG_IsOK(res)) {
-        SWIG_exception_fail(SWIG_ArgError(res), "in method '" "$symname" "', argument " "$argnum"" of type '" "$1_type""'");
-      }
-      $1[i] = (Image*)(argp);
-    }
-    $1[size] = NULL;
-  }
-  else {
-    // Raise exception
-    SWIG_exception_fail(SWIG_TypeError, "Expected list in $symname");
-  }
-}
-
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
