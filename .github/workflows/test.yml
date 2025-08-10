@@ -39,16 +39,13 @@ jobs:
         make
         sudo make install
         
-    - name: Configure CMake
+    - name: Build
       run: |
         ls
         mkdir build
         cd build
         cmake ..
         make
-
-    - name: Build
-      run: make
 
     - name: Run pytest
       run: cd .. && pytest

@@ -1,12 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
-
-if(POLICY CMP0042)
-  cmake_policy(SET CMP0042 NEW) # CMake 3.0
-endif()
-
-if(POLICY CMP0025)
-  cmake_policy(SET CMP0025 NEW) # CMake 3.0
-endif()
+cmake_minimum_required(VERSION 3.18)
 
 PROJECT (spsim)
 
@@ -17,13 +9,8 @@ IF(CMAKE_COMPILER_IS_GNUCC)
 	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -std=c99")
 ENDIF(CMAKE_COMPILER_IS_GNUCC)
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  # Necessary due to CUDA compatibility problems
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
-endif()
-
 find_package(GSL)
-find_package(SpImage REQUIRED)
+find_package(SPIMAGE REQUIRED)
 find_package(HDF5 REQUIRED)
 find_package(FFTW3 REQUIRED)
 
@@ -39,58 +26,42 @@ if(NFFT_FOUND)
   ADD_DEFINITIONS(-DNFFT_SUPPORT)
 endif(NFFT_FOUND)
 
-IF(USE_CUDA)
-  IF(CMAKE_VERSION)
-    # CMAKE VERSION was first defined in 2.6.3. Sorry for the hack
-    find_package(CUDA QUIET)
-  ELSE(CMAKE_VERSION)
-    message(STATUS "cmake 2.6.3 or higher required to use CUDA")
-  ENDIF(CMAKE_VERSION)
-
-  IF(CUDA_FOUND)
-    #set(CUDA_VERBOSE_BUILD ON)
-    ADD_DEFINITIONS(-D_USE_CUDA)
-    # Set a reasonable minimum arch
-    if(NOT CUDA_NVCC_FLAGS)
-      if(${CUDA_VERSION} VERSION_LESS "7.0")
-      	# This ensure that the code also runs on cards with computing cap. as low as 1.1
-      	SET(CUDA_NVCC_FLAGS "--Wno-deprecated-gpu-targets -gencode=arch=compute_11,code=compute_11 -gencode=arch=compute_20,code=compute_20")
-      endif()			   
-    endif()
-    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-      # The CUDA module thinks cc is gcc and passes dumpspecs.
-      # This is a workaround
-      if(CUDA_HOST_COMPILER STREQUAL "/usr/bin/cc")
-	SET(CUDA_HOST_COMPILER "/usr/bin/clang")
-      endif()
-    endif()
-
-    message(STATUS "CUDA found. Using CUDA")
-  ELSE(CUDA_FOUND)
-    message(STATUS "CUDA not found. Not using CUDA")
-  ENDIF(CUDA_FOUND)
-ELSE(USE_CUDA)
-  UNSET(CUDA_FOUND)
-ENDIF(USE_CUDA)
+if(USE_CUDA)
+  find_package(CUDAToolkit)
+  if(CUDAToolkit_BIN_DIR)
+    set(CUDA_FOUND TRUE)
+  else()
+    set(CUDA_FOUND FALSE)
+  endif()
+  if(CUDA_FOUND)
+    enable_language(CUDA)
+    add_definitions(-D_USE_CUDA)
+    message(STATUS "CUDA found. Using CUDA.")
+  else(CUDA_FOUND)
+    message(STATUS "CUDA not found. Not using CUDA.")
+  endif(CUDA_FOUND)
+else(USE_CUDA)
+  unset(CUDA_FOUND)
+endif(USE_CUDA)
 
 if(PYTHON_WRAPPERS)
-  find_package(PythonInterp)
-  find_package(PythonLibs)
-  find_package(Numpy)
-  find_package(SWIG)
-  if(PYTHONLIBS_FOUND AND SWIG_FOUND AND PYTHONINTERP_FOUND AND PYTHON_NUMPY_FOUND)
-    # Taken from plplot. Many thanks!
-    # N.B. This is a nice way to obtain all sorts of python information
-    # using distutils.
-    execute_process(
-	 COMMAND
-  	 ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print(sysconfig.get_python_lib())"
-  	 OUTPUT_VARIABLE _PYTHON_INSTDIR
-  	 OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    SET(PYTHON_INSTDIR ${_PYTHON_INSTDIR} CACHE PATH "Installation directory for python module.")
+  find_package (Python3 COMPONENTS Interpreter Development NumPy)
+  if(Python3_Interpreter_FOUND)
+    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} CACHE PATH "Python interpreter executable")
+    set(PYTHON_INCLUDE_PATH ${Python3_INCLUDE_DIRS} CACHE PATH "Python include dirs")
+    set(PYTHON_LIBRARIES ${Python3_LIBRARIES} CACHE PATH "Python libraries")
+    set(PYTHON_NUMPY_INCLUDE_DIR ${Python3_NumPy_INCLUDE_DIRS} CACHE PATH "Python NumPy include dirs")
+    set(PYTHON_NUMPY_FOUND ${Python3_NumPy_FOUND})
+    mark_as_advanced(PYTHON_INCLUDE_PATH PYTHON_LIBRARIES PYTHON_NUMPY_INCLUDE_DIR)
+  else()
+    message(FATAL_ERROR "Python interpreter not found")
   endif()
-endif(PYTHON_WRAPPERS)
+  find_package(SWIG)
+  if(PYTHON_LIBRARIES AND SWIG_FOUND AND PYTHON_EXECUTABLE AND PYTHON_NUMPY_FOUND)
+    set(PYTHON_INSTDIR ${Python3_SITELIB} CACHE PATH "Installation directory for python module.")
+    mark_as_advanced(PYTHON_INSTDIR)
+  endif()
+endif()
 
 SET(MPI OFF CACHE BOOL "If ON use MPI for parallelization if possible.")
 
