@@ -43,6 +43,8 @@
    define necessary library symbols; they are noted "INFRINGES ON
    USER NAME SPACE" below.  */
 
+
+
 /* Identify Bison output.  */
 #define YYBISON 1
 
@@ -127,9 +129,7 @@
 #include "private.h"
 
 //these delcarations are provided to suppress compiler warnings
-extern int libconfig_yylex();
-extern int libconfig_yyget_lineno();
-
+extern int libconfig_yyget_lineno(void *scanner);
   
 static const char *err_array_elem_type = "mismatched element type in array";
 static const char *err_duplicate_setting = "duplicate setting name";
@@ -184,6 +184,8 @@ typedef union YYSTYPE
 # define YYSTYPE_IS_TRIVIAL 1
 #endif
 
+//these delcarations are provided to suppress compiler warnings
+extern int libconfig_yylex(YYSTYPE *yylval, void *scanner);
 
 
 /* Copy the second part of user declarations.  */
