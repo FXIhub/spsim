@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/FXIhub/spsim.svg?branch=master)](https://travis-ci.org/FXIhub/spsim)
+[![Build and Test](https://github.com/FXIhub/spsim/actions/workflows/test.yml/badge.svg)](https://github.com/FXIhub/spsim/actions/workflows/test.yml)
 
 # SPSIM: X-ray Diffraction Pattern Simulation
 
