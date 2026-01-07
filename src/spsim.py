@@ -41,7 +41,7 @@ def get_atoms_from_molecule(mol):
     return anum, pos
 
 def fetch_pdb(pdb_id):
-    url = "http://www.rcsb.org/pdb/files/%s.pdb.gz" % str(pdb_id)
+    url = "https://www.rcsb.org/pdb/files/%s.pdb.gz" % str(pdb_id)
     filename = "./%s.pdb" % str(pdb_id)
     response = urlopen(url)
     compressedFile = BytesIO()
